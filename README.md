@@ -4,7 +4,17 @@
   * [GitHub](https://github.com/slds-lmu/paper_2021_xautoml)
   * [PDF](documentation/Explaining%20Hyperparameter%20Optimization%20via%20Partial%20Dependence%20Plots.pdf)
 
-## Template Repository for iML-Project Submissions
+## Conda Environment
+### Create environment
+```
+conda create -f environment.yml
+```
+
+### Update environment (if env exists)
+```
+conda env update -f environment.yml --prune
+```
+
 
 ### Requirements for Project Subissions
 * use python 3.9. As in the assignments, we recommend working inside a conda environment.
