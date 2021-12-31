@@ -4,7 +4,7 @@ Collection of blackbox functions that can be minimized
 import numpy as np
 
 
-def _levy(*x: float) -> float:
+def levy(*x: float) -> float:
     """
     https://www.sfu.ca/~ssurjano/levy.html.
 
@@ -28,7 +28,7 @@ def _levy(*x: float) -> float:
     return term1 + term2 + term3
 
 
-def _ackley(*x: float) -> float:
+def ackley(*x: float) -> float:
     """
     https://www.sfu.ca/~ssurjano/ackley.html
 
@@ -67,22 +67,48 @@ def cross_in_tray(x1: float, x2: float) -> float:
     return -0.0001 * term1 ** 0.1
 
 
+def styblinski_tang(*x: float) -> float:
+    """
+    https://www.sfu.ca/~ssurjano/stybtang.html
+    Example from the original paper
+
+    Input Domain:
+    The function is usually evaluated on the hypercube x ∈ [-5, 5] for all x.
+
+    Global Minimum:
+    d = number of dimensions
+    y = -39.16599 * d
+    at (-2.903534, ..., -2.903534)
+    """
+    x = np.asarray(x)
+
+    return np.sum(np.power(x, 4) - 16 * np.power(x, 2) + 5 * x) / 2
+
+
 # Shortcuts
-# Levy
-
-def levy1D(x: float) -> float:
-    return _levy(x)
+def levy_1D(x: float) -> float:
+    return levy(x)
 
 
-def levy2D(x1: float, x2: float) -> float:
-    return _levy(x1, x2)
+def levy_2D(x1: float, x2: float) -> float:
+    return levy(x1, x2)
 
 
-# Ackley
-
-def ackley1D(x: float) -> float:
-    return _ackley(x)
+def ackley_1D(x: float) -> float:
+    return ackley(x)
 
 
-def ackley2D(x1: float, x2: float) -> float:
-    return _ackley(x1, x2)
+def ackley_2D(x1: float, x2: float) -> float:
+    return ackley(x1, x2)
+
+
+def styblinski_tang_3D(x1: float, x2: float, x3: float) -> float:
+    return styblinski_tang(x1, x2, x3)
+
+
+def styblinski_tang_5D(x1: float, x2: float, x3: float, x4: float, x5: float) -> float:
+    return styblinski_tang(x1, x2, x3, x4, x5)
+
+
+def styblinski_tang_8D(x1: float, x2: float, x3: float, x4: float, x5: float, x6: float, x7: float, x8: float) -> float:
+    return styblinski_tang(x1, x2, x3, x4, x5, x6, x7, x8)
