@@ -1,6 +1,8 @@
-## iML-ws21-projects
-
-Please refer to the StudIP slides `iML_lecture_projects.pdf`.
+## Decent PDP
+* Original Paper
+  * [arXiv](https://arxiv.org/abs/2111.04820)
+  * [GitHub](https://github.com/slds-lmu/paper_2021_xautoml)
+  * [PDF](documentation/Explaining%20Hyperparameter%20Optimization%20via%20Partial%20Dependence%20Plots.pdf)
 
 ## Template Repository for iML-Project Submissions
 
