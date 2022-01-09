@@ -10,8 +10,10 @@ import numpy as np
 def config_to_array(config: CS.Configuration) -> np.ndarray:
     return np.asarray(list(config.get_dictionary().values()))
 
+
 def config_list_to_2d_arr(config_list: List[CS.Configuration]) -> np.ndarray:
-    return np.asarray([config_to_array(config) for config in config_list])
+    return np.asarray([config.get_array() for config in config_list])
+
 
 def plot_function(f: Callable, cs: CS.ConfigurationSpace, config_samples: List[Configuration] = None,
                   model: Callable = None, samples_per_axis=100) -> plt.Figure:
@@ -81,8 +83,5 @@ def plot_function(f: Callable, cs: CS.ConfigurationSpace, config_samples: List[C
             x1 = [sample[parameters[0].name] for sample in config_samples]
             x2 = [sample[parameters[1].name] for sample in config_samples]
             ax.scatter(x1, x2, c='r')
-
-
-
 
     return fig

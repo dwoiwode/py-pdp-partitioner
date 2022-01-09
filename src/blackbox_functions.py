@@ -4,6 +4,18 @@ Collection of blackbox functions that can be minimized
 import numpy as np
 
 
+def square(x: float) -> float:
+    return x ** 2
+
+
+def neg_square(x: float) -> float:
+    return 1 - x ** 2
+
+
+def square_2D(x1: float, x2: float) -> float:
+    return x1 ** 2 + x2 ** 2
+
+
 def levy(*x: float) -> float:
     """
     https://www.sfu.ca/~ssurjano/levy.html.

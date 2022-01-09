@@ -1,5 +1,5 @@
 import abc
-from typing import Callable, List
+from typing import Callable, List, Dict, Any
 
 import numpy as np
 from scipy.stats import norm
@@ -7,13 +7,26 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 
 import ConfigSpace as CS
 
-from src.utils import config_to_array, config_list_to_2d_arr
+from src.utils import config_list_to_2d_arr
 
 
 class AbstractOptimizer(abc.ABC):
-    def __init__(self, obj_func: Callable, config_space: CS.ConfigurationSpace):
+    def __init__(self, obj_func: Callable, config_space: CS.ConfigurationSpace, minimize_objective=True):
         self.obj_func = obj_func
         self.config_space = config_space
+        self.values: Dict[CS.Configuration, float] = {}
+        self.minimize_objective = minimize_objective
+
+    def best_config(self) -> tuple[CS.Configuration, float]:
+        if self.minimize_objective:
+            incumbent = min(self.values, key=self.values.get)
+        else:
+            incumbent = max(self.values, key=self.values.get)
+        return incumbent, self.values[incumbent]
+
+    @abc.abstractmethod
+    def optimize(self, n_points: int = 1) -> CS.Configuration:
+        pass
 
 
 class GridSearch(AbstractOptimizer):
@@ -25,15 +38,14 @@ class RandomSearch(AbstractOptimizer):
 
 
 class BayesianOptimization(AbstractOptimizer):
-    def __init__(self, obj_func: Callable[[CS.Configuration], float], config_space: CS.ConfigurationSpace,
+    def __init__(self, obj_func: Callable[[Any], float], config_space: CS.ConfigurationSpace,
                  initial_points: int = 5, config_list: List[CS.Configuration] = None, y_list: List[float] = None,
                  minimize_objective: bool = True, eps: float = 0.1):
-        super().__init__(obj_func, config_space)
+        super().__init__(obj_func, config_space, minimize_objective)
         self.model = GaussianProcessRegressor()  # surrogate model
         self.eps = eps  # exploration factor for acq-function
         self.acq_sample_num = 100  # number of points sampled during acquisition function decision of next point
         self.acq_func = self._probability_of_improvement
-        self.minimize_objective = minimize_objective
 
         assert initial_points > 0 or (len(config_list) > 0 and len(y_list) > 0), \
             'At least one initial random point is required'
@@ -46,21 +58,21 @@ class BayesianOptimization(AbstractOptimizer):
         if self.initial_points == 1:  # for a single value, the sampling does not return a list
             self.config_list = [self.config_list]
         x_arr_list = config_list_to_2d_arr(self.config_list)
-        self.y_list = [self.obj_func(config) for config in self.config_list]
+        self.y_list = [self.obj_func(**config) for config in self.config_list]
         self.model.fit(x_arr_list, self.y_list)
 
-    def sample_new_points(self, num_points: int = 1):
+    def optimize(self, n_points: int = 1):
         # sample initial random points if not already done or given
         if self.config_list is None or self.y_list is None:
             self._sample_initial_points()
 
-        for i in range(num_points):
+        for i in range(n_points):
             # select next point
-            best_point = self.acq_func()
-            new_y = self.obj_func(best_point)
+            best_config = self.acq_func()
+            new_y = self.obj_func(**best_config)
 
             # add new point
-            self.config_list.append(best_point)
+            self.config_list.append(best_config)
             self.y_list.append(new_y)
 
             # update surrogate model
@@ -100,8 +112,3 @@ class BayesianOptimization(AbstractOptimizer):
         if len(x.shape) == 1:
             x = np.expand_dims(x, axis=1)
         return self.model.predict(x, return_std=True)
-
-
-
-
-
