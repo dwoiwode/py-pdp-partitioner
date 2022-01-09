@@ -12,7 +12,7 @@ def config_to_array(config: CS.Configuration) -> np.ndarray:
 
 
 def config_list_to_2d_arr(config_list: List[CS.Configuration]) -> np.ndarray:
-    return np.asarray([config.get_array() for config in config_list])
+    return np.asarray([config_to_array(config) for config in config_list])
 
 
 def plot_function(f: Callable, cs: CS.ConfigurationSpace, config_samples: List[Configuration] = None,
