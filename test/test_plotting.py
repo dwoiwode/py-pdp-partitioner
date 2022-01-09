@@ -1,13 +1,12 @@
 from pathlib import Path
-from typing import List
 from unittest import TestCase
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
-from ConfigSpace.configuration_space import Configuration
 import matplotlib.pyplot as plt
 
-from src.utils import plot_function
+from src.optimizer import BayesianOptimization
+from src.utils import plot_function, config_to_array
 
 
 class TestPlotting(TestCase):
@@ -40,7 +39,6 @@ class TestPlotting(TestCase):
         plt.title(name)
         plt.tight_layout()
         return fig
-
 
 
 class TestPlottingFunctions(TestPlotting):
@@ -89,8 +87,6 @@ class TestPlottingFunctions(TestPlotting):
 
         self._apply_blackbox_plot(square2D, cs, "Test Plot Function 2D (low res)", samples_per_axis=10)
 
-
-class TestPlotWithSamples(TestPlotting):
     def test_plot_square_1D_artificial(self):
         def square(x):
             return x ** 2
@@ -117,6 +113,39 @@ class TestPlotWithSamples(TestPlotting):
         samples = cs.sample_configuration(10)
 
         self._apply_blackbox_plot(square2D, cs, "Test Plot Function 1D", config_samples=samples)
+
+    def test_plot_square_neg_1D_confidence(self):
+        def neg_square(x):
+            return 1 - x ** 2
+
+        def neg_square_with_cs(config: CS.Configuration):
+            arr = config_to_array(config)
+            return 1 - arr[0] ** 2
+
+        x = CSH.UniformFloatHyperparameter("x", lower=-1, upper=1)
+        cs = CS.ConfigurationSpace()
+        cs.add_hyperparameter(x)
+
+        bo = BayesianOptimization(obj_func=neg_square_with_cs, config_space=cs, minimize_objective=False,
+                                  initial_points=1, eps=0.1)
+
+        res = bo.sample_new_points(0)
+        fig = self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, single point",
+                                        config_samples=bo.config_list, model=bo.surrogate_score)
+        fig.show()
+
+        for _ in range(2):
+            bo.sample_new_points(1)
+            fig2 = self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, two points",
+                                             config_samples=bo.config_list, model=bo.surrogate_score)
+            fig2.show()
+
+        bo.sample_new_points(20)
+        fig3 = self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, two points",
+                                         config_samples=bo.config_list, model=bo.surrogate_score)
+        fig3.show()
+
+
 
 
 

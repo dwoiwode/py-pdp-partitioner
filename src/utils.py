@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Callable
 
 import matplotlib.pyplot as plt
 import ConfigSpace as CS
@@ -7,8 +7,14 @@ from ConfigSpace.configuration_space import Configuration
 import numpy as np
 
 
-def plot_function(f: callable, cs: CS.ConfigurationSpace, config_samples: List[Configuration] = None,
-                  samples_per_axis=100) -> plt.Figure:
+def config_to_array(config: CS.Configuration) -> np.ndarray:
+    return np.asarray(list(config.get_dictionary().values()))
+
+def config_list_to_2d_arr(config_list: List[CS.Configuration]) -> np.ndarray:
+    return np.asarray([config_to_array(config) for config in config_list])
+
+def plot_function(f: Callable, cs: CS.ConfigurationSpace, config_samples: List[Configuration] = None,
+                  model: Callable = None, samples_per_axis=100) -> plt.Figure:
     fig = plt.figure()
     assert isinstance(fig, plt.Figure)
 
@@ -32,12 +38,12 @@ def plot_function(f: callable, cs: CS.ConfigurationSpace, config_samples: List[C
 
         ranges.append(space_function(parameter.lower, parameter.upper, num=samples_per_axis))
 
-    # plot ground truth lines
     x = ranges[0]
     ax.set_xlabel(parameters[0].name)
     if n_parameter == 1:
+        # plot ground truth lines
         y = [f(p) for p in x]
-        ax.plot(x, y, label=f.__name__)
+        ax.plot(x, y, label=f.__name__, c='black')
         ax.set_ylabel(f"f({parameters[0].name})")
         plt.legend()
 
@@ -45,9 +51,18 @@ def plot_function(f: callable, cs: CS.ConfigurationSpace, config_samples: List[C
         if config_samples is not None and len(config_samples) > 0:
             x_markers = [sample[parameters[0].name] for sample in config_samples]
             y_markers = [f(x) for x in x_markers]
-            ax.scatter(x_markers, y_markers, c='r')
+            ax.scatter(x_markers, y_markers, c='blue')
+
+        # plot confidence scores and surrogate prediction
+        if model is not None:
+            pred, std = model(x)
+            upper_bound = pred + std
+            lower_bound = pred - std
+            ax.fill_between(x, lower_bound, upper_bound, alpha=0.5)
+            plt.plot(x, pred, '--', c='blue')
 
     elif n_parameter == 2:
+        # plot ground truth lines
         y = ranges[1]
         ax.set_ylabel(parameters[1].name)
         xx, yy = np.meshgrid(x, y)
