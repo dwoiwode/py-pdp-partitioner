@@ -1,8 +1,10 @@
 from pathlib import Path
+from typing import List
 from unittest import TestCase
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
+from ConfigSpace.configuration_space import Configuration
 import matplotlib.pyplot as plt
 
 from src.utils import plot_function
@@ -38,6 +40,7 @@ class TestPlotting(TestCase):
         plt.title(name)
         plt.tight_layout()
         return fig
+
 
 
 class TestPlottingFunctions(TestPlotting):
@@ -85,3 +88,37 @@ class TestPlottingFunctions(TestPlotting):
         cs.add_hyperparameters(hps)
 
         self._apply_blackbox_plot(square2D, cs, "Test Plot Function 2D (low res)", samples_per_axis=10)
+
+
+class TestPlotWithSamples(TestPlotting):
+    def test_plot_square_1D_artificial(self):
+        def square(x):
+            return x ** 2
+
+        x = CSH.UniformFloatHyperparameter("x", lower=-10, upper=10)
+        cs = CS.ConfigurationSpace()
+        cs.add_hyperparameter(x)
+
+        samples = cs.sample_configuration(10)
+
+        self._apply_blackbox_plot(square, cs, "Test Plot Function 1D", config_samples=samples)
+
+    def test_plot_square_2D_artificial(self):
+        def square2D(x1, x2):
+            return x1 ** 2 + x2 ** 2
+
+        hps = [
+            CSH.UniformFloatHyperparameter("x1", lower=-10, upper=10),
+            CSH.UniformFloatHyperparameter("x2", lower=-10, upper=10)
+        ]
+        cs = CS.ConfigurationSpace()
+        cs.add_hyperparameters(hps)
+
+        samples = cs.sample_configuration(10)
+
+        self._apply_blackbox_plot(square2D, cs, "Test Plot Function 1D", config_samples=samples)
+
+
+
+
+
