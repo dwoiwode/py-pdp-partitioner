@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from src.blackbox_functions import neg_square, square_2D, square
 from src.optimizer import BayesianOptimization
-from src.utils import plot_function, config_to_array
+from src.plotting import plot_function, plot_model_confidence, plot_samples, style_axes, finalize_figure
 
 
 class TestPlotting(TestCase):
@@ -25,6 +25,8 @@ class TestPlotting(TestCase):
 
     def tearDown(self) -> None:
         # Save figure from last test
+        fig = plt.gcf()
+        finalize_figure(fig)
         if self.SAVE_FOLDER is not None:
             plt.savefig(self.SAVE_FOLDER / f"{self.__class__.__name__}_{self._testMethodName}.png")
 
@@ -34,10 +36,13 @@ class TestPlotting(TestCase):
         plt.clf()
 
     def _apply_blackbox_plot(self, f: callable, cs: CS.ConfigurationSpace, name: str, **kwargs):
-        fig = plot_function(f, cs, **kwargs)
-        self.assertIsInstance(fig, plt.Figure)
+        fig = plt.figure()
+        ax = fig.gca()
+        ax = plot_function(f, cs, **kwargs, ax=ax)
+        self.assertIsInstance(ax, plt.Axes)
 
         plt.title(name)
+        style_axes(ax, cs)
         plt.tight_layout()
         return fig
 
@@ -83,7 +88,9 @@ class TestPlottingFunctions(TestPlotting):
 
         samples = cs.sample_configuration(10)
 
-        self._apply_blackbox_plot(square, cs, "Test Plot Function 1D", config_samples=samples)
+        fig = self._apply_blackbox_plot(square, cs, "Test Plot Function 1D")
+        ax = fig.gca()
+        plot_samples(samples, [square(**sample) for sample in samples], ax=ax)
 
     def test_plot_square_2D_artificial(self):
         hps = [
@@ -95,7 +102,9 @@ class TestPlottingFunctions(TestPlotting):
 
         samples = cs.sample_configuration(10)
 
-        self._apply_blackbox_plot(square_2D, cs, "Test Plot Function 1D", config_samples=samples)
+        fig = self._apply_blackbox_plot(square_2D, cs, "Test Plot Function 2D")
+        ax = fig.gca()
+        plot_samples(samples, [square_2D(**sample) for sample in samples], ax=ax)
 
     def test_plot_square_neg_1D_confidence(self):
         x = CSH.UniformFloatHyperparameter("x", lower=-1, upper=1)
@@ -106,24 +115,24 @@ class TestPlottingFunctions(TestPlotting):
                                   initial_points=1, eps=0.1)
 
         res = bo.optimize(0)
-        fig = self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, single point",
-                                        config_samples=bo.config_list, model=bo.surrogate_score)
+        fig = self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, single point")
+        ax = fig.gca()
+        plot_samples(bo.config_list, bo.y_list, ax=ax)
+        plot_model_confidence(bo.surrogate_score, cs, ax=ax)
+        finalize_figure(fig)
         fig.show()
 
         for _ in range(2):
             bo.optimize(1)
-            fig2 = self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, two points",
-                                             config_samples=bo.config_list, model=bo.surrogate_score)
+            fig2 = self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, two points")
+            ax = fig2.gca()
+            plot_samples(bo.config_list, bo.y_list, ax=ax)
+            plot_model_confidence(bo.surrogate_score, cs, ax=ax)
+            finalize_figure(fig2)
             fig2.show()
 
         bo.optimize(20)
-        fig3 = self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, two points",
-                                         config_samples=bo.config_list, model=bo.surrogate_score)
-        fig3.show()
-
-
-
-
-
-
-
+        fig3 = self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, two points")
+        ax = fig3.gca()
+        plot_samples(bo.config_list, bo.y_list, ax=ax)
+        plot_model_confidence(bo.surrogate_score, cs, ax=ax)

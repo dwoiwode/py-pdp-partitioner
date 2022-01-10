@@ -1,11 +1,10 @@
 import abc
-from typing import Callable, List, Dict, Any
+from typing import Callable, Any
 
+import ConfigSpace as CS
 import numpy as np
 from scipy.stats import norm
 from sklearn.gaussian_process import GaussianProcessRegressor
-
-import ConfigSpace as CS
 
 from src.utils import config_list_to_2d_arr
 
@@ -14,10 +13,11 @@ class AbstractOptimizer(abc.ABC):
     def __init__(self, obj_func: Callable, config_space: CS.ConfigurationSpace, minimize_objective=True):
         self.obj_func = obj_func
         self.config_space = config_space
-        self.values: Dict[CS.Configuration, float] = {}
+        self.values: dict[CS.Configuration, float] = {}
         self.minimize_objective = minimize_objective
 
-    def best_config(self) -> tuple[CS.Configuration, float]:
+    @property
+    def incumbent(self) -> tuple[CS.Configuration, float]:
         if self.minimize_objective:
             incumbent = min(self.values, key=self.values.get)
         else:
@@ -34,12 +34,18 @@ class GridSearch(AbstractOptimizer):
 
 
 class RandomSearch(AbstractOptimizer):
-    pass
+    def optimize(self, n_points: int = 1) -> CS.Configuration:
+        for i in range(n_points):
+            config = self.config_space.sample_configuration()
+            value = self.obj_func(**config)
+            self.values[config] = value
+
+        return self.incumbent[0]
 
 
 class BayesianOptimization(AbstractOptimizer):
     def __init__(self, obj_func: Callable[[Any], float], config_space: CS.ConfigurationSpace,
-                 initial_points: int = 5, config_list: List[CS.Configuration] = None, y_list: List[float] = None,
+                 initial_points: int = 5, config_list: list[CS.Configuration] = None, y_list: list[float] = None,
                  minimize_objective: bool = True, eps: float = 0.1):
         super().__init__(obj_func, config_space, minimize_objective)
         self.model = GaussianProcessRegressor()  # surrogate model
@@ -107,7 +113,8 @@ class BayesianOptimization(AbstractOptimizer):
         best_new_config = x_sample_config[best_idx]
         return best_new_config
 
-    def surrogate_score(self, x: np.ndarray):
+    def surrogate_score(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        x = np.asarray(x)
         assert len(x.shape) == 1 or len(x.shape) == 2, 'Can only compute surrogate score for 1d or 2d arrays'
         if len(x.shape) == 1:
             x = np.expand_dims(x, axis=1)

@@ -1,10 +1,13 @@
 from unittest import TestCase
+
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
+import matplotlib.pyplot as plt
 
-from src.blackbox_functions import ackley, square, neg_square
+from src.blackbox_functions import square, neg_square
 from src.optimizer import BayesianOptimization
-from src.utils import config_to_array, plot_function
+from src.plotting import plot_function, plot_samples, plot_model_confidence
+from src.utils import config_to_array
 
 
 class TestBayesianOptimizer(TestCase):
@@ -31,10 +34,15 @@ class TestBayesianOptimizer(TestCase):
         best_config = bo.optimize(500)
         best_val = config_to_array(best_config)[0]
 
-        fig = plot_function(neg_square, cs, config_samples=bo.config_list, model=bo.surrogate_score)
+        fig = plt.figure()
+        ax = fig.gca()
+        plot_function(neg_square, cs, ax=ax)
+        plot_samples(bo.config_list, bo.y_list, ax=ax)
+        plot_model_confidence(bo.surrogate_score, cs, ax=ax)
+
         fig.show()
 
-        self.assertAlmostEqual(best_val, 0, delta=1E-3)
+        self.assertAlmostEqual(best_val, 0, delta=1e-3)
 
     def test_find_min_optimum(self):
         x = CSH.UniformFloatHyperparameter("x", lower=-1, upper=1)
@@ -48,6 +56,10 @@ class TestBayesianOptimizer(TestCase):
         best_config = bo.optimize(500)
         best_val = config_to_array(best_config)[0]
 
-        fig = plot_function(square, cs, config_samples=bo.config_list, model=bo.surrogate_score)
+        fig = plt.figure()
+        ax = fig.gca()
+        plot_function(square, cs, ax=ax)
+        plot_samples(bo.config_list, bo.y_list, ax=ax)
+        plot_model_confidence(bo.surrogate_score, cs, ax=ax)
         fig.show()
-        self.assertAlmostEqual(best_val, 0, delta=1E-3)
+        self.assertAlmostEqual(best_val, 0, delta=1e-3)
