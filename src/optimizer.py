@@ -1,5 +1,6 @@
 import abc
 import hashlib
+import warnings
 from typing import Callable, Any, List, Dict, Tuple, Optional, Union, Type
 
 import ConfigSpace as CS
@@ -36,6 +37,10 @@ class AbstractOptimizer(abc.ABC):
 
     @abc.abstractmethod
     def optimize(self, n_points: int = 1) -> CS.Configuration:
+        pass
+
+    @abc.abstractmethod
+    def surrogate_score(self, configs: List[CS.Configuration]) -> Tuple[float, float]:
         pass
 
 
@@ -116,11 +121,15 @@ class BayesianOptimization(AbstractOptimizer):
         # return best configuration so far
         return self.incumbent[0]
 
-    def surrogate_score(self, x: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        x = np.asarray(x)
-        assert len(x.shape) == 1 or len(x.shape) == 2, 'Can only compute surrogate score for 1d or 2d arrays'
-        if len(x.shape) == 1:
-            x = np.expand_dims(x, axis=1)
+    def surrogate_score(self, configs: Union[np.ndarray, List[CS.Configuration]]) -> Tuple[np.ndarray, np.ndarray]:
+        if len(configs) == 0:
+            warnings.warn("No configs provided. Returning empty surrogate scores")
+            return np.asarray([]), np.asarray([])
+
+        if isinstance(configs, list) and isinstance(configs[0], CS.Configuration):
+            configs = [config.get_array() for config in configs]
+
+        x = np.asarray(configs)
         return self.model.predict(x, return_std=True)
 
 

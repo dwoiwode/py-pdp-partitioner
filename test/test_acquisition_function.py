@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 
-from src.optimizer import ProbabilityOfImprovement, ExpectedImprovement
+from src.optimizer import ProbabilityOfImprovement, ExpectedImprovement, BayesianOptimization
 from src.plotting import plot_model_confidence, plot_samples, plot_acquisition
 from test.test_plotting import TestPlotting
 
@@ -31,10 +31,6 @@ class TestAcquisitionFunctions(TestPlotting):
         gpr.fit(X_scaled, y)
         ei.update(1)
 
-        def surrogate_score(x1):
-            x1 = np.expand_dims(x1, axis=1)
-            return gpr.predict(x1, return_std=True)
-
         # Plotting
         fig = plt.figure(figsize=(16, 9))
         assert isinstance(fig, plt.Figure)
@@ -43,7 +39,10 @@ class TestAcquisitionFunctions(TestPlotting):
         assert isinstance(ax_function, plt.Axes)
         assert isinstance(ax_acquisition, plt.Axes)
 
-        plot_model_confidence(surrogate_score, cs, ax=ax_function)
+        bo = BayesianOptimization(obj_func=lambda: 0, config_space=cs)
+        bo.model = gpr
+
+        plot_model_confidence(bo, cs, ax=ax_function)
         plot_samples([CS.Configuration(cs, values={"x": float(a)}) for a in X], y, ax=ax_function)
         plot_acquisition(ei, cs, ax=ax_acquisition)
 

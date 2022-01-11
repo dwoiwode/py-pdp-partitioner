@@ -12,12 +12,8 @@ class TestBayesianOptimizer(TestPlotting):
     def test_initial_sampling(self):
         self.no_plot = True
 
-        x = CSH.UniformFloatHyperparameter("x", lower=-1, upper=1)
-        cs = CS.ConfigurationSpace()
-        cs.add_hyperparameter(x)
-
         initial_points = 2
-        bo = BayesianOptimization(obj_func=square, config_space=cs, initial_points=initial_points, eps=0.001)
+        bo = BayesianOptimization(obj_func=square, config_space=square_config_space, initial_points=initial_points, eps=0.001)
         bo.optimize(0)
 
         self.assertEqual(len(bo.y_list), initial_points)

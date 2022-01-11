@@ -121,7 +121,7 @@ class TestPlottingFunctions(TestPlotting):
         fig = self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, single point")
         ax = fig.gca()
         plot_samples(bo.config_list, bo.y_list, ax=ax)
-        plot_model_confidence(bo.surrogate_score, cs, ax=ax)
+        plot_model_confidence(bo, cs, ax=ax)
         finalize_figure(fig)
         fig.show()
 
@@ -130,7 +130,7 @@ class TestPlottingFunctions(TestPlotting):
             fig2 = self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, two points")
             ax = fig2.gca()
             plot_samples(bo.config_list, bo.y_list, ax=ax)
-            plot_model_confidence(bo.surrogate_score, cs, ax=ax)
+            plot_model_confidence(bo, cs, ax=ax)
             finalize_figure(fig2)
             fig2.show()
 
@@ -138,4 +138,4 @@ class TestPlottingFunctions(TestPlotting):
         fig3 = self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, two points")
         ax = fig3.gca()
         plot_samples(bo.config_list, bo.y_list, ax=ax)
-        plot_model_confidence(bo.surrogate_score, cs, ax=ax)
+        plot_model_confidence(bo, cs, ax=ax)

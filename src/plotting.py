@@ -6,7 +6,7 @@ import numpy as np
 from ConfigSpace import Configuration, hyperparameters as CSH
 from matplotlib import pyplot as plt
 
-from src.optimizer import AcquisitionFunction
+from src.optimizer import AcquisitionFunction, AbstractOptimizer
 
 
 def _get_ax(ax: Optional[plt.Axes]) -> plt.Axes:
@@ -100,7 +100,7 @@ def plot_samples(configs: List[Configuration], y: List[float], ax=None, plotting
     return ax
 
 
-def plot_model_confidence(model: Callable[[Any], float], cs: CS.ConfigurationSpace,
+def plot_model_confidence(optimizer: AbstractOptimizer, cs: CS.ConfigurationSpace,
                           samples_per_axis=100, ax: Optional[plt.Axes] = None) -> plt.Axes:
     ax = _get_ax(ax)
 
@@ -109,7 +109,7 @@ def plot_model_confidence(model: Callable[[Any], float], cs: CS.ConfigurationSpa
 
     ranges = _get_uniform_distributed_ranges(cs, samples_per_axis, scaled=False)
     scaled_ranges = _get_uniform_distributed_ranges(cs, samples_per_axis, scaled=True)
-    mu, std = model(scaled_ranges[0])
+    mu, std = optimizer.surrogate_score([Configuration(cs, vector=vector) for vector in np.asarray(scaled_ranges).T])
 
     sigma_steps = 100
     max_sigma = 1.5
