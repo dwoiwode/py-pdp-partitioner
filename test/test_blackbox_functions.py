@@ -6,7 +6,7 @@ from src.blackbox_functions import levy_1D, levy_2D, ackley_1D, ackley_2D, cross
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
-from .test_plotting import TestPlotting
+from test.test_plotting import TestPlotting
 
 
 class TestLevy(TestCase):

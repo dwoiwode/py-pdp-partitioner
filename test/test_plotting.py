@@ -20,11 +20,14 @@ class TestPlotting(TestCase):
             cls.SAVE_FOLDER.mkdir(exist_ok=True, parents=True)
 
     def setUp(self) -> None:
+        self.no_plot = False
         # Make sure that figure is cleared from previous tests
         plt.clf()
 
     def tearDown(self) -> None:
         # Save figure from last test
+        if self.no_plot:
+            return
         fig = plt.gcf()
         finalize_figure(fig)
         if self.SAVE_FOLDER is not None:

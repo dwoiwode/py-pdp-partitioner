@@ -1,10 +1,14 @@
 import abc
-from typing import Callable, Any
+import hashlib
+from typing import Callable, Any, List, Dict, Tuple, Optional, Union, Type
 
 import ConfigSpace as CS
 import numpy as np
 from scipy.stats import norm
 from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import Matern
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 from src.utils import config_list_to_2d_arr
 
@@ -13,16 +17,22 @@ class AbstractOptimizer(abc.ABC):
     def __init__(self, obj_func: Callable, config_space: CS.ConfigurationSpace, minimize_objective=True):
         self.obj_func = obj_func
         self.config_space = config_space
-        self.values: dict[CS.Configuration, float] = {}
+        self.config_list: List[CS.Configuration] = []
+        self.y_list: List[float] = []
         self.minimize_objective = minimize_objective
 
     @property
-    def incumbent(self) -> tuple[CS.Configuration, float]:
+    def incumbent(self) -> Tuple[Optional[CS.Configuration], float]:
+        if len(self.y_list) == 0:
+            return None, 10000
         if self.minimize_objective:
-            incumbent = min(self.values, key=self.values.get)
+            incumbent_index = np.argmin(self.y_list)
         else:
-            incumbent = max(self.values, key=self.values.get)
-        return incumbent, self.values[incumbent]
+            incumbent_index = np.argmax(self.y_list)
+
+        incumbent_config = self.config_list[incumbent_index]
+        incumbent_value = self.y_list[incumbent_index]
+        return incumbent_config, incumbent_value
 
     @abc.abstractmethod
     def optimize(self, n_points: int = 1) -> CS.Configuration:
@@ -38,20 +48,27 @@ class RandomSearch(AbstractOptimizer):
         for i in range(n_points):
             config = self.config_space.sample_configuration()
             value = self.obj_func(**config)
-            self.values[config] = value
+            self.config_list.append(config)
+            self.y_list.append(value)
 
         return self.incumbent[0]
 
 
 class BayesianOptimization(AbstractOptimizer):
     def __init__(self, obj_func: Callable[[Any], float], config_space: CS.ConfigurationSpace,
-                 initial_points: int = 5, config_list: list[CS.Configuration] = None, y_list: list[float] = None,
+                 initial_points: int = 5, config_list: List[CS.Configuration] = None, y_list: List[float] = None,
                  minimize_objective: bool = True, eps: float = 0.1):
         super().__init__(obj_func, config_space, minimize_objective)
-        self.model = GaussianProcessRegressor()  # surrogate model
+        self.model = Pipeline([
+            ("standardize", StandardScaler()),
+            ("GP", GaussianProcessRegressor(kernel=Matern(nu=2.5), normalize_y=True,
+                                            n_restarts_optimizer=10,
+                                            random_state=0)),
+        ])
         self.eps = eps  # exploration factor for acq-function
         self.acq_sample_num = 100  # number of points sampled during acquisition function decision of next point
-        self.acq_func = self._probability_of_improvement
+        self.acq_func: AcquisitionFunction = ProbabilityOfImprovement(self.config_space, self.model,
+                                                                      minimize_objective=minimize_objective)
 
         assert initial_points > 0 or (len(config_list) > 0 and len(y_list) > 0), \
             'At least one initial random point is required'
@@ -59,13 +76,24 @@ class BayesianOptimization(AbstractOptimizer):
         self.config_list = config_list
         self.y_list = y_list
 
+        self._model_fitted_hash: str = ""
+
     def _sample_initial_points(self):
         self.config_list = self.config_space.sample_configuration(self.initial_points)
         if self.initial_points == 1:  # for a single value, the sampling does not return a list
             self.config_list = [self.config_list]
-        x_arr_list = config_list_to_2d_arr(self.config_list)
+
         self.y_list = [self.obj_func(**config) for config in self.config_list]
-        self.model.fit(x_arr_list, self.y_list)
+        self.fit_surrogate()
+
+    def fit_surrogate(self):
+        parameter_hash = hashlib.md5()
+        parameter_hash.update(str(self.config_list).encode("latin"))
+        if self._model_fitted_hash != parameter_hash:
+            x_arr_list = config_list_to_2d_arr(self.config_list)
+            self.model.fit(x_arr_list, self.y_list)
+
+        self._model_fitted_hash = parameter_hash
 
     def optimize(self, n_points: int = 1):
         # sample initial random points if not already done or given
@@ -73,49 +101,113 @@ class BayesianOptimization(AbstractOptimizer):
             self._sample_initial_points()
 
         for i in range(n_points):
+            # Update surrogate model
+            self.fit_surrogate()
+
             # select next point
-            best_config = self.acq_func()
-            new_y = self.obj_func(**best_config)
+            self.acq_func.update(self.incumbent[1])
+            new_best_candidate = self.acq_func.get_optimum()
+            new_y = self.obj_func(**new_best_candidate)
 
             # add new point
-            self.config_list.append(best_config)
+            self.config_list.append(new_best_candidate)
             self.y_list.append(new_y)
 
-            # update surrogate model
-            x_arr_list = config_list_to_2d_arr(self.config_list)
-            self.model.fit(x_arr_list, self.y_list)
+        # return best configuration so far
+        return self.incumbent[0]
 
-        # find best configuration so far
-        if self.minimize_objective:
-            best_idx = np.argmin(self.y_list)
-        else:
-            best_idx = np.argmax(self.y_list)
-        best_config = self.config_list[best_idx]
-        return best_config
-
-    def _probability_of_improvement(self) -> CS.Configuration:
-        # sample points
-        x_sample_config = self.config_space.sample_configuration(self.acq_sample_num)
-        x_sample_array = config_list_to_2d_arr(x_sample_config)
-        means, stds = self.surrogate_score(x_sample_array)
-
-        # prob of improvement for sampled points
-        if self.minimize_objective:
-            cur_best_y = np.min(self.y_list)
-            temp = (cur_best_y - means - self.eps) / stds
-        else:
-            cur_best_y = np.max(self.y_list)
-            temp = (means - cur_best_y - self.eps) / stds
-        prob_of_improvement = norm.cdf(temp)
-
-        # best sampled point
-        best_idx = np.argmax(prob_of_improvement)
-        best_new_config = x_sample_config[best_idx]
-        return best_new_config
-
-    def surrogate_score(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def surrogate_score(self, x: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         x = np.asarray(x)
         assert len(x.shape) == 1 or len(x.shape) == 2, 'Can only compute surrogate score for 1d or 2d arrays'
         if len(x.shape) == 1:
             x = np.expand_dims(x, axis=1)
         return self.model.predict(x, return_std=True)
+
+
+class AcquisitionFunction(abc.ABC):
+    def __init__(self, config_space: CS.ConfigurationSpace, samples=100, minimize_objective=True):
+        self.config_space = config_space
+        self.samples = samples
+        self.minimize_objective = minimize_objective
+
+    @abc.abstractmethod
+    def __call__(self, configuration: CS.Configuration) -> float:
+        pass
+
+    def update(self, eta: float):
+        pass
+
+    def get_optimum(self) -> CS.Configuration:
+        return self._get_optimum_uniform_distribution()[0]
+
+    def _get_optimum_uniform_distribution(self) -> Tuple[CS.Configuration, float]:
+        config_value_pairs = []
+        for config in self.config_space.sample_configuration(self.samples):
+            config_value_pairs.append((config, self(config.get_array())))
+
+        # if self.minimize_objective:
+        #     return min(config_value_pairs, key=lambda x: x[1])
+        # else:
+        return max(config_value_pairs, key=lambda x: x[1])
+
+
+class ExpectedImprovement(AcquisitionFunction):
+    def __init__(self, config_space,
+                 surrogate_model: Union[GaussianProcessRegressor, Pipeline],
+                 samples=100, minimize_objective=True):
+        super().__init__(config_space, samples=samples, minimize_objective=minimize_objective)
+        self.surrogate_model = surrogate_model
+        self.eta = 0
+        self.exploration = 0  # Exploration parameter
+
+    def __call__(self, configuration: Union[CS.Configuration, np.ndarray]):
+        # print(type(configuration), inspect.getouterframes(inspect.currentframe(), 2)[2][3])
+        if isinstance(configuration, CS.Configuration):
+            x = np.asarray(configuration.get_array())
+        else:
+            x = configuration.copy()
+        x = x.reshape([1, -1])
+
+        mean, sigma = self.surrogate_model.predict(x, return_std=True)
+        if sigma == 0:
+            return 0
+
+        Z = (self.eta - mean - self.exploration) / sigma
+        Phi_Z = norm.cdf(Z)
+        phi_Z = norm.pdf(Z)
+        return sigma * (Z * Phi_Z + phi_Z)
+
+    def update(self, eta: float):
+        self.eta = eta
+
+
+class ProbabilityOfImprovement(AcquisitionFunction):
+    def __init__(self, config_space: CS.ConfigurationSpace,
+                 surrogate_model: Union[GaussianProcessRegressor, Pipeline],
+                 samples=100, minimize_objective=True):
+        super().__init__(config_space, samples=samples, minimize_objective=minimize_objective)
+        self.surrogate_model = surrogate_model
+        self.eta = 0
+        self.exploration = 0.0  # Exploration parameter
+
+    def __call__(self, configuration: Union[CS.Configuration, np.ndarray]):
+        # print(type(configuration), inspect.getouterframes(inspect.currentframe(), 2)[2][3])
+        if isinstance(configuration, CS.Configuration):
+            x = np.asarray(configuration.get_array())
+        else:
+            x = configuration.copy()
+        x = x.reshape([1, -1])
+
+        mean, sigma = self.surrogate_model.predict(x, return_std=True)
+        if sigma == 0:
+            return 0
+
+        if self.minimize_objective:
+            temp = (self.eta - mean - self.exploration) / sigma
+        else:
+            temp = (mean - self.eta - self.exploration) / sigma
+        prob_of_improvement = norm.cdf(temp)
+        return prob_of_improvement
+
+    def update(self, eta: float):
+        self.eta = eta
