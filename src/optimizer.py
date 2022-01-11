@@ -102,7 +102,7 @@ class BayesianOptimization(AbstractOptimizer):
         # prob of improvement for sampled points
         if self.minimize_objective:
             cur_best_y = np.min(self.y_list)
-            temp = - (means - cur_best_y - self.eps) / stds
+            temp = (cur_best_y - means - self.eps) / stds
         else:
             cur_best_y = np.max(self.y_list)
             temp = (means - cur_best_y - self.eps) / stds
