@@ -19,7 +19,8 @@ def _get_ax(ax: Optional[plt.Axes]) -> plt.Axes:
     return ax
 
 
-def _get_uniform_distributed_ranges(cs: CS.ConfigurationSpace, samples_per_axis: int = 100, scaled=False) -> List[np.ndarray]:
+def _get_uniform_distributed_ranges(cs: CS.ConfigurationSpace, samples_per_axis: int = 100, scaled=False) \
+        -> List[np.ndarray]:
     ranges = []
     for parameter in cs.get_hyperparameters():
         assert isinstance(parameter, CSH.NumericalHyperparameter)
@@ -151,6 +152,28 @@ def plot_acquisition(acquisition_function: AcquisitionFunction, cs: CS.Configura
     config = acquisition_function.get_optimum()
     ax.plot(list(config.values())[0], acquisition_function(config), "*", color="red", label="next best candidate", markersize=15)
 
+    return ax
+
+def plot_ice(x_ice: np.ndarray, y_ice: np.ndarray, idx: int, ax: Optional[plt.Axes] = None,
+             alpha: Optional[float] = 0.2) -> plt.Axes:
+
+    ax = _get_ax(ax)
+
+    num_curves = x_ice.shape[0]
+    for i in range(num_curves):
+        x = x_ice[i, :, idx]
+        y = y_ice[i]
+        ax.plot(x, y, alpha=alpha, color='green')
+
+    return ax
+
+def plot_pdp(x_pdp: np.ndarray, y_pdp: np.ndarray, idx: int, ax: Optional[plt.Axes] = None,
+             alpha: Optional[float] = 0.2) -> plt.Axes:
+
+    ax = _get_ax(ax)
+
+    x = x_pdp[:, idx]
+    ax.plot(x, y_pdp, alpha=alpha, color='red')
     return ax
 
 

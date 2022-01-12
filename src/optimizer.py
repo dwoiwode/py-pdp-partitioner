@@ -40,7 +40,7 @@ class AbstractOptimizer(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def surrogate_score(self, configs: List[CS.Configuration]) -> Tuple[float, float]:
+    def surrogate_score(self, configs: List[CS.Configuration]) -> Tuple[np.ndarray, np.ndarray]:
         pass
 
 
@@ -105,10 +105,10 @@ class BayesianOptimization(AbstractOptimizer):
         if self.config_list is None or self.y_list is None:
             self._sample_initial_points()
 
-        for i in range(n_points):
-            # Update surrogate model
-            self.fit_surrogate()
+        # Update surrogate model
+        self.fit_surrogate()
 
+        for i in range(n_points):
             # select next point
             self.acq_func.update(self.incumbent[1])
             new_best_candidate = self.acq_func.get_optimum()
@@ -117,6 +117,9 @@ class BayesianOptimization(AbstractOptimizer):
             # add new point
             self.config_list.append(new_best_candidate)
             self.y_list.append(new_y)
+
+            # Update surrogate model
+            self.fit_surrogate()
 
         # return best configuration so far
         return self.incumbent[0]

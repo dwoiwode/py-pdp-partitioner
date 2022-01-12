@@ -6,8 +6,13 @@ import ConfigSpace.hyperparameters as CSH
 import matplotlib.pyplot as plt
 
 from src.blackbox_functions import neg_square, square_2D, square
+from src.config_spaces import square_2D_config_space, square_config_space
 from src.optimizer import BayesianOptimization
-from src.plotting import plot_function, plot_model_confidence, plot_samples, style_axes, finalize_figure
+from src.partitioner import DecisionTreePartitioner
+from src.pdp import PDP
+from src.plotting import plot_function, plot_model_confidence, plot_samples, style_axes, finalize_figure, plot_ice, \
+    plot_pdp
+from src.utils import unscale
 
 
 class TestPlotting(TestCase):
@@ -139,3 +144,38 @@ class TestPlottingFunctions(TestPlotting):
         ax = fig3.gca()
         plot_samples(bo.config_list, bo.y_list, ax=ax)
         plot_model_confidence(bo, cs, ax=ax)
+
+    def test_plot_ice(self):
+        bo = BayesianOptimization(square_2D, config_space=square_2D_config_space())
+        partitioner = DecisionTreePartitioner()
+
+        bo.optimize(10)
+        pdp = PDP(partitioner, bo)
+        idx = 0
+        x_ice, y_ice = pdp.calculate_ice(idx, ordered=True, centered=False)
+        x_unscaled = unscale(x_ice, square_2D_config_space())
+        fig = self._apply_blackbox_plot(square, square_config_space(), "Test Plot ICE")
+        ax = fig.gca()
+        plot_ice(x_unscaled, y_ice, idx, ax=ax)
+
+    def test_plot_pdp(self):
+        bo = BayesianOptimization(square_2D, config_space=square_2D_config_space())
+        partitioner = DecisionTreePartitioner()
+
+        bo.optimize(10)
+        pdp = PDP(partitioner, bo)
+        idx = 0
+
+        x_ice, y_ice = pdp.calculate_ice(idx, ordered=True, centered=False)
+        x_unscaled_ice = unscale(x_ice, square_2D_config_space())
+
+        x_pdp, y_pdp = pdp.calculate_pdp(idx, centered=False)
+        x_unscaled_pdp = unscale(x_pdp, square_2D_config_space())
+
+        fig = self._apply_blackbox_plot(square, square_config_space(), "Test Plot PDP")
+        ax = fig.gca()
+        plot_ice(x_unscaled_ice, y_ice, idx, ax=ax)
+        plot_pdp(x_unscaled_pdp, y_pdp, idx, ax=ax)
+
+
+
