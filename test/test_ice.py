@@ -31,7 +31,7 @@ class TestICE(unittest.TestCase):
         for y_row in y_ice:
             self.assertTrue(np.all(np.abs(y_row - bo.y_list) < 0.00001))
         for y_col in y_ice.T:
-            self.assertTrue(np.all(y_col == y_col[0]))
+            self.assertTrue(np.all(np.abs(y_col - y_col[0] < 0.00001)))
 
     def test_create_ice_2D(self):
         bo = BayesianOptimization(square_2D, config_space=square_2D_config_space())
