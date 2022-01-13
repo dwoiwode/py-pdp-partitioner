@@ -19,7 +19,7 @@ class TestICE(unittest.TestCase):
 
         bo.optimize(10)
         pdp = PDP(partitioner, bo)
-        x_ice, y_ice = pdp.calculate_ice(0, ordered=False)
+        x_ice, y_ice, stds = pdp.calculate_ice(0, ordered=False)
 
         self.assertTrue(len(x_ice.shape) == 3)
         self.assertTrue(len(y_ice.shape) == 2)
@@ -39,7 +39,7 @@ class TestICE(unittest.TestCase):
 
         bo.optimize(10)
         pdp = PDP(partitioner, bo)
-        x_ice, y_ice = pdp.calculate_ice(0, ordered=False)
+        x_ice, y_ice, stds = pdp.calculate_ice(0, ordered=False)
         num_instances = x_ice.shape[0]
 
         for i in range(num_instances):
@@ -55,7 +55,7 @@ class TestICE(unittest.TestCase):
 
         bo.optimize(10)
         pdp = PDP(partitioner, bo)
-        x_ice, y_ice = pdp.calculate_ice(0, ordered=True)
+        x_ice, y_ice, stds = pdp.calculate_ice(0, ordered=True)
         num_instances = x_ice.shape[0]
 
         # assert x_ice is sorted ascending for x_s
@@ -68,7 +68,7 @@ class TestICE(unittest.TestCase):
 
         bo.optimize(10)
         pdp = PDP(partitioner, bo)
-        x_ice, y_ice = pdp.calculate_ice(0, ordered=True, centered=True)
+        x_ice, y_ice, stds = pdp.calculate_ice(0, ordered=True, centered=True)
 
         self.assertTrue(np.all(y_ice[:, 0] == 0))
 

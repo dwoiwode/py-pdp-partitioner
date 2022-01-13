@@ -17,7 +17,7 @@ class TestPDP(unittest.TestCase):
 
         bo.optimize(10)
         pdp = PDP(partitioner, bo)
-        x_pdp, y_pdp = pdp.calculate_pdp(0)
+        x_pdp, y_pdp, stds = pdp.calculate_pdp(0)
 
         self.assertTrue(x_pdp.shape[0] == y_pdp.shape[0])
         self.assertTrue(np.all(np.diff(x_pdp) > 0))
@@ -31,7 +31,7 @@ class TestPDP(unittest.TestCase):
 
         bo.optimize(10)
         pdp = PDP(partitioner, bo)
-        x_pdp, y_pdp = pdp.calculate_pdp(0, centered=False)
+        x_pdp, y_pdp, stds = pdp.calculate_pdp(0, centered=False)
 
         self.assertTrue(x_pdp.shape[0] == y_pdp.shape[0])
         self.assertTrue(x_pdp.shape[1] == 2)
@@ -43,7 +43,7 @@ class TestPDP(unittest.TestCase):
 
         bo.optimize(10)
         pdp = PDP(partitioner, bo)
-        x_pdp, y_pdp = pdp.calculate_pdp(0, centered=True)
+        x_pdp, y_pdp, stds = pdp.calculate_pdp(0, centered=True)
 
         self.assertTrue(y_pdp[0] == 0)
 
