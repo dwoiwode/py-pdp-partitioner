@@ -112,25 +112,12 @@ def plot_model_confidence(optimizer: AbstractOptimizer, cs: CS.ConfigurationSpac
     scaled_ranges = _get_uniform_distributed_ranges(cs, samples_per_axis, scaled=True)
     mu, std = optimizer.surrogate_score([Configuration(cs, vector=vector) for vector in np.asarray(scaled_ranges).T])
 
-    sigma_steps = 100
-    max_sigma = 1.5
-    x = ranges[0]
-    for i in range(sigma_steps):
-        sigma_factor = i / sigma_steps * max_sigma
-        ax.fill_between(x,
-                        y1=mu - sigma_factor * std,
-                        y2=mu + sigma_factor * std,
-                        alpha=0.3 / sigma_steps, color="lightblue")
-
-    ax.plot(x, mu, color="blue", alpha=0.3, label="GP-$\mu$")
-    ax.plot(x, mu - std, color="blue", alpha=0.2, label="GP-1$\sigma$")
-    ax.plot(x, mu + std, color="blue", alpha=0.2)
-    ax.plot(x, mu - 2 * std, color="blue", alpha=0.1, label="GP-2$\sigma$")
-    ax.plot(x, mu + 2 * std, color="blue", alpha=0.1)
+    plot_confidence_lists(ranges[0], mu, std, ax=ax)
     return ax
 
+
 def plot_acquisition(acquisition_function: AcquisitionFunction, cs: CS.ConfigurationSpace,
-                          samples_per_axis=100, ax: Optional[plt.Axes] = None) -> plt.Axes:
+                     samples_per_axis=100, ax: Optional[plt.Axes] = None) -> plt.Axes:
     if len(cs.get_hyperparameters()) != 1:
         raise ValueError("Number of hyperparameters for plotting model confidence has to be 1")
 
@@ -150,13 +137,14 @@ def plot_acquisition(acquisition_function: AcquisitionFunction, cs: CS.Configura
     ax.plot(ranges, acquisition_y, color="darkgreen", label=acquisition_function.__class__.__name__)
 
     config = acquisition_function.get_optimum()
-    ax.plot(list(config.values())[0], acquisition_function(config), "*", color="red", label="next best candidate", markersize=15)
+    ax.plot(list(config.values())[0], acquisition_function(config), "*", color="red", label="next best candidate",
+            markersize=15)
 
     return ax
 
+
 def plot_ice(x_ice: np.ndarray, y_ice: np.ndarray, idx: int, ax: Optional[plt.Axes] = None,
              alpha: Optional[float] = 0.2) -> plt.Axes:
-
     ax = _get_ax(ax)
 
     num_curves = x_ice.shape[0]
@@ -167,14 +155,40 @@ def plot_ice(x_ice: np.ndarray, y_ice: np.ndarray, idx: int, ax: Optional[plt.Ax
 
     return ax
 
+
 def plot_pdp(x_pdp: np.ndarray, y_pdp: np.ndarray, idx: int, ax: Optional[plt.Axes] = None,
              alpha: Optional[float] = 0.2) -> plt.Axes:
-
     ax = _get_ax(ax)
 
     x = x_pdp[:, idx]
     ax.plot(x, y_pdp, alpha=alpha, color='red')
     return ax
+
+
+def plot_confidence_lists(x: np.ndarray, means: np.ndarray,
+                          stds: Optional[np.ndarray] = None, variances: Optional[np.ndarray] = None,
+                          ax: Optional[plt.Axes] = None):
+    if stds is None and variances is None or (stds is not None and variances is not None):
+        raise RuntimeError("Requires either stds or variances")
+
+    if variances is not None:
+        stds = np.sqrt(variances)
+
+    ax = _get_ax(ax)
+    sigma_steps = 100
+    max_sigma = 1.5
+    for i in range(sigma_steps):
+        sigma_factor = i / sigma_steps * max_sigma
+        ax.fill_between(x,
+                        y1=means - sigma_factor * stds,
+                        y2=means + sigma_factor * stds,
+                        alpha=0.3 / sigma_steps, color="lightblue")
+
+    ax.plot(x, means, color="blue", alpha=0.3, label="GP-$\mu$")
+    ax.plot(x, means - stds, color="blue", alpha=0.2, label="GP-1$\sigma$")
+    ax.plot(x, means + stds, color="blue", alpha=0.2)
+    ax.plot(x, means - 2 * stds, color="blue", alpha=0.1, label="GP-2$\sigma$")
+    ax.plot(x, means + 2 * stds, color="blue", alpha=0.1)
 
 
 def style_axes(ax: plt.Axes, cs: CS.ConfigurationSpace):

@@ -11,7 +11,7 @@ from src.optimizer import BayesianOptimization
 from src.partitioner import DecisionTreePartitioner
 from src.pdp import PDP
 from src.plotting import plot_function, plot_model_confidence, plot_samples, style_axes, finalize_figure, plot_ice, \
-    plot_pdp
+    plot_pdp, plot_confidence_lists
 from src.utils import unscale
 
 
@@ -152,7 +152,7 @@ class TestPlottingFunctions(TestPlotting):
         bo.optimize(10)
         pdp = PDP(partitioner, bo)
         idx = 0
-        x_ice, y_ice = pdp.calculate_ice(idx, ordered=True, centered=False)
+        x_ice, y_ice, stds = pdp.calculate_ice(idx, ordered=True, centered=False)
         x_unscaled = unscale(x_ice, square_2D_config_space())
         fig = self._apply_blackbox_plot(square, square_config_space(), "Test Plot ICE")
         ax = fig.gca()
@@ -166,16 +166,15 @@ class TestPlottingFunctions(TestPlotting):
         pdp = PDP(partitioner, bo)
         idx = 0
 
-        x_ice, y_ice = pdp.calculate_ice(idx, ordered=True, centered=False)
+        x_ice, y_ice, variances = pdp.calculate_ice(idx, ordered=True, centered=False)
         x_unscaled_ice = unscale(x_ice, square_2D_config_space())
 
-        x_pdp, y_pdp = pdp.calculate_pdp(idx, centered=False)
+        x_pdp, y_pdp, variances = pdp.calculate_pdp(idx, centered=False)
         x_unscaled_pdp = unscale(x_pdp, square_2D_config_space())
 
         fig = self._apply_blackbox_plot(square, square_config_space(), "Test Plot PDP")
         ax = fig.gca()
+        plot_confidence_lists(x_unscaled_pdp[:, idx], y_pdp, variances=variances, ax=ax)
         plot_ice(x_unscaled_ice, y_ice, idx, ax=ax)
         plot_pdp(x_unscaled_pdp, y_pdp, idx, ax=ax)
-
-
-
+        finalize_figure(fig)
