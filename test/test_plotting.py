@@ -147,10 +147,9 @@ class TestPlottingFunctions(TestPlotting):
 
     def test_plot_ice(self):
         bo = BayesianOptimization(square_2D, config_space=square_2D_config_space())
-        partitioner = DecisionTreePartitioner()
 
         bo.optimize(10)
-        pdp = PDP(partitioner, bo)
+        pdp = PDP(bo)
         idx = 0
         x_ice, y_ice, variances = pdp.calculate_ice(idx, centered=False)
         x_unscaled = unscale(x_ice, square_2D_config_space())
@@ -161,10 +160,9 @@ class TestPlottingFunctions(TestPlotting):
 
     def test_plot_single_ice_with_confidence(self):
         bo = BayesianOptimization(square_2D, config_space=square_2D_config_space())
-        partitioner = DecisionTreePartitioner()
 
         bo.optimize(10)
-        pdp = PDP(partitioner, bo)
+        pdp = PDP(bo)
         idx = 0
         x_ice, y_ice, variances = pdp.calculate_ice(idx, centered=False)
         curve_idx = 0
@@ -180,10 +178,9 @@ class TestPlottingFunctions(TestPlotting):
 
     def test_plot_pdp(self):
         bo = BayesianOptimization(square_2D, config_space=square_2D_config_space())
-        partitioner = DecisionTreePartitioner()
 
         bo.optimize(10)
-        pdp = PDP(partitioner, bo)
+        pdp = PDP(bo)
         idx = 0
 
         # x_ice, y_ice, variances = pdp.calculate_ice(idx, centered=False)

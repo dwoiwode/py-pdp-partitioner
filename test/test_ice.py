@@ -16,10 +16,9 @@ class TestICE(unittest.TestCase):
     def test_create_ice_1D(self):
         cs = square_config_space()
         bo = BayesianOptimization(square, config_space=cs)
-        partitioner = DecisionTreePartitioner()
 
         bo.optimize(10)
-        pdp = PDP(partitioner, bo)
+        pdp = PDP(bo)
         num_grid_points = 1000
         x_ice, y_ice, variances = pdp.calculate_ice(0, num_grid_points=num_grid_points)
         num_instances = x_ice.shape[0]
@@ -42,10 +41,9 @@ class TestICE(unittest.TestCase):
 
     def test_create_ice_2D(self):
         bo = BayesianOptimization(square_2D, config_space=square_2D_config_space())
-        partitioner = DecisionTreePartitioner()
 
         bo.optimize(10)
-        pdp = PDP(partitioner, bo)
+        pdp = PDP(bo)
         num_grid_points = 1000
         x_ice, y_ice, variances = pdp.calculate_ice(0, num_grid_points=num_grid_points)
         num_instances = x_ice.shape[0]
@@ -62,10 +60,9 @@ class TestICE(unittest.TestCase):
 
     def test_create_ice_centered(self):
         bo = BayesianOptimization(square_2D, config_space=square_2D_config_space())
-        partitioner = DecisionTreePartitioner()
 
         bo.optimize(10)
-        pdp = PDP(partitioner, bo)
+        pdp = PDP(bo)
         x_ice, y_ice, variances = pdp.calculate_ice(0, centered=True)
 
         self.assertTrue(np.all(y_ice[:, 0] == 0))
