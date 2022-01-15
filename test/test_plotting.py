@@ -152,11 +152,31 @@ class TestPlottingFunctions(TestPlotting):
         bo.optimize(10)
         pdp = PDP(partitioner, bo)
         idx = 0
-        x_ice, y_ice, stds = pdp.calculate_ice(idx, ordered=True, centered=False)
+        x_ice, y_ice, variances = pdp.calculate_ice(idx, centered=False)
         x_unscaled = unscale(x_ice, square_2D_config_space())
         fig = self._apply_blackbox_plot(square, square_config_space(), "Test Plot ICE")
         ax = fig.gca()
         plot_ice(x_unscaled, y_ice, idx, ax=ax)
+        finalize_figure(fig)
+
+    def test_plot_single_ice_with_confidence(self):
+        bo = BayesianOptimization(square_2D, config_space=square_2D_config_space())
+        partitioner = DecisionTreePartitioner()
+
+        bo.optimize(10)
+        pdp = PDP(partitioner, bo)
+        idx = 0
+        x_ice, y_ice, variances = pdp.calculate_ice(idx, centered=False)
+        curve_idx = 0
+        x_single = x_ice[curve_idx]
+        y_single = y_ice[curve_idx]
+        variance_single = variances[curve_idx]
+        x_unscaled = unscale(x_single, square_2D_config_space())
+        fig = self._apply_blackbox_plot(square, square_config_space(), "Test Plot Single ICE Curve")
+        ax = fig.gca()
+        plot_confidence_lists(x_unscaled[:, idx], y_single, variances=variance_single, ax=ax)
+        finalize_figure(fig)
+
 
     def test_plot_pdp(self):
         bo = BayesianOptimization(square_2D, config_space=square_2D_config_space())
@@ -166,8 +186,8 @@ class TestPlottingFunctions(TestPlotting):
         pdp = PDP(partitioner, bo)
         idx = 0
 
-        x_ice, y_ice, variances = pdp.calculate_ice(idx, ordered=True, centered=False)
-        x_unscaled_ice = unscale(x_ice, square_2D_config_space())
+        # x_ice, y_ice, variances = pdp.calculate_ice(idx, centered=False)
+        # x_unscaled_ice = unscale(x_ice, square_2D_config_space())
 
         x_pdp, y_pdp, variances = pdp.calculate_pdp(idx, centered=False)
         x_unscaled_pdp = unscale(x_pdp, square_2D_config_space())
@@ -175,6 +195,6 @@ class TestPlottingFunctions(TestPlotting):
         fig = self._apply_blackbox_plot(square, square_config_space(), "Test Plot PDP")
         ax = fig.gca()
         plot_confidence_lists(x_unscaled_pdp[:, idx], y_pdp, variances=variances, ax=ax)
-        plot_ice(x_unscaled_ice, y_ice, idx, ax=ax)
+        # plot_ice(x_unscaled_ice, y_ice, idx, ax=ax)
         plot_pdp(x_unscaled_pdp, y_pdp, idx, ax=ax)
         finalize_figure(fig)
