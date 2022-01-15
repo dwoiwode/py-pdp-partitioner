@@ -47,7 +47,7 @@ class TestICE(unittest.TestCase):
         bo.optimize(10)
         pdp = PDP(partitioner, bo)
         num_grid_points = 1000
-        x_ice, y_ice, stds = pdp.calculate_ice(0, num_grid_points=num_grid_points)
+        x_ice, y_ice, variances = pdp.calculate_ice(0, num_grid_points=num_grid_points)
         num_instances = x_ice.shape[0]
 
         self.assertTrue(x_ice.shape[0] == num_instances)
@@ -66,7 +66,7 @@ class TestICE(unittest.TestCase):
 
         bo.optimize(10)
         pdp = PDP(partitioner, bo)
-        x_ice, y_ice, stds = pdp.calculate_ice(0, centered=True)
+        x_ice, y_ice, variances = pdp.calculate_ice(0, centered=True)
 
         self.assertTrue(np.all(y_ice[:, 0] == 0))
 

@@ -144,14 +144,14 @@ def plot_acquisition(acquisition_function: AcquisitionFunction, cs: CS.Configura
 
 
 def plot_ice(x_ice: np.ndarray, y_ice: np.ndarray, idx: int, ax: Optional[plt.Axes] = None,
-             alpha: Optional[float] = 0.2) -> plt.Axes:
+             alpha: Optional[float] = 0.2, color: Optional[str] = 'green') -> plt.Axes:
     ax = _get_ax(ax)
 
     num_curves = x_ice.shape[0]
     for i in range(num_curves):
         x = x_ice[i, :, idx]
         y = y_ice[i]
-        ax.plot(x, y, alpha=alpha, color='green')
+        ax.plot(x, y, alpha=alpha, color=color)
 
     return ax
 

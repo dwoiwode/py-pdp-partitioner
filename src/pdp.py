@@ -9,9 +9,9 @@ import numpy as np
 
 class PDP:
     def __init__(self,
-                 partitioner: Optional[AbstractPartitioner],
+                 # partitioner: Optional[AbstractPartitioner],
                  optimizer: Optional[AbstractOptimizer]):
-        self.partitioner = partitioner
+        # self.partitioner = partitioner
         self.optimizer = optimizer
 
     def calculate_ice(self, idx: int, centered: bool = False, num_grid_points: int = 1000) \
