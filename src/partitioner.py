@@ -45,28 +45,44 @@ class DecisionTreePartitioner(AbstractPartitioner):
         self.num_features = x_ice.shape[2]
         self.possible_split_params = list(set(range(self.num_features)) - {idx})
         self.root = None
+        self.leaves = []
 
-    def partition(self, max_depth: int = 1):
+    def partition(self, max_depth: int = 1) -> Tuple[np.ndarray, np.ndarray]:
         assert max_depth > 0, f'Cannot split partition for depth < 1, but got {max_depth}'
 
         # create root node
         index_arr = np.ones((self.num_instances,), dtype=bool)
-        root = DTNode(index_arr, depth=0, max_depth=max_depth)
+        self.root = DTNode(index_arr, depth=0, max_depth=max_depth)
+        self.leaves = []
 
-        queue = [root]
+        queue = [self.root]
         while len(queue) > 0:
             node = queue.pop()
 
             # calculate children
             left_child, right_child = self.calc_best_split(node)
-            if left_child.depth >= max_depth:
-                left_child.is_terminal = True
-                right_child.is_terminal = True
+            if not left_child.is_terminal():
+                queue.append(left_child)
             else:
-                queue.append(node.left_child)
-                queue.append(node.right_child)
+                self.leaves.append(left_child)
+            if not right_child.is_terminal():
+                queue.append(right_child)
+            else:
+                self.leaves.append(right_child)
 
-        self.root = root
+        # calculate mean variance per partition
+        partition_means = np.zeros((len(self.leaves), ), dtype=float)
+        partition_indices = np.zeros((len(self.leaves), self.num_instances), dtype=bool)
+        for i, node in enumerate(self.leaves):
+            partition_means[i] = self.calc_partition_mean(node)
+            partition_indices[i] = node.index_arr
+
+        # sort according to mean variance
+        order = np.argsort(partition_means)
+        partition_means = partition_means[order]
+        partition_indices = partition_indices[order]
+
+        return partition_indices, partition_means
 
     def calc_best_split(self, node: DTNode) -> Tuple[DTNode, DTNode]:
         best_j = -1
@@ -75,7 +91,7 @@ class DecisionTreePartitioner(AbstractPartitioner):
         for j in self.possible_split_params:
             for t in range(self.num_instances):
                 # get children after split
-                left_indices, right_indices = self.calc_children(node, j, t)
+                left_indices, right_indices = self.calc_children_indices(node, j, t)
 
                 # calculate loss
                 left_loss = self.calc_loss(left_indices)
@@ -89,7 +105,7 @@ class DecisionTreePartitioner(AbstractPartitioner):
                     best_loss = loss
 
         # split according to best values
-        left_indices, right_indices = self.calc_children(node, best_j, best_t)
+        left_indices, right_indices = self.calc_children_indices(node, best_j, best_t)
         left_child = DTNode(left_indices, node.depth + 1, node.max_depth)
         right_child = DTNode(right_indices, node.depth + 1, node.max_depth)
         left_child.loss_val = self.calc_loss(left_indices)
@@ -104,7 +120,7 @@ class DecisionTreePartitioner(AbstractPartitioner):
 
         return left_child, right_child
 
-    def calc_children(self, node, j, t):
+    def calc_children_indices(self, node, j, t) -> Tuple[np.ndarray, np.ndarray]:
         # get split values
         split_val = self.x[t, 0, j]  # index in second dim does not matter
         instance_vals = self.x[:, 0, j]
@@ -123,10 +139,15 @@ class DecisionTreePartitioner(AbstractPartitioner):
         variance_grid_points = self.variances[indices, :]
         mean_variances = np.mean(variance_grid_points, axis=0)
 
-        pointwise_l2_loss = (variance_grid_points - mean_variances) ** 2
+        # pointwise_l2_loss = (variance_grid_points - mean_variances) ** 2
+        pointwise_l2_loss = (self.variances - mean_variances) ** 2
         loss_sum = np.sum(pointwise_l2_loss, axis=None)
 
         return loss_sum.item()
+
+    def calc_partition_mean(self, node) -> float:
+        variances_in_partition = self.variances[node.index_arr]
+        return np.mean(variances_in_partition, axis=None).item()
 
 
 
