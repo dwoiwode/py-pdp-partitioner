@@ -1,26 +1,23 @@
 import unittest
 
 import numpy as np
-from matplotlib import pyplot as plt
 
 from src.blackbox_functions import square, square_2D
-from src.config_spaces import square_config_space, square_2D_config_space
+from src.config_spaces import config_space_nd
 from src.optimizer import BayesianOptimization
-from src.partitioner import DecisionTreePartitioner
 from src.pdp import PDP
-from src.plotting import plot_ice
-from src.utils import unscale
 
 
 class TestICE(unittest.TestCase):
     def test_create_ice_1D(self):
-        cs = square_config_space()
+        cs = config_space_nd(1)
         bo = BayesianOptimization(square, config_space=cs)
+        selected_hp = cs.get_hyperparameters()[0]
 
         bo.optimize(10)
-        pdp = PDP(bo)
+        pdp = PDP(bo.surrogate_model, cs)
         num_grid_points = 1000
-        x_ice, y_ice, variances = pdp.calculate_ice(0, num_grid_points=num_grid_points)
+        x_ice, y_ice, variances = pdp.calculate_ice(selected_hp, n_grid_points=num_grid_points)
         num_instances = x_ice.shape[0]
 
         self.assertTrue(len(x_ice.shape) == 3)
@@ -40,12 +37,14 @@ class TestICE(unittest.TestCase):
             self.assertTrue(np.all(np.diff(x_ice[i, :, 0]) > 0))
 
     def test_create_ice_2D(self):
-        bo = BayesianOptimization(square_2D, config_space=square_2D_config_space())
+        cs = config_space_nd(2)
+        bo = BayesianOptimization(square_2D, config_space=cs)
+        selected_hyperparameter = cs.get_hyperparameters()[0]
 
         bo.optimize(10)
-        pdp = PDP(bo)
+        pdp = PDP(bo.surrogate_model, cs)
         num_grid_points = 1000
-        x_ice, y_ice, variances = pdp.calculate_ice(0, num_grid_points=num_grid_points)
+        x_ice, y_ice, variances = pdp.calculate_ice(selected_hyperparameter, n_grid_points=num_grid_points)
         num_instances = x_ice.shape[0]
 
         self.assertTrue(x_ice.shape[0] == num_instances)
@@ -59,11 +58,13 @@ class TestICE(unittest.TestCase):
             self.assertTrue(np.all(np.diff(x_ice[i, :, 1]) == 0))
 
     def test_create_ice_centered(self):
-        bo = BayesianOptimization(square_2D, config_space=square_2D_config_space())
+        cs = config_space_nd(2)
+        bo = BayesianOptimization(square_2D, config_space=cs)
+        selected_hp = cs.get_hyperparameters()[0]
 
         bo.optimize(10)
-        pdp = PDP(bo)
-        x_ice, y_ice, variances = pdp.calculate_ice(0, centered=True)
+        pdp = PDP(bo.surrogate_model, cs)
+        x_ice, y_ice, variances = pdp.calculate_ice(selected_hp, centered=True)
 
         self.assertTrue(np.all(y_ice[:, 0] == 0))
 

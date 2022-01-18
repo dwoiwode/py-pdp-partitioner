@@ -25,7 +25,7 @@ class AbstractOptimizer(abc.ABC):
     @property
     def incumbent(self) -> Tuple[Optional[CS.Configuration], float]:
         if len(self.y_list) == 0:
-            return None, 10000
+            return None, float("inf")
         if self.minimize_objective:
             incumbent_index = np.argmin(self.y_list)
         else:
@@ -60,20 +60,32 @@ class RandomSearch(AbstractOptimizer):
 
 
 class BayesianOptimization(AbstractOptimizer):
-    def __init__(self, obj_func: Callable[[Any], float], config_space: CS.ConfigurationSpace,
-                 initial_points: int = 5, config_list: List[CS.Configuration] = None, y_list: List[float] = None,
-                 minimize_objective: bool = True, eps: float = 0.1):
+    def __init__(self,
+                 obj_func: Callable[[Any], float],
+                 config_space: CS.ConfigurationSpace,
+                 surrogate_model=None,
+                 acq_class=None,
+                 initial_points: int = 5,
+                 config_list: List[CS.Configuration] = None,
+                 y_list: List[float] = None,
+                 minimize_objective: bool = True,
+                 eps: float = 0.1):
         super().__init__(obj_func, config_space, minimize_objective)
-        self.model = Pipeline([
-            ("standardize", StandardScaler()),
-            ("GP", GaussianProcessRegressor(kernel=Matern(nu=2.5), normalize_y=True,
-                                            n_restarts_optimizer=10,
-                                            random_state=0)),
-        ])
+        if surrogate_model is None:
+            surrogate_model = Pipeline([
+                ("standardize", StandardScaler()),
+                ("GP", GaussianProcessRegressor(kernel=Matern(nu=2.5), normalize_y=True,
+                                                n_restarts_optimizer=10,
+                                                random_state=0)),
+            ])
+        self.surrogate_model = surrogate_model
+
         self.eps = eps  # exploration factor for acq-function
         self.acq_sample_num = 100  # number of points sampled during acquisition function decision of next point
-        self.acq_func: AcquisitionFunction = ProbabilityOfImprovement(self.config_space, self.model,
-                                                                      minimize_objective=minimize_objective)
+        if acq_class is None:
+            acq_class = ProbabilityOfImprovement
+        self.acq_func: AcquisitionFunction = acq_class(self.config_space, self.surrogate_model,
+                                                       minimize_objective=minimize_objective)
 
         assert initial_points > 0 or (len(config_list) > 0 and len(y_list) > 0), \
             'At least one initial random point is required'
@@ -96,7 +108,7 @@ class BayesianOptimization(AbstractOptimizer):
         parameter_hash.update(str(self.config_list).encode("latin"))
         if self._model_fitted_hash != parameter_hash:
             x_arr_list = config_list_to_2d_arr(self.config_list)
-            self.model.fit(x_arr_list, self.y_list)
+            self.surrogate_model.fit(x_arr_list, self.y_list)
 
         self._model_fitted_hash = parameter_hash
 
@@ -133,11 +145,16 @@ class BayesianOptimization(AbstractOptimizer):
             configs = [config.get_array() for config in configs]
 
         x = np.asarray(configs)
-        return self.model.predict(x, return_std=True)
+        return self.surrogate_model.predict(x, return_std=True)
 
 
 class AcquisitionFunction(abc.ABC):
-    def __init__(self, config_space: CS.ConfigurationSpace, samples=100, minimize_objective=True):
+    def __init__(self,
+                 config_space: CS.ConfigurationSpace,
+                 surrogate_model: Union[GaussianProcessRegressor, Pipeline],
+                 samples=100,
+                 minimize_objective=True):
+        self.surrogate_model = surrogate_model
         self.config_space = config_space
         self.samples = samples
         self.minimize_objective = minimize_objective
@@ -157,28 +174,27 @@ class AcquisitionFunction(abc.ABC):
         for config in self.config_space.sample_configuration(self.samples):
             config_value_pairs.append((config, self(config.get_array())))
 
-        # if self.minimize_objective:
-        #     return min(config_value_pairs, key=lambda x: x[1])
-        # else:
         return max(config_value_pairs, key=lambda x: x[1])
+
+    def convert_configs(self, configuration: Union[CS.Configuration, np.ndarray]):
+        if isinstance(configuration, CS.Configuration):
+            x = np.asarray(configuration.get_array())
+        else:
+            x = configuration.copy()
+        x = x.reshape([1, -1])
+        return x
 
 
 class ExpectedImprovement(AcquisitionFunction):
     def __init__(self, config_space,
                  surrogate_model: Union[GaussianProcessRegressor, Pipeline],
                  samples=100, minimize_objective=True):
-        super().__init__(config_space, samples=samples, minimize_objective=minimize_objective)
-        self.surrogate_model = surrogate_model
+        super().__init__(config_space, surrogate_model, samples=samples, minimize_objective=minimize_objective)
         self.eta = 0
         self.exploration = 0  # Exploration parameter
 
     def __call__(self, configuration: Union[CS.Configuration, np.ndarray]):
-        # print(type(configuration), inspect.getouterframes(inspect.currentframe(), 2)[2][3])
-        if isinstance(configuration, CS.Configuration):
-            x = np.asarray(configuration.get_array())
-        else:
-            x = configuration.copy()
-        x = x.reshape([1, -1])
+        x = self.convert_configs(configuration)
 
         mean, sigma = self.surrogate_model.predict(x, return_std=True)
         if sigma == 0:
@@ -197,18 +213,12 @@ class ProbabilityOfImprovement(AcquisitionFunction):
     def __init__(self, config_space: CS.ConfigurationSpace,
                  surrogate_model: Union[GaussianProcessRegressor, Pipeline],
                  samples=100, minimize_objective=True):
-        super().__init__(config_space, samples=samples, minimize_objective=minimize_objective)
-        self.surrogate_model = surrogate_model
+        super().__init__(config_space, surrogate_model, samples=samples, minimize_objective=minimize_objective)
         self.eta = 0
         self.exploration = 0.0  # Exploration parameter
 
     def __call__(self, configuration: Union[CS.Configuration, np.ndarray]):
-        # print(type(configuration), inspect.getouterframes(inspect.currentframe(), 2)[2][3])
-        if isinstance(configuration, CS.Configuration):
-            x = np.asarray(configuration.get_array())
-        else:
-            x = configuration.copy()
-        x = x.reshape([1, -1])
+        x = self.convert_configs(configuration)
 
         mean, sigma = self.surrogate_model.predict(x, return_std=True)
         if sigma == 0:
@@ -223,3 +233,22 @@ class ProbabilityOfImprovement(AcquisitionFunction):
 
     def update(self, eta: float):
         self.eta = eta
+
+
+class LowerConfidenceBound(AcquisitionFunction):
+    def __init__(self,
+                 config_space: CS.ConfigurationSpace,
+                 surrogate_model: Union[GaussianProcessRegressor, Pipeline],
+                 theta: float = 5,
+                 minimize_objective=True):
+        super().__init__(config_space, surrogate_model, minimize_objective=minimize_objective)
+        self.theta = theta
+
+    def __call__(self, configuration: Union[CS.Configuration, np.ndarray]):
+        x = self.convert_configs(configuration)
+
+        mean, sigma = self.surrogate_model.predict(x, return_std=True)
+        if self.minimize_objective:
+            return - mean + self.theta * sigma
+        else:
+            return mean + self.theta * sigma

@@ -1,51 +1,56 @@
-from typing import Optional, Callable, Any, Type, Tuple
+from typing import Tuple
+
 import ConfigSpace as CS
-
-from src.optimizer import AbstractOptimizer, RandomSearch
-from src.partitioner import AbstractPartitioner, DecisionTreePartitioner
-
+import ConfigSpace.hyperparameters as CSH
 import numpy as np
 
 
 class PDP:
     def __init__(self,
-                 # partitioner: Optional[AbstractPartitioner],
-                 optimizer: Optional[AbstractOptimizer]):
-        # self.partitioner = partitioner
-        self.optimizer = optimizer
+                 surrogate_model,
+                 cs:CS.ConfigurationSpace
+                 ):
+        self.surrogate_model = surrogate_model
+        self.cs = cs
 
-    def calculate_ice(self, idx: int, centered: bool = False, num_grid_points: int = 1000) \
+    def calculate_ice(self,
+                      selected_hp: CSH.Hyperparameter,
+                      centered: bool = False,
+                      n_grid_points: int = 20,
+                      n_samples: int = 1000
+                      ) \
             -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        # Retrieve hp index from cs
+        idx = self.cs.get_idx_by_hyperparameter_name(selected_hp.name)
 
         # retrieve x-values from config
-        x = np.asarray([config.get_array() for config in self.optimizer.config_list])
+        x = np.asarray([config.get_array() for config in self.cs.sample_configuration(n_samples)])
         num_instances, num_features = x.shape
-        x_s = np.linspace(0, 1, num_grid_points)
+        x_s = np.linspace(0, 1, n_grid_points)
 
         # create x values by repeating x_s along a new dimension
-        x_ice = x.repeat(num_grid_points)
-        # x_ice = x_ice.reshape((num_instances, num_grid_points, num_features))
-        x_ice = x_ice.reshape((num_instances, num_features, num_grid_points))
+        x_ice = x.repeat(n_grid_points)
+        x_ice = x_ice.reshape((num_instances, num_features, n_grid_points))
         x_ice = x_ice.transpose((0, 2, 1))
         x_ice[:, :, idx] = x_s
 
         # predictions of surrogate
-        means, stds = self.optimizer.surrogate_score(x_ice.reshape(-1, num_features))
-        y_ice = means.reshape((num_instances, num_grid_points))
-        stds = stds.reshape((num_instances, num_grid_points))
+        means, stds = self.surrogate_model.predict(x_ice.reshape(-1, num_features), return_std=True)
+        y_ice = means.reshape((num_instances, n_grid_points))
+        stds = stds.reshape((num_instances, n_grid_points))
         variances = np.square(stds)
 
         # center values
         if centered:
-            y_start = y_ice[:, 0].repeat(num_grid_points).reshape(num_instances, num_grid_points)
+            y_start = y_ice[:, 0].repeat(n_grid_points).reshape(num_instances, n_grid_points)
             y_ice -= y_start
 
         return x_ice, y_ice, variances
 
-    def calculate_pdp(self, idx: int, centered=False, num_grid_points: int = 1000) \
+    def calculate_pdp(self, selected_hp:CSH.Hyperparameter, centered=False, num_grid_points: int = 1000) \
             -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         # get all ice curves
-        x_ice, y_ice, variances = self.calculate_ice(idx, centered=centered, num_grid_points=num_grid_points)
+        x_ice, y_ice, variances = self.calculate_ice(selected_hp, centered=centered, n_grid_points=num_grid_points)
 
         # average over ice curves
         y_pdp = np.mean(y_ice, axis=0)

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 
-from src.optimizer import ProbabilityOfImprovement, ExpectedImprovement, BayesianOptimization
+from src.optimizer import ExpectedImprovement, BayesianOptimization
 from src.plotting import plot_model_confidence, plot_samples, plot_acquisition
 from test.test_plotting import TestPlotting
 
@@ -17,7 +17,7 @@ class TestAcquisitionFunctions(TestPlotting):
         pass
 
     def test_expected_improvement(self):
-        x = CSH.UniformFloatHyperparameter("x", lower=-4, upper=4)
+        x = CSH.UniformFloatHyperparameter("x1", lower=-4, upper=4)
         cs = CS.ConfigurationSpace()
         cs.add_hyperparameter(x)
 
@@ -40,13 +40,13 @@ class TestAcquisitionFunctions(TestPlotting):
         assert isinstance(ax_acquisition, plt.Axes)
 
         bo = BayesianOptimization(obj_func=lambda: 0, config_space=cs)
-        bo.model = gpr
+        bo.surrogate_model = gpr
 
         plot_model_confidence(bo, cs, ax=ax_function)
-        plot_samples([CS.Configuration(cs, values={"x": float(a)}) for a in X], y, ax=ax_function)
+        plot_samples([CS.Configuration(cs, values={"x1": float(a)}) for a in X], y, ax=ax_function)
         plot_acquisition(ei, cs, ax=ax_acquisition)
 
-        self.assertAlmostEqual(0, ei.get_optimum()["x"], places=2)
+        self.assertAlmostEqual(0, ei.get_optimum()["x1"], places=2)
 
 
 # def _probability_of_improvement(config: CS.Configuration, model, eta, exploration=0,

@@ -1,34 +1,56 @@
 import abc
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import ConfigSpace as CS
 import numpy as np
 
 Sample = Tuple[np.ndarray, np.ndarray]  # configurations, variances
 
+
 class AbstractPartitioner(abc.ABC):
     def __init__(self):
         pass
 
-    # @abc.abstractmethod
-    # def partition(self):
-    #     pass
+
 
 class DTNode:
-    def __init__(self, index_arr: np.ndarray, depth: int, max_depth: int):
+    def __init__(self, parent: Optional["DTNode"], index_arr: np.ndarray, depth: int, max_depth: int):
+        self.parent = parent
         self.index_arr = index_arr  # matrix determining samples included in split
         self.depth = depth
         self.max_depth = max_depth
 
-        self.left_child = None
-        self.right_child = None
-        self.split_value = None  # t
-        self.split_feature_index = None  # j
-        self.loss_val = None  # l2 loss regarding variance impurity
+        self.left_child: Optional[DTNode] = None  # <= split_value
+        self.right_child: Optional[DTNode] = None  # > split_value
+        self.split_value: Optional[float] = None  # float
+        self.split_indices: Optional[Tuple[int, int]] = None  # t, j
+        self.loss_val: float = Optional[None]  # l2 loss regarding variance impurity
 
-    def is_terminal(self):
+    def __contains__(self, item: CS.Configuration) -> bool:
+        if self.is_root():
+            return True
+        config_array = item.get_array()
+
+        parent_split_value = self.parent.split_value
+        we_are_left_child = self.parent.left_child == self
+        if we_are_left_child:
+            return config_array[self.parent.split_indices[1]] <= parent_split_value and (item in self.parent)
+        else:  # we are right_child
+            return config_array[self.parent.split_indices[1]] > parent_split_value and (item in self.parent)
+
+    def is_terminal(self) -> bool:
         # either max depth or single instance
         return self.depth >= self.max_depth or np.sum(self.index_arr) == 1
+
+    def is_root(self) -> bool:
+        return self.parent is None
+
+    def filter_pdp(self, x_ice, y_ice, variances):
+        return (
+            np.mean(x_ice[self.index_arr], axis=0),
+            y_ice[self.index_arr].T,
+            variances[self.index_arr],
+        )
 
 
 class DecisionTreePartitioner(AbstractPartitioner):
@@ -44,15 +66,15 @@ class DecisionTreePartitioner(AbstractPartitioner):
         self.num_grid_points = x_ice.shape[1]
         self.num_features = x_ice.shape[2]
         self.possible_split_params = list(set(range(self.num_features)) - {idx})
-        self.root = None
-        self.leaves = []
+        self.root:Optional[DTNode] = None
+        self.leaves:List[DTNode] = []
 
     def partition(self, max_depth: int = 1) -> Tuple[np.ndarray, np.ndarray]:
         assert max_depth > 0, f'Cannot split partition for depth < 1, but got {max_depth}'
 
         # create root node
         index_arr = np.ones((self.num_instances,), dtype=bool)
-        self.root = DTNode(index_arr, depth=0, max_depth=max_depth)
+        self.root = DTNode(None, index_arr, depth=0, max_depth=max_depth)
         self.leaves = []
 
         queue = [self.root]
@@ -71,7 +93,7 @@ class DecisionTreePartitioner(AbstractPartitioner):
                 self.leaves.append(right_child)
 
         # calculate mean variance per partition
-        partition_means = np.zeros((len(self.leaves), ), dtype=float)
+        partition_means = np.zeros((len(self.leaves),), dtype=float)
         partition_indices = np.zeros((len(self.leaves), self.num_instances), dtype=bool)
         for i, node in enumerate(self.leaves):
             partition_means[i] = self.calc_partition_mean(node)
@@ -106,16 +128,16 @@ class DecisionTreePartitioner(AbstractPartitioner):
 
         # split according to best values
         left_indices, right_indices = self.calc_children_indices(node, best_j, best_t)
-        left_child = DTNode(left_indices, node.depth + 1, node.max_depth)
-        right_child = DTNode(right_indices, node.depth + 1, node.max_depth)
+        left_child = DTNode(node, left_indices, node.depth + 1, node.max_depth)
+        right_child = DTNode(node, right_indices, node.depth + 1, node.max_depth)
         left_child.loss_val = self.calc_loss(left_indices)
         right_child.loss_val = self.calc_loss(right_indices)
 
         # update attributes of parent node
         node.left_child = left_child
         node.right_child = right_child
-        node.split_value = best_t
-        node.split_feature_index = best_j
+        node.split_value = self.x[best_t, 0, best_j]
+        node.split_indices = (best_t, best_j)
         node.loss_val = best_loss
 
         return left_child, right_child
@@ -148,9 +170,6 @@ class DecisionTreePartitioner(AbstractPartitioner):
     def calc_partition_mean(self, node) -> float:
         variances_in_partition = self.variances[node.index_arr]
         return np.mean(variances_in_partition, axis=None).item()
-
-
-
 
 
 class RandomForestPartitioner(AbstractPartitioner):

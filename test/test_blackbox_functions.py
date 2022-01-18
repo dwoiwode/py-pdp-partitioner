@@ -1,11 +1,10 @@
 from unittest import TestCase
 
+import ConfigSpace as CS
+import ConfigSpace.hyperparameters as CSH
 import numpy as np
 
 from src.blackbox_functions import levy_1D, levy_2D, ackley_1D, ackley_2D, cross_in_tray, styblinski_tang
-
-import ConfigSpace as CS
-import ConfigSpace.hyperparameters as CSH
 from test.test_plotting import TestPlotting
 
 
@@ -75,7 +74,7 @@ class TestStyblinskiTang(TestCase):
 
     def test_minima(self):
         f = styblinski_tang
-        for d in range(1, 11):
+        for d in range(1, 11):  # Test multiple dimensions
             x = [self.minimum_at] * d
             print(f"Dimensions: {d:2d}, Input: {x}")
             self.assertEqual(len(x), d)
@@ -85,7 +84,7 @@ class TestStyblinskiTang(TestCase):
 class TestPlotBlackboxFunctions(TestPlotting):
     def test_plot_levy_1D(self):
         hps = [
-            CSH.UniformFloatHyperparameter("x", lower=-10, upper=10),
+            CSH.UniformFloatHyperparameter("x1", lower=-10, upper=10),
         ]
         cs = CS.ConfigurationSpace()
         cs.add_hyperparameters(hps)
@@ -102,7 +101,7 @@ class TestPlotBlackboxFunctions(TestPlotting):
 
     def test_plot_ackley_1D(self):
         hps = [
-            CSH.UniformFloatHyperparameter("x", lower=-32.768, upper=32.768),
+            CSH.UniformFloatHyperparameter("x1", lower=-32.768, upper=32.768),
         ]
         cs = CS.ConfigurationSpace()
         cs.add_hyperparameters(hps)
@@ -119,7 +118,7 @@ class TestPlotBlackboxFunctions(TestPlotting):
 
     def test_plot_ackley_1D_zoomed(self):
         hps = [
-            CSH.UniformFloatHyperparameter("x", lower=-10, upper=10),
+            CSH.UniformFloatHyperparameter("x1", lower=-10, upper=10),
         ]
         cs = CS.ConfigurationSpace()
         cs.add_hyperparameters(hps)
@@ -148,7 +147,7 @@ class TestPlotBlackboxFunctions(TestPlotting):
             return styblinski_tang(x)
 
         hps = [
-            CSH.UniformFloatHyperparameter("x", lower=-5, upper=5),
+            CSH.UniformFloatHyperparameter("x1", lower=-5, upper=5),
         ]
         cs = CS.ConfigurationSpace()
         cs.add_hyperparameters(hps)

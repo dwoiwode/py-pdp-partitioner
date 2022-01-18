@@ -4,12 +4,12 @@ Collection of blackbox functions that can be minimized
 import numpy as np
 
 
-def square(x: float) -> float:
-    return x ** 2
+def square(x1: float) -> float:
+    return x1 ** 2
 
 
-def neg_square(x: float) -> float:
-    return 1 - x ** 2
+def neg_square(x1: float) -> float:
+    return 1 - x1 ** 2
 
 
 def square_2D(x1: float, x2: float) -> float:
@@ -98,16 +98,16 @@ def styblinski_tang(*x: float) -> float:
 
 
 # Shortcuts
-def levy_1D(x: float) -> float:
-    return levy(x)
+def levy_1D(x1: float) -> float:
+    return levy(x1)
 
 
 def levy_2D(x1: float, x2: float) -> float:
     return levy(x1, x2)
 
 
-def ackley_1D(x: float) -> float:
-    return ackley(x)
+def ackley_1D(x1: float) -> float:
+    return ackley(x1)
 
 
 def ackley_2D(x1: float, x2: float) -> float:

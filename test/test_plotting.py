@@ -6,9 +6,8 @@ import ConfigSpace.hyperparameters as CSH
 import matplotlib.pyplot as plt
 
 from src.blackbox_functions import neg_square, square_2D, square
-from src.config_spaces import square_2D_config_space, square_config_space
+from src.config_spaces import config_space_nd
 from src.optimizer import BayesianOptimization
-from src.partitioner import DecisionTreePartitioner
 from src.pdp import PDP
 from src.plotting import plot_function, plot_model_confidence, plot_samples, style_axes, finalize_figure, plot_ice, \
     plot_pdp, plot_confidence_lists
@@ -57,13 +56,13 @@ class TestPlotting(TestCase):
 
 class TestPlottingFunctions(TestPlotting):
     def test_plot_square_function_1D(self):
-        x = CSH.UniformFloatHyperparameter("x", lower=-10, upper=10)
+        x = CSH.UniformFloatHyperparameter("x1", lower=-10, upper=10)
         cs = CS.ConfigurationSpace()
         cs.add_hyperparameter(x)
         self._apply_blackbox_plot(square, cs, "Test Plot Function 1D")
 
     def test_plot_square_function_1D_low_res(self):
-        x = CSH.UniformFloatHyperparameter("x", lower=-10, upper=10)
+        x = CSH.UniformFloatHyperparameter("x1", lower=-10, upper=10)
         cs = CS.ConfigurationSpace()
         cs.add_hyperparameter(x)
 
@@ -90,7 +89,7 @@ class TestPlottingFunctions(TestPlotting):
         self._apply_blackbox_plot(square_2D, cs, "Test Plot Function 2D (low res)", samples_per_axis=10)
 
     def test_plot_square_1D_artificial(self):
-        x = CSH.UniformFloatHyperparameter("x", lower=-10, upper=10)
+        x = CSH.UniformFloatHyperparameter("x1", lower=-10, upper=10)
         cs = CS.ConfigurationSpace()
         cs.add_hyperparameter(x)
 
@@ -115,7 +114,7 @@ class TestPlottingFunctions(TestPlotting):
         plot_samples(samples, [square_2D(**sample) for sample in samples], ax=ax)
 
     def test_plot_square_neg_1D_confidence(self):
-        x = CSH.UniformFloatHyperparameter("x", lower=-1, upper=1)
+        x = CSH.UniformFloatHyperparameter("x1", lower=-1, upper=1)
         cs = CS.ConfigurationSpace()
         cs.add_hyperparameter(x)
 
@@ -146,50 +145,53 @@ class TestPlottingFunctions(TestPlotting):
         plot_model_confidence(bo, cs, ax=ax)
 
     def test_plot_ice(self):
-        bo = BayesianOptimization(square_2D, config_space=square_2D_config_space())
-
+        cs = config_space_nd(2)
+        bo = BayesianOptimization(square_2D, config_space=cs)
+        selected_hp = cs.get_hyperparameters()[0]
         bo.optimize(10)
-        pdp = PDP(bo)
+        pdp = PDP(bo.surrogate_model,  cs)
         idx = 0
-        x_ice, y_ice, variances = pdp.calculate_ice(idx, centered=False)
-        x_unscaled = unscale(x_ice, square_2D_config_space())
-        fig = self._apply_blackbox_plot(square, square_config_space(), "Test Plot ICE")
+        x_ice, y_ice, variances = pdp.calculate_ice(selected_hp, centered=False)
+        x_unscaled = unscale(x_ice, cs)
+        fig = self._apply_blackbox_plot(square, config_space_nd(1), "Test Plot ICE")
         ax = fig.gca()
         plot_ice(x_unscaled, y_ice, idx, ax=ax)
         finalize_figure(fig)
 
     def test_plot_single_ice_with_confidence(self):
-        bo = BayesianOptimization(square_2D, config_space=square_2D_config_space())
-
+        cs = config_space_nd(2)
+        bo = BayesianOptimization(square_2D, config_space=cs)
+        selected_hp = cs.get_hyperparameters()[0]
         bo.optimize(10)
-        pdp = PDP(bo)
+        pdp = PDP(bo.surrogate_model,  cs)
         idx = 0
-        x_ice, y_ice, variances = pdp.calculate_ice(idx, centered=False)
+        x_ice, y_ice, variances = pdp.calculate_ice(selected_hp, centered=False)
         curve_idx = 0
         x_single = x_ice[curve_idx]
         y_single = y_ice[curve_idx]
         variance_single = variances[curve_idx]
-        x_unscaled = unscale(x_single, square_2D_config_space())
-        fig = self._apply_blackbox_plot(square, square_config_space(), "Test Plot Single ICE Curve")
+        x_unscaled = unscale(x_single, cs)
+        fig = self._apply_blackbox_plot(square, config_space_nd(1), "Test Plot Single ICE Curve")
         ax = fig.gca()
         plot_confidence_lists(x_unscaled[:, idx], y_single, variances=variance_single, ax=ax)
         finalize_figure(fig)
 
 
     def test_plot_pdp(self):
-        bo = BayesianOptimization(square_2D, config_space=square_2D_config_space())
-
+        cs = config_space_nd(2)
+        bo = BayesianOptimization(square_2D, config_space=cs)
+        selected_hp = cs.get_hyperparameters()[0]
         bo.optimize(10)
-        pdp = PDP(bo)
+        pdp = PDP(bo.surrogate_model,  cs)
         idx = 0
 
         # x_ice, y_ice, variances = pdp.calculate_ice(idx, centered=False)
-        # x_unscaled_ice = unscale(x_ice, square_2D_config_space())
+        # x_unscaled_ice = unscale(x_ice, config_space_nd(2))
 
-        x_pdp, y_pdp, variances = pdp.calculate_pdp(idx, centered=False)
-        x_unscaled_pdp = unscale(x_pdp, square_2D_config_space())
+        x_pdp, y_pdp, variances = pdp.calculate_pdp(selected_hp, centered=False)
+        x_unscaled_pdp = unscale(x_pdp, cs)
 
-        fig = self._apply_blackbox_plot(square, square_config_space(), "Test Plot PDP")
+        fig = self._apply_blackbox_plot(square, config_space_nd(1), "Test Plot PDP")
         ax = fig.gca()
         plot_confidence_lists(x_unscaled_pdp[:, idx], y_pdp, variances=variances, ax=ax)
         # plot_ice(x_unscaled_ice, y_ice, idx, ax=ax)
