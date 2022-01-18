@@ -139,8 +139,8 @@ class DecisionTreePartitioner(AbstractPartitioner):
         variance_grid_points = self.variances[indices, :]
         mean_variances = np.mean(variance_grid_points, axis=0)
 
-        # pointwise_l2_loss = (variance_grid_points - mean_variances) ** 2
-        pointwise_l2_loss = (self.variances - mean_variances) ** 2
+        pointwise_l2_loss = (variance_grid_points - mean_variances) ** 2
+        # pointwise_l2_loss = (self.variances - mean_variances) ** 2
         loss_sum = np.sum(pointwise_l2_loss, axis=None)
 
         return loss_sum.item()

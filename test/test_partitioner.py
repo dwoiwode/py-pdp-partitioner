@@ -53,7 +53,7 @@ class TestPartitioner(unittest.TestCase):
         plt.show()
 
         # create color map
-        color_map = np.asarray(['THis is a long string' for i in range(indices.shape[1])])
+        color_map = np.asarray(['This is a long string' for i in range(indices.shape[1])])
         for i, index in enumerate(indices):
             color_map[index] = colors[i]
         args = {'c': list(color_map)}
