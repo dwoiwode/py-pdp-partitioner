@@ -2,8 +2,8 @@ import unittest
 
 import matplotlib.pyplot as plt
 
-from src import blackbox_functions
-from src.config_spaces import config_space_nd
+from src.demo_data import blackbox_functions
+from src.demo_data.config_spaces import config_space_nd
 from src.optimizer import BayesianOptimization, LowerConfidenceBound
 from src.partitioner import DecisionTreePartitioner, DTNode
 from src.pdp import PDP

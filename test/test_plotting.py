@@ -5,8 +5,8 @@ import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 import matplotlib.pyplot as plt
 
-from src.blackbox_functions import neg_square, square_2D, square
-from src.config_spaces import config_space_nd
+from src.demo_data.blackbox_functions import neg_square, square_2D, square
+from src.demo_data.config_spaces import config_space_nd
 from src.optimizer import BayesianOptimization
 from src.pdp import PDP
 from src.plotting import plot_function, plot_model_confidence, plot_samples, style_axes, finalize_figure, plot_ice, \
