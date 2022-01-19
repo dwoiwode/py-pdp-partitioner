@@ -43,18 +43,19 @@ class TestICE(unittest.TestCase):
 
         bo.optimize(10)
         pdp = PDP(bo.surrogate_model, cs)
-        num_grid_points = 1000
-        x_ice, y_ice, variances = pdp.calculate_ice(selected_hyperparameter, n_grid_points=num_grid_points)
-        num_instances = x_ice.shape[0]
+        num_grid_points = 20
+        n_samples = 1000
+        x_ice, y_ice, variances = pdp.calculate_ice(selected_hyperparameter, n_grid_points=num_grid_points,
+                                                    n_samples=n_samples)
 
-        self.assertTrue(x_ice.shape[0] == num_instances)
+        self.assertTrue(x_ice.shape[0] == n_samples)
         self.assertTrue(x_ice.shape[1] == num_grid_points)
         self.assertTrue(x_ice.shape[2] == 2)
 
         for i in range(num_grid_points):  # x_0 should be the same across all instances
             self.assertTrue(np.all(x_ice[:, i, 0] == x_ice[0, i, 0]))
 
-        for i in range(num_instances):  # x_1 should be the same for all x_0
+        for i in range(n_samples):  # x_1 should be the same for all x_0
             self.assertTrue(np.all(np.diff(x_ice[i, :, 1]) == 0))
 
     def test_create_ice_centered(self):
