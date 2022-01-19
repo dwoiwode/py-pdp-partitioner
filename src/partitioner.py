@@ -45,12 +45,17 @@ class DTNode:
     def is_root(self) -> bool:
         return self.parent is None
 
+    def filter_ice(self, x_ice, y_ice, variances):
+        x_filtered = x_ice[self.index_arr]
+        y_filtered = y_ice[self.index_arr]
+        variances_filtered = variances[self.index_arr]
+        return x_filtered, y_filtered, variances_filtered
+
     def filter_pdp(self, x_ice, y_ice, variances):
-        return (
-            np.mean(x_ice[self.index_arr], axis=0),
-            y_ice[self.index_arr].T,
-            variances[self.index_arr],
-        )
+        x_filtered = np.mean(x_ice[self.index_arr], axis=0)
+        y_filtered = np.mean(y_ice[self.index_arr], axis=0)
+        variances_filtered = np.mean(variances[self.index_arr], axis=0)
+        return x_filtered, y_filtered, variances_filtered
 
 
 class DecisionTreePartitioner(AbstractPartitioner):
