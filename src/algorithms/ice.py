@@ -57,10 +57,10 @@ class ICECurve(Plottable):
             plot_line(x, self.y_ice, color=line_color, label=self.name, ax=ax)
 
         elif n_hyperparameters == 2:  # 2D
-            raise NotImplemented("2D currently not implemented (#TODO)")
+            raise NotImplementedError("2D currently not implemented (#TODO)")
         else:
-            raise NotImplemented("Plotting for more than 2 dimensions not implemented. "
-                                 "Please select a specific hp by setting `x_hyperparemeters`")
+            raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
+                                      "Please select a specific hp by setting `x_hyperparemeters`")
 
     @property
     def config(self) -> CS.Configuration:
@@ -157,7 +157,6 @@ class ICE(Algorithm):
         return self._y_variances
 
     def plot(self,
-             *args,
              color: ColorType = "red",
              alpha=0.1,
              ax: Optional[plt.Axes] = None):
@@ -172,7 +171,7 @@ class ICE(Algorithm):
             ax.plot(x_ice[:, :, idx].T, y_ice.T, alpha=alpha, color=color)
             ax.plot([], [], color=color, label="ICE")  # Hacky label for plot...
         elif self.n_selected_hyperparameter == 2:  # 2D
-            raise NotImplemented("2D currently not implemented (#TODO)")
+            raise NotImplementedError("2D currently not implemented (#TODO)")
         else:
-            raise NotImplemented("Plotting for more than 2 dimensions not implemented. "
-                                 "Please select a specific hp by setting `x_hyperparemeters`")
+            raise NotImplementedError(f"Plotting for {self.n_selected_hyperparameter} dimensions not implemented. "
+                                      "Please select a specific hp by setting `x_hyperparemeters`")

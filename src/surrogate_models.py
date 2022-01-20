@@ -95,10 +95,10 @@ class SurrogateModel(Plottable, ABC):
                 plot_1D_confidence_lines(x, mu, std, k_sigmas=(1, 2), color=line_color, ax=ax, name=name)
             plot_line(x, mu, color=line_color, label=f"{name}-$\mu$", ax=ax)
         elif n_hyperparameters == 2:  # 2D
-            raise NotImplemented("2D currently not implemented (#TODO)")
+            raise NotImplementedError("2D currently not implemented (#TODO)")
         else:
-            raise NotImplemented("Plotting for more than 2 dimensions not implemented. "
-                                 "Please select a specific hp by setting `x_hyperparemeters`")
+            raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
+                                      "Please select a specific hp by setting `x_hyperparemeters`")
 
 
 class SkLearnPipelineSurrogate(SurrogateModel):

@@ -105,8 +105,8 @@ class Sampler(Plottable, ABC):
             colors = self.y  # TODO: How to plot values
             ax.scatter(x1, x2, c=colors, **plotting_kwargs)
         else:
-            raise NotImplemented("Plotting for more than 2 dimensions not implemented. "
-                                 "Please select a specific hp by setting `x_hyperparemeters`")
+            raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
+                                      "Please select a specific hp by setting `x_hyperparemeters`")
 
 
 class GridSampler(Sampler):
@@ -298,10 +298,10 @@ class AcquisitionFunction(Plottable, ABC):
                     markersize=15)
         elif n_hyperparameters == 2:  # 2D
             idx = get_selected_idx(x_hyperparameters, self.config_space)
-            raise NotImplemented("2D currently not implemented (#TODO)")
+            raise NotImplementedError("2D currently not implemented (#TODO)")
         else:
-            raise NotImplemented("Plotting for more than 2 dimensions not implemented. "
-                                 "Please select a specific hp by setting `x_hyperparemeters`")
+            raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
+                                      "Please select a specific hp by setting `x_hyperparemeters`")
 
 
 class ExpectedImprovement(AcquisitionFunction):

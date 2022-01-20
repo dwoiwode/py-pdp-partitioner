@@ -28,12 +28,12 @@ class Plottable(ABC):
             raise ValueError("x_hyperparameters is None and no config_space in class")
         n_hyperparameters = len(tuple(x_hyperparameters))
         if n_hyperparameters == 1:  # 1D
-            raise NotImplemented("1D currently not implemented (#TODO)")
+            raise NotImplementedError("1D currently not implemented (#TODO)")
         elif n_hyperparameters == 2:  # 2D
-            raise NotImplemented("2D currently not implemented (#TODO)")
+            raise NotImplementedError("2D currently not implemented (#TODO)")
         else:
-            raise NotImplemented("Plotting for more than 2 dimensions not implemented. "
-                                 "Please select a specific hp by setting `x_hyperparemeters`")
+            raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
+                                      "Please select a specific hp by setting `x_hyperparemeters`")
 
 
 def adjust_lightness(color: ColorType,
