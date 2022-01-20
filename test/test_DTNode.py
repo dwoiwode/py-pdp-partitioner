@@ -5,9 +5,9 @@ from sklearn.gaussian_process.kernels import Matern
 
 from src.demo_data import blackbox_functions
 from src.demo_data.config_spaces import config_space_nd
-from src.optimizer import LowerConfidenceBound, BayesianOptimization
-from src.partitioner import DecisionTreePartitioner
-from src.pdp import PDP
+from src.sampler import LowerConfidenceBound, BayesianOptimization
+from src.algorithms.partitioner import DecisionTreePartitioner
+from src.algorithms.pdp import PDP
 
 
 class TestDTNode(TestCase):
@@ -30,7 +30,7 @@ class TestDTNode(TestCase):
                                   surrogate_model=surrogate_model,
                                   acq_class=LowerConfidenceBound,
                                   initial_points=2)
-        bo.optimize(bo_sampling_points - bo.initial_points)
+        bo.sample(bo_sampling_points - bo.initial_points)
         pdp = PDP(bo.surrogate_model, self.cs)
 
         x_ice, y_ice, variances = pdp.calculate_ice(selected_hyperparameter,

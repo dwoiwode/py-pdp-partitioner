@@ -1,5 +1,5 @@
-from abc import ABC, abstractmethod
 from typing import Union, List, Tuple
+from abc import ABC, abstractmethod
 
 import ConfigSpace as CS
 
@@ -20,15 +20,16 @@ class SurrogateModel(ABC):
                  X: Union[np.ndarray, CS.Configuration, List[CS.Configuration]]
                  ) -> Union[np.ndarray, float, List[float]]:
         # Config or List[Config] or empty list
-        if isinstance(X, CS.Configuration) or (
-                isinstance(X, CS.Configuration) and (len(X) == 0) or isinstance(X[0], CS.Configuration)):
+        if isinstance(X, CS.Configuration):
+            means, stds = self.predict_config(X)
+        elif isinstance(X, list) and (len(X) == 0) or isinstance(X[0], CS.Configuration):
             # Returns either float or List[float], depending on whether a single config or list of configs is given
-            means, stds = self.predict_configs(X)[0]
+            means, stds = self.predict_configs(X)
         elif isinstance(X, np.ndarray):
             # np.ndarray
             means, stds = self.predict(X)[0]
         else:
-            raise TypeError(f"Could not interprete {type(X)}")
+            raise TypeError(f"Could not interpret {type(X)}")
         return means
 
     @abstractmethod
@@ -74,6 +75,16 @@ class SkLearnPipelineSurrogate(SurrogateModel):
         X = convert_config_list_to_np(X)
         self.pipeline.fit(X, y)
 
+    def predict(self, X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Calculate mean and sigma of predictions
+
+        :param X: input data shaped [NxK] for N samples and K parameters
+        :return: means, sigmas
+        """
+
+        return self.pipeline.predict(X, return_std=True)
+
 
 class GaussianProcessSurrogate(SkLearnPipelineSurrogate):
     def __init__(self, cs: CS.ConfigurationSpace):
@@ -84,13 +95,3 @@ class GaussianProcessSurrogate(SkLearnPipelineSurrogate):
                                             random_state=0)),
         ])
         super().__init__(pipeline, cs)
-
-    def predict(self, X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Calculate mean and sigma of predictions
-
-        :param X: input data shaped [NxK] for N samples and K parameters
-        :return: means, sigmas
-        """
-        return self.pipeline.predict(X, return_std=True)
-

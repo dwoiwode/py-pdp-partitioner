@@ -4,8 +4,8 @@ import numpy as np
 
 from src.demo_data.blackbox_functions import square, square_2D
 from src.demo_data.config_spaces import config_space_nd
-from src.optimizer import BayesianOptimization
-from src.pdp import PDP
+from src.sampler import BayesianOptimization
+from src.algorithms.pdp import PDP
 
 
 class TestICE(unittest.TestCase):
@@ -14,7 +14,7 @@ class TestICE(unittest.TestCase):
         bo = BayesianOptimization(square, config_space=cs)
         selected_hp = cs.get_hyperparameters()[0]
 
-        bo.optimize(10)
+        bo.sample(10)
         pdp = PDP(bo.surrogate_model, cs)
         num_grid_points = 1000
         x_ice, y_ice, variances = pdp.calculate_ice(selected_hp, n_grid_points=num_grid_points)
@@ -41,7 +41,7 @@ class TestICE(unittest.TestCase):
         bo = BayesianOptimization(square_2D, config_space=cs)
         selected_hyperparameter = cs.get_hyperparameters()[0]
 
-        bo.optimize(10)
+        bo.sample(10)
         pdp = PDP(bo.surrogate_model, cs)
         num_grid_points = 20
         n_samples = 1000
@@ -63,7 +63,7 @@ class TestICE(unittest.TestCase):
         bo = BayesianOptimization(square_2D, config_space=cs)
         selected_hp = cs.get_hyperparameters()[0]
 
-        bo.optimize(10)
+        bo.sample(10)
         pdp = PDP(bo.surrogate_model, cs)
         x_ice, y_ice, variances = pdp.calculate_ice(selected_hp, centered=True)
 

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 
-from src.optimizer import ExpectedImprovement, BayesianOptimization
+from src.sampler import ExpectedImprovement, BayesianOptimization
 from src.plotting import plot_model_confidence, plot_samples, plot_acquisition
 from test.test_plotting import TestPlotting
 

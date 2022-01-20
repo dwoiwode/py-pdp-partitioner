@@ -1,22 +1,21 @@
 import unittest
 
 import numpy as np
-from ConfigSpace import Configuration
 from matplotlib import pyplot as plt
 
 from src.demo_data.blackbox_functions import square_2D
 from src.demo_data.config_spaces import config_space_nd
-from src.optimizer import BayesianOptimization
-from src.partitioner import DecisionTreePartitioner
-from src.pdp import PDP
-from src.plotting import plot_ice, plot_function, plot_samples
+from src.sampler import BayesianOptimization
+from src.algorithms.partitioner import DecisionTreePartitioner
+from src.algorithms.pdp import PDP
+from src.plotting import plot_ice
 
 
 class TestPartitioner(unittest.TestCase):
     def test_dt_partitioner_single_split(self):
         cs = config_space_nd(2)
         bo = BayesianOptimization(square_2D, config_space=cs)
-        bo.optimize(10)
+        bo.sample(10)
         selected_hp = cs.get_hyperparameters()[0]
         pdp = PDP(bo.surrogate_model,  cs)
         idx = 0
@@ -41,7 +40,7 @@ class TestPartitioner(unittest.TestCase):
         cs = config_space_nd(2, lower=-1, upper=1)
         selected_hp = cs.get_hyperparameters()[0]
         bo = BayesianOptimization(square_2D, config_space=cs)
-        bo.optimize(10)
+        bo.sample(10)
         pdp = PDP(bo.surrogate_model,  cs)
         idx = 0
         n_samples = 1000

@@ -4,8 +4,8 @@ import numpy as np
 
 from src.demo_data.blackbox_functions import square, square_2D
 from src.demo_data.config_spaces import config_space_nd
-from src.optimizer import BayesianOptimization
-from src.pdp import PDP
+from src.sampler import BayesianOptimization
+from src.algorithms.pdp import PDP
 
 
 class TestPDP(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestPDP(unittest.TestCase):
         cs = config_space_nd(1)
         bo = BayesianOptimization(square, config_space=cs)
         selected_hp = cs.get_hyperparameters()[0]
-        bo.optimize(10)
+        bo.sample(10)
         pdp = PDP(bo.surrogate_model,  cs)
         x_pdp, y_pdp, stds = pdp.calculate_pdp(selected_hp)
 
@@ -24,7 +24,7 @@ class TestPDP(unittest.TestCase):
         cs = config_space_nd(2)
         bo = BayesianOptimization(square_2D, config_space=cs)
         selected_hp = cs.get_hyperparameters()[0]
-        bo.optimize(10)
+        bo.sample(10)
         pdp = PDP(bo.surrogate_model,  cs)
         x_pdp, y_pdp, stds = pdp.calculate_pdp(selected_hp, centered=False)
 
@@ -36,7 +36,7 @@ class TestPDP(unittest.TestCase):
         cs = config_space_nd(2)
         bo = BayesianOptimization(square_2D, config_space=cs)
         selected_hp = cs.get_hyperparameters()[0]
-        bo.optimize(10)
+        bo.sample(10)
         pdp = PDP(bo.surrogate_model,  cs)
         x_pdp, y_pdp, stds = pdp.calculate_pdp(selected_hp, centered=True)
 

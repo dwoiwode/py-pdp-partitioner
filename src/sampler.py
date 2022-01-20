@@ -14,13 +14,21 @@ from sklearn.preprocessing import StandardScaler
 from src.utils import config_list_to_2d_arr
 
 
-class AbstractOptimizer(abc.ABC):
+class Sampler(abc.ABC):
     def __init__(self, obj_func: Callable, config_space: CS.ConfigurationSpace, minimize_objective=True):
         self.obj_func = obj_func
         self.config_space = config_space
         self.config_list: List[CS.Configuration] = []
         self.y_list: List[float] = []
         self.minimize_objective = minimize_objective
+
+    @property
+    def X(self) -> np.ndarray:
+        return config_list_to_2d_arr(self.config_list)
+
+    @property
+    def y(self) -> np.ndarray:
+        return np.asarray(self.y_list)
 
     @property
     def incumbent(self) -> Tuple[Optional[CS.Configuration], float]:
@@ -36,20 +44,16 @@ class AbstractOptimizer(abc.ABC):
         return incumbent_config, incumbent_value
 
     @abc.abstractmethod
-    def optimize(self, n_points: int = 1) -> CS.Configuration:
-        pass
-
-    @abc.abstractmethod
-    def surrogate_score(self, configs: List[CS.Configuration]) -> Tuple[np.ndarray, np.ndarray]:
+    def sample(self, n_points: int = 1) -> CS.Configuration:
         pass
 
 
-class GridSearch(AbstractOptimizer):
+class GridSampler(Sampler):
     pass
 
 
-class RandomSearch(AbstractOptimizer):
-    def optimize(self, n_points: int = 1) -> CS.Configuration:
+class RandomSampler(Sampler):
+    def sample(self, n_points: int = 1) -> CS.Configuration:
         for i in range(n_points):
             config = self.config_space.sample_configuration()
             value = self.obj_func(**config)
@@ -59,7 +63,7 @@ class RandomSearch(AbstractOptimizer):
         return self.incumbent[0]
 
 
-class BayesianOptimization(AbstractOptimizer):
+class BayesianOptimization(Sampler):
     def __init__(self,
                  obj_func: Callable[[Any], float],
                  config_space: CS.ConfigurationSpace,
@@ -90,8 +94,6 @@ class BayesianOptimization(AbstractOptimizer):
         assert initial_points > 0 or (len(config_list) > 0 and len(y_list) > 0), \
             'At least one initial random point is required'
         self.initial_points = initial_points  # number of initial points to be sampled
-        self.config_list = config_list
-        self.y_list = y_list
 
         self._model_fitted_hash: str = ""
 
@@ -112,7 +114,7 @@ class BayesianOptimization(AbstractOptimizer):
 
         self._model_fitted_hash = parameter_hash
 
-    def optimize(self, n_points: int = 1):
+    def sample(self, n_points: int = 1):
         # sample initial random points if not already done or given
         if self.config_list is None or self.y_list is None:
             self._sample_initial_points()

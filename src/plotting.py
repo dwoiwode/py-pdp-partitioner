@@ -6,7 +6,7 @@ import numpy as np
 from ConfigSpace import Configuration, hyperparameters as CSH
 from matplotlib import pyplot as plt
 
-from src.optimizer import AcquisitionFunction, AbstractOptimizer
+from src.sampler import AcquisitionFunction, Sampler
 
 
 def _get_ax(ax: Optional[plt.Axes]) -> plt.Axes:
@@ -101,7 +101,7 @@ def plot_samples(configs: List[Configuration], y: List[float], ax=None, plotting
     return ax
 
 
-def plot_model_confidence(optimizer: AbstractOptimizer, cs: CS.ConfigurationSpace,
+def plot_model_confidence(optimizer: Sampler, cs: CS.ConfigurationSpace,
                           samples_per_axis=100, ax: Optional[plt.Axes] = None) -> plt.Axes:
     ax = _get_ax(ax)
 

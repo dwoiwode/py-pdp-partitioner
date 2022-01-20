@@ -1,0 +1,2 @@
+class RandomForestPartitioner(Partitioner):
+    pass

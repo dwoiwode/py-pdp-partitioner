@@ -3,9 +3,9 @@ from unittest import TestCase
 from matplotlib import pyplot as plt
 
 from src.demo_data.hpo_bench import get_SVMBenchmarkMF
-from src.optimizer import BayesianOptimization, LowerConfidenceBound
-from src.partitioner import DecisionTreePartitioner, DTNode
-from src.pdp import PDP
+from src.sampler import BayesianOptimization, LowerConfidenceBound
+from src.algorithms.partitioner import DecisionTreePartitioner, DTNode
+from src.algorithms.pdp import PDP
 from src.plotting import plot_pdp
 
 
@@ -28,7 +28,7 @@ class TestHPOBench(TestCase):
                                   # surrogate_model=surrogate_model,
                                   acq_class=LowerConfidenceBound,
                                   initial_points=4 * dimensions)
-        bo.optimize(bo_sampling_points - bo.initial_points)
+        bo.sample(bo_sampling_points - bo.initial_points)
         self.assertEqual(bo_sampling_points, len(bo.y_list))
         incumbent_config, incumbent_score = bo.incumbent
         pdp = PDP(bo.surrogate_model, cs)

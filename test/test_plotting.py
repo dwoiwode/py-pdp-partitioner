@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 
 from src.demo_data.blackbox_functions import neg_square, square_2D, square
 from src.demo_data.config_spaces import config_space_nd
-from src.optimizer import BayesianOptimization
-from src.pdp import PDP
+from src.sampler import BayesianOptimization
+from src.algorithms.pdp import PDP
 from src.plotting import plot_function, plot_model_confidence, plot_samples, style_axes, finalize_figure, plot_ice, \
     plot_pdp, plot_confidence_lists
 from src.utils import unscale
@@ -121,7 +121,7 @@ class TestPlottingFunctions(TestPlotting):
         bo = BayesianOptimization(obj_func=neg_square, config_space=cs, minimize_objective=False,
                                   initial_points=1, eps=0.1)
 
-        res = bo.optimize(0)
+        res = bo.sample(0)
         fig = self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, single point")
         ax = fig.gca()
         plot_samples(bo.config_list, bo.y_list, ax=ax)
@@ -130,7 +130,7 @@ class TestPlottingFunctions(TestPlotting):
         fig.show()
 
         for _ in range(2):
-            bo.optimize(1)
+            bo.sample(1)
             fig2 = self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, two points")
             ax = fig2.gca()
             plot_samples(bo.config_list, bo.y_list, ax=ax)
@@ -138,7 +138,7 @@ class TestPlottingFunctions(TestPlotting):
             finalize_figure(fig2)
             fig2.show()
 
-        bo.optimize(20)
+        bo.sample(20)
         fig3 = self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, two points")
         ax = fig3.gca()
         plot_samples(bo.config_list, bo.y_list, ax=ax)
@@ -148,7 +148,7 @@ class TestPlottingFunctions(TestPlotting):
         cs = config_space_nd(2)
         bo = BayesianOptimization(square_2D, config_space=cs)
         selected_hp = cs.get_hyperparameters()[0]
-        bo.optimize(10)
+        bo.sample(10)
         pdp = PDP(bo.surrogate_model,  cs)
         idx = 0
         x_ice, y_ice, variances = pdp.calculate_ice(selected_hp, centered=False)
@@ -162,7 +162,7 @@ class TestPlottingFunctions(TestPlotting):
         cs = config_space_nd(2)
         bo = BayesianOptimization(square_2D, config_space=cs)
         selected_hp = cs.get_hyperparameters()[0]
-        bo.optimize(10)
+        bo.sample(10)
         pdp = PDP(bo.surrogate_model,  cs)
         idx = 0
         x_ice, y_ice, variances = pdp.calculate_ice(selected_hp, centered=False)
@@ -181,7 +181,7 @@ class TestPlottingFunctions(TestPlotting):
         cs = config_space_nd(2)
         bo = BayesianOptimization(square_2D, config_space=cs)
         selected_hp = cs.get_hyperparameters()[0]
-        bo.optimize(10)
+        bo.sample(10)
         pdp = PDP(bo.surrogate_model,  cs)
         idx = 0
 

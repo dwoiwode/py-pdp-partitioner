@@ -1,16 +1,34 @@
-import abc
-from typing import List, Tuple, Optional
+from src.algorithms.partitioner import Region, Partitioner
+from abc import ABC, abstractmethod
+from typing import List, Tuple, Optional, Union, Iterable, Any
 
 import ConfigSpace as CS
+import ConfigSpace.hyperparameters as CSH
 import numpy as np
 
-Sample = Tuple[np.ndarray, np.ndarray]  # configurations, variances
+from src.algorithms import Algorithm, Plottable
+from src.surrogate_models import SurrogateModel
 
+class DTRegion(Region, Plottable):
+    def __init__(self,
+                 x_points: np.ndarray,
+                 y_points: np.ndarray,
+                 y_variances: np.ndarray,
+                 split_conditions:List[Tuple[CSH.Hyperparameter, Any]]):
+        super().__init__(x_points, y_points, y_variances)
 
-class AbstractPartitioner(abc.ABC):
-    def __init__(self):
+        self.split_conditions = split_conditions
+
+    @property
+    def config_space(self) -> CS.ConfigurationSpace:
+        # TODO
         pass
 
+    def plot(self, color=None, ax=None):
+        """
+        :param color: If None: Take random color
+        """
+        pass
 
 
 class DTNode:
@@ -58,7 +76,7 @@ class DTNode:
         return x_filtered, y_filtered, variances_filtered
 
 
-class DecisionTreePartitioner(AbstractPartitioner):
+class DTPartitioner(Partitioner):
     def __init__(self, idx: int, x_ice: np.ndarray, variances: np.ndarray):
         super().__init__()
         self.idx = idx
@@ -71,8 +89,8 @@ class DecisionTreePartitioner(AbstractPartitioner):
         self.num_grid_points = x_ice.shape[1]
         self.num_features = x_ice.shape[2]
         self.possible_split_params = list(set(range(self.num_features)) - {idx})
-        self.root:Optional[DTNode] = None
-        self.leaves:List[DTNode] = []
+        self.root: Optional[DTNode] = None
+        self.leaves: List[DTNode] = []
 
     def partition(self, max_depth: int = 1) -> Tuple[np.ndarray, np.ndarray]:
         assert max_depth > 0, f'Cannot split partition for depth < 1, but got {max_depth}'
@@ -175,7 +193,3 @@ class DecisionTreePartitioner(AbstractPartitioner):
     def calc_partition_mean(self, node) -> float:
         variances_in_partition = self.variances[node.index_arr]
         return np.mean(variances_in_partition, axis=None).item()
-
-
-class RandomForestPartitioner(AbstractPartitioner):
-    pass
