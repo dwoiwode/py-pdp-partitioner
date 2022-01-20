@@ -1,14 +1,22 @@
 import ConfigSpace as CS
 import numpy as np
-from typing import List
+from typing import List, Iterable, Union
 
 
 def config_to_array(config: CS.Configuration) -> np.ndarray:
     return config.get_array()
 
 
+def convert_config_list_to_np(X: Union[List[CS.Configuration], List[Iterable[float], np.ndarray]]) -> np.ndarray:
+    if isinstance(X, list):
+        if isinstance(X[0], CS.Configuration):
+            X = [x.values() for x in X]
+    return np.asarray(X)
+
+
 def config_list_to_2d_arr(config_list: List[CS.Configuration]) -> np.ndarray:
     return np.asarray([config.get_array() for config in config_list])
+
 
 def unscale(x: np.ndarray, cs: CS.ConfigurationSpace):
     """

@@ -4,11 +4,13 @@ import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 import numpy as np
 
+from src.surrogate_models import SurrogateModel
+
 
 class PDP:
     def __init__(self,
-                 surrogate_model,
-                 cs:CS.ConfigurationSpace
+                 surrogate_model: SurrogateModel,
+                 cs: CS.ConfigurationSpace
                  ):
         self.surrogate_model = surrogate_model
         self.cs = cs
