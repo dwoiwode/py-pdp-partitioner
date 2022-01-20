@@ -3,8 +3,8 @@ from unittest import TestCase
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern
 
-from src import blackbox_functions
-from src.config_spaces import config_space_nd
+from src.demo_data import blackbox_functions
+from src.demo_data.config_spaces import config_space_nd
 from src.optimizer import LowerConfidenceBound, BayesianOptimization
 from src.partitioner import DecisionTreePartitioner
 from src.pdp import PDP

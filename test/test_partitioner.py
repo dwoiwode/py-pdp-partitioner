@@ -4,8 +4,8 @@ import numpy as np
 from ConfigSpace import Configuration
 from matplotlib import pyplot as plt
 
-from src.blackbox_functions import square_2D
-from src.config_spaces import config_space_nd
+from src.demo_data.blackbox_functions import square_2D
+from src.demo_data.config_spaces import config_space_nd
 from src.optimizer import BayesianOptimization
 from src.partitioner import DecisionTreePartitioner
 from src.pdp import PDP

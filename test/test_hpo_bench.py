@@ -1,25 +1,25 @@
-import unittest
+from unittest import TestCase
 
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
 
-from src.demo_data import blackbox_functions
-from src.demo_data.config_spaces import config_space_nd
+from src.demo_data.hpo_bench import get_SVMBenchmarkMF
 from src.optimizer import BayesianOptimization, LowerConfidenceBound
 from src.partitioner import DecisionTreePartitioner, DTNode
 from src.pdp import PDP
-from src.plotting import plot_pdp, plot_ice, plot_confidence_lists
+from src.plotting import plot_pdp
 
 
-class TestPaperEvaluations(unittest.TestCase):
-    def test_styblinski_tang_8d(self):
+class TestHPOBench(TestCase):
+    def test_svm_task_2079(self):
+        """
+        Took ~3 min for me (dwoiwode)
+        """
+        cs, f = get_SVMBenchmarkMF(2079)
         # Paper configurations
-        bo_sampling_points = 80  # [80, 150, 250]
-        dimensions = 8  # [3,5,8]
-        f = blackbox_functions.styblinski_tang_8D
-        # f = blackbox_functions.styblinski_tang_3D
+        bo_sampling_points = 250  # [80, 150, 250]
+        dimensions = len(cs.get_hyperparameters())
 
         # Static paper configurations (not changed throughout the paper)
-        cs = config_space_nd(dimensions)
         selected_hyperparameter = cs.get_hyperparameters()[0]
         n_samples = 1000
         n_grid_points = 20
@@ -27,7 +27,7 @@ class TestPaperEvaluations(unittest.TestCase):
         bo = BayesianOptimization(f, cs,
                                   # surrogate_model=surrogate_model,
                                   acq_class=LowerConfidenceBound,
-                                  initial_points=4*dimensions)
+                                  initial_points=4 * dimensions)
         bo.optimize(bo_sampling_points - bo.initial_points)
         self.assertEqual(bo_sampling_points, len(bo.y_list))
         incumbent_config, incumbent_score = bo.incumbent
@@ -49,15 +49,7 @@ class TestPaperEvaluations(unittest.TestCase):
         self.assertIsNotNone(correct_leaf)
         self.assertIsInstance(correct_leaf, DTNode)
 
-        filtered_x_pdp, filtered_y_pdp, filtered_variances_pdp = correct_leaf.filter_pdp(x_ice, y_ice, variances)
-        filtered_x_ice, filtered_y_ice, filtered_variances_ice = correct_leaf.filter_ice(x_ice, y_ice, variances)
+        filtered_x_ice, filtered_y_ice, filtered_variances = correct_leaf.filter_pdp(x_ice, y_ice, variances)
 
-        ax = plot_ice(filtered_x_ice, filtered_y_ice, idx=0, alpha=0.1)
-        plot_pdp(filtered_x_pdp, filtered_y_pdp, idx=0, ax=ax, alpha=1)
-        plot_confidence_lists(filtered_x_pdp[:, 0], filtered_y_pdp, variances=filtered_variances_pdp, ax=ax)
+        plot_pdp(filtered_x_ice, filtered_y_ice, 0)
         plt.show()
-
-
-
-
-

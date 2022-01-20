@@ -4,7 +4,7 @@ import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 import numpy as np
 
-from src.blackbox_functions import levy_1D, levy_2D, ackley_1D, ackley_2D, cross_in_tray, styblinski_tang
+from src.demo_data.blackbox_functions import levy_1D, levy_2D, ackley_1D, ackley_2D, cross_in_tray, styblinski_tang
 from test.test_plotting import TestPlotting
 
 

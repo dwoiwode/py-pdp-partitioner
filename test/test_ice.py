@@ -2,8 +2,8 @@ import unittest
 
 import numpy as np
 
-from src.blackbox_functions import square, square_2D
-from src.config_spaces import config_space_nd
+from src.demo_data.blackbox_functions import square, square_2D
+from src.demo_data.config_spaces import config_space_nd
 from src.optimizer import BayesianOptimization
 from src.pdp import PDP
 
