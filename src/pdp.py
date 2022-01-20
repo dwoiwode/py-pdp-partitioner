@@ -22,35 +22,36 @@ class PDP:
             -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         # Retrieve hp index from cs
         idx = self.cs.get_idx_by_hyperparameter_name(selected_hp.name)
+        num_features = len(self.cs.get_hyperparameters())
 
         # retrieve x-values from config
         x = np.asarray([config.get_array() for config in self.cs.sample_configuration(n_samples)])
-        num_instances, num_features = x.shape
         x_s = np.linspace(0, 1, n_grid_points)
 
         # create x values by repeating x_s along a new dimension
         x_ice = x.repeat(n_grid_points)
-        x_ice = x_ice.reshape((num_instances, num_features, n_grid_points))
+        x_ice = x_ice.reshape((n_samples, num_features, n_grid_points))
         x_ice = x_ice.transpose((0, 2, 1))
         x_ice[:, :, idx] = x_s
 
         # predictions of surrogate
         means, stds = self.surrogate_model.predict(x_ice.reshape(-1, num_features), return_std=True)
-        y_ice = means.reshape((num_instances, n_grid_points))
-        stds = stds.reshape((num_instances, n_grid_points))
+        y_ice = means.reshape((n_samples, n_grid_points))
+        stds = stds.reshape((n_samples, n_grid_points))
         variances = np.square(stds)
 
         # center values
         if centered:
-            y_start = y_ice[:, 0].repeat(n_grid_points).reshape(num_instances, n_grid_points)
+            y_start = y_ice[:, 0].repeat(n_grid_points).reshape(n_samples, n_grid_points)
             y_ice -= y_start
 
         return x_ice, y_ice, variances
 
-    def calculate_pdp(self, selected_hp:CSH.Hyperparameter, centered=False, num_grid_points: int = 1000) \
-            -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def calculate_pdp(self, selected_hp: CSH.Hyperparameter, centered=False, num_grid_points: int = 20,
+                      n_samples: int = 1000) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         # get all ice curves
-        x_ice, y_ice, variances = self.calculate_ice(selected_hp, centered=centered, n_grid_points=num_grid_points)
+        x_ice, y_ice, variances = self.calculate_ice(selected_hp, centered=centered, n_grid_points=num_grid_points,
+                                                     n_samples=n_samples)
 
         # average over ice curves
         y_pdp = np.mean(y_ice, axis=0)

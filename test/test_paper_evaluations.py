@@ -7,15 +7,16 @@ from src.config_spaces import config_space_nd
 from src.optimizer import BayesianOptimization, LowerConfidenceBound
 from src.partitioner import DecisionTreePartitioner, DTNode
 from src.pdp import PDP
-from src.plotting import plot_pdp
+from src.plotting import plot_pdp, plot_ice, plot_confidence_lists
 
 
 class TestPaperEvaluations(unittest.TestCase):
     def test_styblinski_tang_8d(self):
         # Paper configurations
-        bo_sampling_points = 250  # [80, 150, 250]
+        bo_sampling_points = 80  # [80, 150, 250]
         dimensions = 8  # [3,5,8]
         f = blackbox_functions.styblinski_tang_8D
+        # f = blackbox_functions.styblinski_tang_3D
 
         # Static paper configurations (not changed throughout the paper)
         cs = config_space_nd(dimensions)
@@ -48,9 +49,12 @@ class TestPaperEvaluations(unittest.TestCase):
         self.assertIsNotNone(correct_leaf)
         self.assertIsInstance(correct_leaf, DTNode)
 
-        filtered_x_ice, filtered_y_ice, filtered_variances = correct_leaf.filter_pdp(x_ice, y_ice, variances)
+        filtered_x_pdp, filtered_y_pdp, filtered_variances_pdp = correct_leaf.filter_pdp(x_ice, y_ice, variances)
+        filtered_x_ice, filtered_y_ice, filtered_variances_ice = correct_leaf.filter_ice(x_ice, y_ice, variances)
 
-        plot_pdp(filtered_x_ice, filtered_y_ice, 0)
+        ax = plot_ice(filtered_x_ice, filtered_y_ice, idx=0, alpha=0.1)
+        plot_pdp(filtered_x_pdp, filtered_y_pdp, idx=0, ax=ax, alpha=1)
+        plot_confidence_lists(filtered_x_pdp[:, 0], filtered_y_pdp, variances=filtered_variances_pdp, ax=ax)
         plt.show()
 
 
