@@ -1,20 +1,26 @@
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Optional
 from abc import ABC, abstractmethod
 
 import ConfigSpace as CS
 
 import numpy as np
+from matplotlib import pyplot as plt
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-from src.utils import convert_config_list_to_np
+from src.utils.plotting import Plottable, plot_1D_confidence_lines, plot_1D_confidence_color_gradients, get_ax, \
+    plot_line
+from src.utils.typing import SelectedHyperparameterType
+from src.utils.utils import convert_config_list_to_np, get_uniform_distributed_ranges, get_hyperparameters
 
 
-class SurrogateModel(ABC):
-    def __init__(self, cs: CS.ConfigurationSpace):
-        self.cs = cs
+class SurrogateModel(Plottable, ABC):
+    def __init__(self, cs: CS.ConfigurationSpace, seed=None):
+        super().__init__()
+        self.config_space = cs
+        self.seed = seed
 
     def __call__(self,
                  X: Union[np.ndarray, CS.Configuration, List[CS.Configuration]]
@@ -65,10 +71,39 @@ class SurrogateModel(ABC):
         assert isinstance(std, float)
         return mean, std
 
+    def plot(self,
+             line_color="blue",
+             gradient_color="lightblue",
+             with_confidence=True,
+             samples_per_axis=100,
+             x_hyperparameters: SelectedHyperparameterType = None,
+             ax: Optional[plt.Axes] = None):
+        ax = get_ax(ax)
+        x_hyperparameters = get_hyperparameters(x_hyperparameters, self.config_space)
+
+        # Switch cases for number of dimensions
+        n_hyperparameters = len(x_hyperparameters)
+        if n_hyperparameters == 1:  # 1D
+            ranges = get_uniform_distributed_ranges(self.config_space, samples_per_axis, scaled=False)
+            scaled_ranges = get_uniform_distributed_ranges(self.config_space, samples_per_axis, scaled=True)
+            mu, std = self.predict(scaled_ranges.T)  # Transpose so that per hp axis -> per config axis
+
+            name = self.__class__.__name__
+            x = ranges[0]
+            if with_confidence:
+                plot_1D_confidence_color_gradients(x, mu, std, color=gradient_color, ax=ax)
+                plot_1D_confidence_lines(x, mu, std, k_sigmas=(1, 2), color=line_color, ax=ax, name=name)
+            plot_line(x, mu, color=line_color, label=f"{name}-$\mu$", ax=ax)
+        elif n_hyperparameters == 2:  # 2D
+            raise NotImplemented("2D currently not implemented (#TODO)")
+        else:
+            raise NotImplemented("Plotting for more than 2 dimensions not implemented. "
+                                 "Please select a specific hp by setting `x_hyperparemeters`")
+
 
 class SkLearnPipelineSurrogate(SurrogateModel):
-    def __init__(self, pipeline: Pipeline, cs: CS.ConfigurationSpace):
-        super().__init__(cs)
+    def __init__(self, pipeline: Pipeline, cs: CS.ConfigurationSpace, seed=None):
+        super().__init__(cs, seed=seed)
         self.pipeline = pipeline
 
     def fit(self, X: Union[List[CS.Configuration], np.ndarray], y: Union[List[float], np.ndarray]):
@@ -87,11 +122,11 @@ class SkLearnPipelineSurrogate(SurrogateModel):
 
 
 class GaussianProcessSurrogate(SkLearnPipelineSurrogate):
-    def __init__(self, cs: CS.ConfigurationSpace):
+    def __init__(self, cs: CS.ConfigurationSpace, seed=None):
         pipeline = Pipeline([
             ("standardize", StandardScaler()),
             ("GP", GaussianProcessRegressor(kernel=Matern(nu=2.5), normalize_y=True,
                                             n_restarts_optimizer=10,
-                                            random_state=0)),
+                                            random_state=seed)),
         ])
-        super().__init__(pipeline, cs)
+        super().__init__(pipeline, cs, seed=seed)

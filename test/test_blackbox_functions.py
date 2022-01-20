@@ -1,11 +1,14 @@
 from unittest import TestCase
 
 import ConfigSpace as CS
-import ConfigSpace.hyperparameters as CSH
 import numpy as np
+from matplotlib import pyplot as plt
 
-from src.demo_data.blackbox_functions import levy_1D, levy_2D, ackley_1D, ackley_2D, cross_in_tray, styblinski_tang
-from test.test_plotting import TestPlotting
+from src.demo_data.blackbox_functions import levy_1D, levy_2D, ackley_1D, ackley_2D, cross_in_tray, styblinski_tang, \
+    square_2D, square, neg_square
+from src.demo_data.config_spaces import config_space_nd
+from src.utils.plotting import plot_function
+from test import PlottableTest
 
 
 class TestLevy(TestCase):
@@ -68,6 +71,7 @@ class TestCrossInTray(TestCase):
 class TestStyblinskiTang(TestCase):
     minimum = -39.16616570377142
     minimum_at = -2.90353401818596
+
     def test_styblinski_tang_1D(self):
         f = styblinski_tang
         self.assertAlmostEqual(f(self.minimum_at), self.minimum)
@@ -81,76 +85,60 @@ class TestStyblinskiTang(TestCase):
             self.assertAlmostEqual(f(*x), d * self.minimum)
 
 
-class TestPlotBlackboxFunctions(TestPlotting):
+class TestPlotBlackboxFunctions(PlottableTest):
+    def _apply_blackbox_plot(self, f: callable, cs: CS.ConfigurationSpace, name: str, **kwargs):
+        if self.fig is None:
+            self.initialize_figure()
+        plot_function(f, cs, **kwargs)
+
+        plt.title(name)
+        plt.tight_layout()
+
+    def test_plot_square_1D(self):
+        cs = config_space_nd(1)
+        self._apply_blackbox_plot(square, cs, "Square 1D")
+
+    def test_plot_neg_square_1D(self):
+        cs = config_space_nd(1)
+        self._apply_blackbox_plot(neg_square, cs, "Negative Square 1D")
+
+    def test_plot_square_2D(self):
+        cs = config_space_nd(2)
+        self._apply_blackbox_plot(square_2D, cs, "Square 2D")
+
     def test_plot_levy_1D(self):
-        hps = [
-            CSH.UniformFloatHyperparameter("x1", lower=-10, upper=10),
-        ]
-        cs = CS.ConfigurationSpace()
-        cs.add_hyperparameters(hps)
+        cs = config_space_nd(1, -10, 10)
         self._apply_blackbox_plot(levy_1D, cs, "Levy 1D")
 
     def test_plot_levy_2D(self):
-        hps = [
-            CSH.UniformFloatHyperparameter("x1", lower=-10, upper=10),
-            CSH.UniformFloatHyperparameter("x2", lower=-10, upper=10)
-        ]
-        cs = CS.ConfigurationSpace()
-        cs.add_hyperparameters(hps)
+        cs = config_space_nd(2, -10, 10)
         self._apply_blackbox_plot(levy_2D, cs, "Levy 2D")
 
     def test_plot_ackley_1D(self):
-        hps = [
-            CSH.UniformFloatHyperparameter("x1", lower=-32.768, upper=32.768),
-        ]
-        cs = CS.ConfigurationSpace()
-        cs.add_hyperparameters(hps)
+        cs = config_space_nd(1, -32.768, 32.768)
         self._apply_blackbox_plot(ackley_1D, cs, "Ackley 1D")
 
     def test_plot_ackley_2D(self):
-        hps = [
-            CSH.UniformFloatHyperparameter("x1", lower=-32.768, upper=32.768),
-            CSH.UniformFloatHyperparameter("x2", lower=-32.768, upper=32.768)
-        ]
-        cs = CS.ConfigurationSpace()
-        cs.add_hyperparameters(hps)
+        cs = config_space_nd(2, -32.768, 32.768)
         self._apply_blackbox_plot(ackley_2D, cs, "Ackley 2D")
 
     def test_plot_ackley_1D_zoomed(self):
-        hps = [
-            CSH.UniformFloatHyperparameter("x1", lower=-10, upper=10),
-        ]
-        cs = CS.ConfigurationSpace()
-        cs.add_hyperparameters(hps)
+        cs = config_space_nd(2, -10, 10)
         self._apply_blackbox_plot(ackley_1D, cs, "Ackley 1D")
 
     def test_plot_ackley_2D_zoomed(self):
-        hps = [
-            CSH.UniformFloatHyperparameter("x1", lower=-10, upper=10),
-            CSH.UniformFloatHyperparameter("x2", lower=-10, upper=10)
-        ]
-        cs = CS.ConfigurationSpace()
-        cs.add_hyperparameters(hps)
+        cs = config_space_nd(2, -10, 10)
         self._apply_blackbox_plot(ackley_2D, cs, "Ackley 2D")
 
     def test_plot_cross_in_tray_2D(self):
-        hps = [
-            CSH.UniformFloatHyperparameter("x1", lower=-10, upper=10),
-            CSH.UniformFloatHyperparameter("x2", lower=-10, upper=10)
-        ]
-        cs = CS.ConfigurationSpace()
-        cs.add_hyperparameters(hps)
+        cs = config_space_nd(2, -10, 10)
         self._apply_blackbox_plot(cross_in_tray, cs, "Cross in Tray 2D")
 
     def test_plot_styblinski_tang_1D(self):
         def styblinski_tang_1D(x):
             return styblinski_tang(x)
 
-        hps = [
-            CSH.UniformFloatHyperparameter("x1", lower=-5, upper=5),
-        ]
-        cs = CS.ConfigurationSpace()
-        cs.add_hyperparameters(hps)
+        cs = config_space_nd(1)
 
         self._apply_blackbox_plot(styblinski_tang_1D, cs, "Styblinski Tang 1D")
 
@@ -158,11 +146,5 @@ class TestPlotBlackboxFunctions(TestPlotting):
         def styblinski_tang_2D(x1, x2):
             return styblinski_tang(x1, x2)
 
-        hps = [
-            CSH.UniformFloatHyperparameter("x1", lower=-5, upper=5),
-            CSH.UniformFloatHyperparameter("x2", lower=-5, upper=5)
-        ]
-        cs = CS.ConfigurationSpace()
-        cs.add_hyperparameters(hps)
-
+        cs = config_space_nd(2)
         self._apply_blackbox_plot(styblinski_tang_2D, cs, "Styblinski Tang 2D")

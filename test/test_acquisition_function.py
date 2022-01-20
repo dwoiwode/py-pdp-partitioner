@@ -6,61 +6,93 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 
-from src.sampler import ExpectedImprovement, BayesianOptimization
-from src.plotting import plot_model_confidence, plot_samples, plot_acquisition
-from test.test_plotting import TestPlotting
+from src.demo_data.config_spaces import config_space_nd
+from src.sampler import ExpectedImprovement, ProbabilityOfImprovement, LowerConfidenceBound
+from src.surrogate_models import GaussianProcessSurrogate
+from test import PlottableTest
 
 
-class TestAcquisitionFunctions(TestPlotting):
-    @unittest.SkipTest
-    def test_probability_of_improvement(self):
-        pass
-
+class TestAcquisitionFunctions(PlottableTest):
     def test_expected_improvement(self):
-        x = CSH.UniformFloatHyperparameter("x1", lower=-4, upper=4)
-        cs = CS.ConfigurationSpace()
-        cs.add_hyperparameter(x)
+        self.initialize_figure()
+        cs = config_space_nd(1)
+        selected_hyperparameter = cs.get_hyperparameter("x1")
 
-        gpr = GaussianProcessRegressor()
-        ei = ExpectedImprovement(cs, gpr, samples=2000)
+        surrogate = GaussianProcessSurrogate(cs)
+        ei = ExpectedImprovement(cs, surrogate, samples_for_optimization=2000)
 
         X = np.asarray([-2, -1, 1, 2, 3, 4]).reshape((-1, 1))
         y = [4, 1, 1, 4, 9, 16]
-        X_scaled = (X + 4) / 8
-        print(X_scaled)
-        gpr.fit(X_scaled, y)
+        X_scaled = (X + 5) / 10
+        surrogate.fit(X_scaled, y)
         ei.update(1)
 
         # Plotting
-        fig = plt.figure(figsize=(16, 9))
+        fig = self.fig
         assert isinstance(fig, plt.Figure)
         ax_function = fig.add_subplot(3, 1, (1, 2))
         ax_acquisition = fig.add_subplot(3, 1, 3)
         assert isinstance(ax_function, plt.Axes)
         assert isinstance(ax_acquisition, plt.Axes)
 
-        bo = BayesianOptimization(obj_func=lambda: 0, config_space=cs)
-        bo.surrogate_model = gpr
+        surrogate.plot(ax=ax_function, x_hyperparameters=selected_hyperparameter)
+        ax_function.plot(X, y, ".", color="red")  # Plot samples
+        ei.plot(ax=ax_acquisition)
 
-        plot_model_confidence(bo, cs, ax=ax_function)
-        plot_samples([CS.Configuration(cs, values={"x1": float(a)}) for a in X], y, ax=ax_function)
-        plot_acquisition(ei, cs, ax=ax_acquisition)
+        self.assertAlmostEqual(0, ei.get_optimum()["x1"], places=1)
 
-        self.assertAlmostEqual(0, ei.get_optimum()["x1"], places=2)
+    def test_probability_of_improvement(self):
+        self.initialize_figure()
+        cs = config_space_nd(1)
+        selected_hyperparameter = cs.get_hyperparameter("x1")
 
+        surrogate = GaussianProcessSurrogate(cs)
+        pi = ProbabilityOfImprovement(cs, surrogate, samples_for_optimization=2000)
 
-# def _probability_of_improvement(config: CS.Configuration, model, eta, exploration=0,
-#                                 minimize_objective=True) -> CS.Configuration:
-#     # sample points
-#     x_sample_array = [config.get_array()]
-#     means, stds = model.predict(x_sample_array, return_std=True)
-#
-#     # prob of improvement for sampled points
-#     if minimize_objective:
-#         temp = (eta - means - exploration) / stds
-#     else:
-#         temp = (means - eta - exploration) / stds
-#     prob_of_improvement = norm.cdf(temp)
-#
-#     # best sampled point
-#     return prob_of_improvement[0]
+        X = np.asarray([-2, -1, 1, 2, 3, 4]).reshape((-1, 1))
+        y = [4, 1, 1, 4, 9, 16]
+        X_scaled = (X + 5) / 10
+        surrogate.fit(X_scaled, y)
+        pi.update(1)
+
+        # Plotting
+        fig = self.fig
+        assert isinstance(fig, plt.Figure)
+        ax_function = fig.add_subplot(3, 1, (1, 2))
+        ax_acquisition = fig.add_subplot(3, 1, 3)
+        assert isinstance(ax_function, plt.Axes)
+        assert isinstance(ax_acquisition, plt.Axes)
+
+        surrogate.plot(ax=ax_function, x_hyperparameters=selected_hyperparameter)
+        ax_function.plot(X, y, ".", color="red")  # Plot samples
+        pi.plot(ax=ax_acquisition)
+
+        self.assertAlmostEqual(0, pi.get_optimum()["x1"], places=1)
+
+    def test_lower_confidence_bound(self):
+        self.initialize_figure()
+        cs = config_space_nd(1)
+        selected_hyperparameter = cs.get_hyperparameter("x1")
+
+        surrogate = GaussianProcessSurrogate(cs)
+        lcb = LowerConfidenceBound(cs, surrogate, samples_for_optimization=2000)
+
+        X = np.asarray([-2, -1, 1, 2, 3, 4]).reshape((-1, 1))
+        y = [4, 1, 1, 4, 9, 16]
+        X_scaled = (X + 5) / 10
+        surrogate.fit(X_scaled, y)
+        lcb.update(1)
+
+        # Plotting
+        fig = self.fig
+        assert isinstance(fig, plt.Figure)
+        ax_function = fig.add_subplot(3, 1, (1, 2))
+        ax_acquisition = fig.add_subplot(3, 1, 3)
+        assert isinstance(ax_function, plt.Axes)
+        assert isinstance(ax_acquisition, plt.Axes)
+
+        surrogate.plot(ax=ax_function, x_hyperparameters=selected_hyperparameter)
+        ax_function.plot(X, y, ".", color="red")  # Plot samples
+        lcb.plot(ax=ax_acquisition)
+
+        self.assertAlmostEqual(0, lcb.get_optimum()["x1"], places=1)

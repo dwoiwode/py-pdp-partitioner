@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 
 from src.demo_data import blackbox_functions
 from src.demo_data.config_spaces import config_space_nd
-from src.sampler import BayesianOptimization, LowerConfidenceBound
+from src.sampler import BayesianOptimizationSampler, LowerConfidenceBound
 from src.algorithms.partitioner import DecisionTreePartitioner, DTNode
 from src.algorithms.pdp import PDP
-from src.plotting import plot_pdp, plot_ice, plot_confidence_lists
+from src.utils.plotting import plot_pdp, plot_ice, plot_confidence_lists
 
 
 class TestPaperEvaluations(unittest.TestCase):
@@ -24,10 +24,10 @@ class TestPaperEvaluations(unittest.TestCase):
         n_samples = 1000
         n_grid_points = 20
 
-        bo = BayesianOptimization(f, cs,
-                                  # surrogate_model=surrogate_model,
-                                  acq_class=LowerConfidenceBound,
-                                  initial_points=4*dimensions)
+        bo = BayesianOptimizationSampler(f, cs,
+                                         # surrogate_model=surrogate_model,
+                                         acq_class=LowerConfidenceBound,
+                                         initial_points=4*dimensions)
         bo.sample(bo_sampling_points - bo.initial_points)
         self.assertEqual(bo_sampling_points, len(bo.y_list))
         incumbent_config, incumbent_score = bo.incumbent

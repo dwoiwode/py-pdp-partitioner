@@ -5,10 +5,13 @@ import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 import numpy as np
 
-from src.algorithms import Algorithm, Plottable
+from src.algorithms import Algorithm
+from src.utils.plotting import Plottable
 from src.surrogate_models import SurrogateModel
+from src.utils.typing import SelectedHyperparameterType
 
 Sample = Tuple[np.ndarray, np.ndarray]  # configurations, variances
+
 
 class Region:
     def __init__(self, x_points: np.ndarray, y_points: np.ndarray, y_variances: np.ndarray):
@@ -24,17 +27,18 @@ class Region:
         assert len(self.x_points) == len(self.y_points) == len(self.y_variances)
 
 
-
 class Partitioner(Algorithm, ABC):
     def __init__(self, surrogate_model: SurrogateModel,
-                 selected_hyperparameter: Union[CSH.Hyperparameter, Iterable[CSH.Hyperparameter]],
+                 selected_hyperparameter: SelectedHyperparameterType,
                  num_grid_points: int = 20,
                  num_samples: int = 1000):
         super().__init__(surrogate_model, selected_hyperparameter)
-
+        self.num_grid_points = num_grid_points
+        self.num_samples = num_samples
 
         # Properties
-        self._regions:Optional[Region] = None
+        self._regions: Optional[Region] = None
+
     @property
     def regions(self):
         return

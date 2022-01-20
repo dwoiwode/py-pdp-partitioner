@@ -1,3 +1,4 @@
+from src.algorithms.ice import ICE
 from src.algorithms.partitioner import Region, Partitioner
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Optional, Union, Iterable, Any
@@ -6,22 +7,26 @@ import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 import numpy as np
 
-from src.algorithms import Algorithm, Plottable
+from src.algorithms import Algorithm
+from src.utils.plotting import Plottable
 from src.surrogate_models import SurrogateModel
+from src.utils.typing import SelectedHyperparameterType
+
 
 class DTRegion(Region, Plottable):
     def __init__(self,
                  x_points: np.ndarray,
                  y_points: np.ndarray,
                  y_variances: np.ndarray,
-                 split_conditions:List[Tuple[CSH.Hyperparameter, Any]]):
-        super().__init__(x_points, y_points, y_variances)
+                 split_conditions: List[Tuple[CSH.Hyperparameter, Any]]):
+        Region.__init__(self, x_points, y_points, y_variances)
+        Plottable.__init__(self)
 
         self.split_conditions = split_conditions
 
     @property
     def config_space(self) -> CS.ConfigurationSpace:
-        # TODO
+        # TODO take form split_conditions
         pass
 
     def plot(self, color=None, ax=None):
@@ -77,20 +82,36 @@ class DTNode:
 
 
 class DTPartitioner(Partitioner):
-    def __init__(self, idx: int, x_ice: np.ndarray, variances: np.ndarray):
-        super().__init__()
-        self.idx = idx
-        self.x = x_ice
-        self.variances = variances
+    def __init__(self,
+                 surrogate_model: SurrogateModel,
+                 selected_hyperparameter: SelectedHyperparameterType,
+                 num_samples: int = 1000,
+                 num_grid_points_per_axis: int = 20
+                 ):
+        super().__init__(surrogate_model, selected_hyperparameter, num_samples, num_grid_points_per_axis)
 
-        assert len(x_ice.shape) == 3, 'x needs to be 3-dimensional'  # 1 feat. selected
-        assert x_ice.shape[2] > 1, 'x needs at least one feature to split on'
-        self.num_instances = x_ice.shape[0]
-        self.num_grid_points = x_ice.shape[1]
-        self.num_features = x_ice.shape[2]
         self.possible_split_params = list(set(range(self.num_features)) - {idx})
-        self.root: Optional[DTNode] = None
+        self.root: Optional[DTNode] = DTNode(None, index_arr, depth=0)
         self.leaves: List[DTNode] = []
+        self._ice = None
+
+    @property
+    def ice(self):
+        if self._ice is None:
+            self._ice = ICE(self.surrogate_model,
+                            self.selected_hyperparameter,
+                            self.num_samples,
+                            self.num_grid_points_per_axis)
+        return self._ice
+
+    @classmethod
+    def from_ICE(cls, ice: ICE) -> "DTPartitioner":
+        partitioner = DTPartitioner(ice.surrogate_model,
+                                    ice.selected_hyperparameter,
+                                    ice.num_samples,
+                                    ice.num_grid_points_per_axis)
+        partitioner._ice = ice
+        return partitioner
 
     def partition(self, max_depth: int = 1) -> Tuple[np.ndarray, np.ndarray]:
         assert max_depth > 0, f'Cannot split partition for depth < 1, but got {max_depth}'

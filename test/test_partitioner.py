@@ -5,16 +5,16 @@ from matplotlib import pyplot as plt
 
 from src.demo_data.blackbox_functions import square_2D
 from src.demo_data.config_spaces import config_space_nd
-from src.sampler import BayesianOptimization
+from src.sampler import BayesianOptimizationSampler
 from src.algorithms.partitioner import DecisionTreePartitioner
 from src.algorithms.pdp import PDP
-from src.plotting import plot_ice
+from src.utils.plotting import plot_ice
 
 
 class TestPartitioner(unittest.TestCase):
     def test_dt_partitioner_single_split(self):
         cs = config_space_nd(2)
-        bo = BayesianOptimization(square_2D, config_space=cs)
+        bo = BayesianOptimizationSampler(square_2D, config_space=cs)
         bo.sample(10)
         selected_hp = cs.get_hyperparameters()[0]
         pdp = PDP(bo.surrogate_model,  cs)
@@ -39,7 +39,7 @@ class TestPartitioner(unittest.TestCase):
     def test_dt_partitioner_multiple_splits(self):
         cs = config_space_nd(2, lower=-1, upper=1)
         selected_hp = cs.get_hyperparameters()[0]
-        bo = BayesianOptimization(square_2D, config_space=cs)
+        bo = BayesianOptimizationSampler(square_2D, config_space=cs)
         bo.sample(10)
         pdp = PDP(bo.surrogate_model,  cs)
         idx = 0

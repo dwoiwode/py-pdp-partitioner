@@ -1,17 +1,42 @@
+import matplotlib.pyplot as plt
+
+from src.algorithms.ice import ICE
+from src.algorithms.pdp import PDP
 from src.demo_data import blackbox_functions
 from src.demo_data.config_spaces import config_space_nd
 from src.sampler import RandomSampler
 from src.surrogate_models import GaussianProcessSurrogate
 
+seed = 0
 f = blackbox_functions.styblinski_tang_3D
-cs = config_space_nd(3)
+cs = config_space_nd(3, seed=seed)
 
-sampler = RandomSampler(f, cs)
-sampler.sample(150)
+selected_hyperparameter = cs.get_hyperparameter("x1")
 
+# Sampler
+sampler = RandomSampler(f, cs, seed=seed)
+sampler.sample(100)
+sampler.plot(x_hyperparameters=selected_hyperparameter)
+
+# Surrogate model
 surrogate_model = GaussianProcessSurrogate(cs)
 surrogate_model.fit(sampler.X, sampler.y)
+surrogate_model.plot(x_hyperparameters=selected_hyperparameter)
 
-selected_hyperparamter = cs.get_hyperparameter("x1")
+# ICE
+ice = ICE(surrogate_model, selected_hyperparameter)
+ice.plot(color="orange")
 
-# ice = ICE(surrogate_model, selected_hyperparamter)
+# PDP
+pdp = PDP.from_ICE(ice)
+pdp.plot("black", "grey", with_confidence=True)
+
+# Partitioner
+# dt_partitioner = DTPartitioner(surrogate_model, selected_hyperparameter)
+
+# Finish plot
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+

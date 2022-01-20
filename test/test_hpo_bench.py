@@ -2,11 +2,11 @@ from unittest import TestCase
 
 from matplotlib import pyplot as plt
 
+from src.algorithms.ice import ICE
 from src.demo_data.hpo_bench import get_SVMBenchmarkMF
-from src.sampler import BayesianOptimization, LowerConfidenceBound
-from src.algorithms.partitioner import DecisionTreePartitioner, DTNode
+from src.sampler import BayesianOptimizationSampler, LowerConfidenceBound, RandomSampler
 from src.algorithms.pdp import PDP
-from src.plotting import plot_pdp
+from src.surrogate_models import GaussianProcessSurrogate
 
 
 class TestHPOBench(TestCase):
@@ -24,32 +24,32 @@ class TestHPOBench(TestCase):
         n_samples = 1000
         n_grid_points = 20
 
-        bo = BayesianOptimization(f, cs,
-                                  # surrogate_model=surrogate_model,
-                                  acq_class=LowerConfidenceBound,
-                                  initial_points=4 * dimensions)
-        bo.sample(bo_sampling_points - bo.initial_points)
-        self.assertEqual(bo_sampling_points, len(bo.y_list))
-        incumbent_config, incumbent_score = bo.incumbent
-        pdp = PDP(bo.surrogate_model, cs)
+        seed = 0
 
-        x_ice, y_ice, variances = pdp.calculate_ice(selected_hyperparameter,
-                                                    n_grid_points=n_grid_points,
-                                                    n_samples=n_samples,
-                                                    )
-        partitioner = DecisionTreePartitioner(0, x_ice, variances)
-        partition_indices, partition_means = partitioner.partition(2)
+        # Sampler
+        sampler = BayesianOptimizationSampler(f, cs, seed=seed)
+        sampler.sample(bo_sampling_points)
+        sampler.plot(x_hyperparameters=selected_hyperparameter)
 
-        correct_leaf = None
-        for leaf in partitioner.leaves:
-            if incumbent_config in leaf:
-                correct_leaf = leaf
-                break
+        # Surrogate model
+        surrogate_model = GaussianProcessSurrogate(cs)
+        surrogate_model.fit(sampler.X, sampler.y)
+        surrogate_model.plot(x_hyperparameters=selected_hyperparameter)
 
-        self.assertIsNotNone(correct_leaf)
-        self.assertIsInstance(correct_leaf, DTNode)
+        # ICE
+        ice = ICE(surrogate_model, selected_hyperparameter)
+        ice.plot(color="orange")
 
-        filtered_x_ice, filtered_y_ice, filtered_variances = correct_leaf.filter_pdp(x_ice, y_ice, variances)
+        # PDP
+        pdp = PDP.from_ICE(ice)
+        pdp.plot("black", "grey", with_confidence=True)
 
-        plot_pdp(filtered_x_ice, filtered_y_ice, 0)
+        # Partitioner
+        # dt_partitioner = DTPartitioner(surrogate_model, selected_hyperparamter)
+
+        # Finish plot
+        plt.legend()
+        plt.tight_layout()
         plt.show()
+
+

@@ -1,28 +1,66 @@
 from dataclasses import dataclass
-from typing import Union, Iterable, Optional
+from typing import Union, Iterable, Optional, List
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 import numpy as np
+from matplotlib import pyplot as plt
 
-from src.algorithms import Algorithm, Plottable
+from src.algorithms import Algorithm
+from src.utils.plotting import Plottable, get_ax, plot_1D_confidence_color_gradients, plot_1D_confidence_lines, \
+    plot_line
 from src.surrogate_models import SurrogateModel
+from src.utils.typing import SelectedHyperparameterType, ColorType
+from src.utils.utils import get_hyperparameters, unscale, get_selected_idx
 
 
 @dataclass
 class ICECurve(Plottable):
-    def __init__(self, x_ice: np.ndarray, y_ice: np.ndarray, y_variances: np.ndarray):
+    def __init__(self,
+                 cs: CS.ConfigurationSpace,
+                 x_ice: np.ndarray,
+                 y_ice: np.ndarray,
+                 y_variances: np.ndarray,
+                 name="ICE-Curve"):
         """
-        :param x_ice: Shape: (num_gridpoints, num_features)
+        :param x_ice: Shape: (num_gridpoints, num_features) - scaled between [0..1]
         :param y_ice: Shape: (num_gridpoints)
         :param y_variances: (num_gridpoints)
         """
-        self.x_ice: np.ndarray
-        self.y_ice: np.ndarray
-        self.y_variances: np.ndarray
+        super().__init__()
+        self.conig_space = cs
+        self.x_ice: np.ndarray = x_ice
+        self.y_ice: np.ndarray = y_ice
+        self.y_variances: np.ndarray = y_variances
+        self.name = name
 
-    def plot(self, color="red", with_confidence=False, ax=None):
-        pass
+    def plot(self,
+             line_color="red",
+             gradient_color="xkcd:light red",
+             with_confidence=False,
+             x_hyperparameters: SelectedHyperparameterType = None,
+             ax: Optional[plt.Axes] = None):
+        ax = get_ax(ax)
+        x_hyperparameters = get_hyperparameters(x_hyperparameters, self.conig_space)
+        idx = get_selected_idx(x_hyperparameters, self.conig_space)
+        sigmas = np.sqrt(self.y_variances)
+        x_unscaled = unscale(self.x_ice, self.conig_space)
+
+        # Switch cases for number of dimensions
+        n_hyperparameters = len(x_hyperparameters)
+        if n_hyperparameters == 1:  # 1D
+            x = x_unscaled[:, idx[0]]
+            if with_confidence:
+                plot_1D_confidence_color_gradients(x, self.y_ice, sigmas, color=gradient_color, ax=ax)
+                plot_1D_confidence_lines(x, self.y_ice, sigmas, k_sigmas=(1, 2),
+                                         color=line_color, ax=ax, name=self.name)
+            plot_line(x, self.y_ice, color=line_color, label=self.name, ax=ax)
+
+        elif n_hyperparameters == 2:  # 2D
+            raise NotImplemented("2D currently not implemented (#TODO)")
+        else:
+            raise NotImplemented("Plotting for more than 2 dimensions not implemented. "
+                                 "Please select a specific hp by setting `x_hyperparemeters`")
 
     @property
     def config(self) -> CS.Configuration:
@@ -31,15 +69,13 @@ class ICECurve(Plottable):
 
 
 class ICE(Algorithm):
-    def __init__(self, surrogate_model: SurrogateModel,
-                 selected_hyperparameter: Union[CSH.Hyperparameter, Iterable[CSH.Hyperparameter]],
-                 num_grid_points_per_axis: int = 20,
-                 num_samples: int = 1000):
-        super().__init__(surrogate_model, selected_hyperparameter)
-        self.n_selected_hyperparameter = len(self.selected_hyperparameter)
-        self.num_grid_points_per_axis = num_grid_points_per_axis
-        self.num_grid_points = num_grid_points_per_axis * self.n_selected_hyperparemeter
-        self.num_samples = num_samples
+    def __init__(self,
+                 surrogate_model: SurrogateModel,
+                 selected_hyperparameter: SelectedHyperparameterType,
+                 num_samples: int = 1000,
+                 num_grid_points_per_axis: int = 20):
+        super().__init__(surrogate_model, selected_hyperparameter, num_samples, num_grid_points_per_axis)
+        self.centered = False  # Can be set directly in class
 
         # Properties
         self._x_ice: Optional[np.ndarray] = None
@@ -50,36 +86,57 @@ class ICE(Algorithm):
         return self.num_samples
 
     def __getitem__(self, idx: int):
-        return ICECurve(self.x_ice[idx], self.y_ice[idx], self.y_variances[idx])
+        return ICECurve(self.config_space,
+                        self.x_ice[idx],
+                        self.y_ice[idx],
+                        self.y_variances[idx],
+                        name=f"ICE-Curve[{idx}]")
+
+    def reset(self):
+        """
+        Reset all calculations so they can be done again (maybe with different number of samples or centered)
+        """
+        self._x_ice: Optional[np.ndarray] = None
+        self._y_ice: Optional[np.ndarray] = None
+        self._y_variances: Optional[np.ndarray] = None
 
     def _calculate(self):
-        pass
-        # # Retrieve hp index from cs
-        # idx = self.cs.get_idx_by_hyperparameter_name(selected_hp.name)
-        # num_features = len(self.cs.get_hyperparameters())
-        #
-        # # retrieve x-values from config
-        # x = np.asarray([config.get_array() for config in self.cs.sample_configuration(n_samples)])
-        # x_s = np.linspace(0, 1, n_grid_points)
-        #
-        # # create x values by repeating x_s along a new dimension
-        # x_ice = x.repeat(n_grid_points)
-        # x_ice = x_ice.reshape((n_samples, num_features, n_grid_points))
-        # x_ice = x_ice.transpose((0, 2, 1))
-        # x_ice[:, :, idx] = x_s
-        #
-        # # predictions of surrogate
-        # means, stds = self.surrogate_model.predict(x_ice.reshape(-1, num_features), return_std=True)
-        # y_ice = means.reshape((n_samples, n_grid_points))
-        # stds = stds.reshape((n_samples, n_grid_points))
-        # variances = np.square(stds)
-        #
-        # # center values
-        # if centered:
-        #     y_start = y_ice[:, 0].repeat(n_grid_points).reshape(n_samples, n_grid_points)
-        #     y_ice -= y_start
-        #
-        # return x_ice, y_ice, variances
+        self.logger.info("Recalculating ICE...")
+        # Retrieve hp index from cs
+        cs = self.surrogate_model.config_space
+        idx = get_selected_idx(self.selected_hyperparameter, cs)
+        num_features = len(cs.get_hyperparameters())
+
+        # retrieve x-values from config
+        x = np.asarray([config.get_array() for config in cs.sample_configuration(self.num_samples)])
+        x_s = np.linspace(0, 1, self.num_grid_points)
+
+        # TODO: For more than 1 dimension: remove
+        x_s = np.expand_dims(x_s, axis=1)
+
+        # create x values by repeating x_s along a new dimension
+        x_ice = x.repeat(self.num_grid_points)
+        x_ice = x_ice.reshape((self.num_samples, num_features, self.num_grid_points))
+        x_ice = x_ice.transpose((0, 2, 1))
+        x_ice[:, :, idx] = x_s
+
+        # predictions of surrogate
+        means, stds = self.surrogate_model.predict(x_ice.reshape(-1, num_features))
+        y_ice = means.reshape((self.num_samples, self.num_grid_points))
+        stds = stds.reshape((self.num_samples, self.num_grid_points))
+        variances = np.square(stds)
+
+        # center values
+        if self.centered:
+            y_start = y_ice[:, 0].repeat(self.num_grid_points).reshape(self.num_samples, self.num_grid_points)
+            y_ice -= y_start
+
+        assert len(y_ice) == len(variances) == self.num_samples
+        self._x_ice = x_ice
+        self._y_ice = y_ice
+        self._y_variances = variances
+
+        return x_ice, y_ice, variances
 
     @property
     def x_ice(self) -> np.ndarray:
@@ -99,5 +156,23 @@ class ICE(Algorithm):
             self._calculate()
         return self._y_variances
 
-    def plot(self, color="red", ax=None):
-        pass
+    def plot(self,
+             *args,
+             color: ColorType = "red",
+             alpha=0.1,
+             ax: Optional[plt.Axes] = None):
+        # Resolve arguments
+        ax = get_ax(ax)
+
+        # Plot
+        if self.n_selected_hyperparameter == 1:  # 1D
+            x_ice = unscale(self.x_ice, self.surrogate_model.config_space)
+            y_ice = self.y_ice
+            idx = self.surrogate_model.config_space.get_idx_by_hyperparameter_name(self.selected_hyperparameter[0].name)
+            ax.plot(x_ice[:, :, idx].T, y_ice.T, alpha=alpha, color=color)
+            ax.plot([], [], color=color, label="ICE")  # Hacky label for plot...
+        elif self.n_selected_hyperparameter == 2:  # 2D
+            raise NotImplemented("2D currently not implemented (#TODO)")
+        else:
+            raise NotImplemented("Plotting for more than 2 dimensions not implemented. "
+                                 "Please select a specific hp by setting `x_hyperparemeters`")
