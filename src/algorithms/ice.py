@@ -8,16 +8,17 @@ from matplotlib import pyplot as plt
 
 from src.algorithms import Algorithm
 from src.utils.plotting import Plottable, get_ax, plot_1D_confidence_color_gradients, plot_1D_confidence_lines, \
-    plot_line
+    plot_line, check_and_set_axis
 from src.surrogate_models import SurrogateModel
 from src.utils.typing import SelectedHyperparameterType, ColorType
-from src.utils.utils import get_hyperparameters, unscale, get_selected_idx
+from src.utils.utils import unscale, get_selected_idx
 
 
 @dataclass
 class ICECurve(Plottable):
     def __init__(self,
-                 cs: CS.ConfigurationSpace,
+                 config_space: CS.ConfigurationSpace,
+                 selected_hyperparameter: List[CSH.Hyperparameter],
                  x_ice: np.ndarray,
                  y_ice: np.ndarray,
                  y_variances: np.ndarray,
@@ -28,7 +29,8 @@ class ICECurve(Plottable):
         :param y_variances: (num_gridpoints)
         """
         super().__init__()
-        self.conig_space = cs
+        self.config_space = config_space
+        self.selected_hyperparameter = selected_hyperparameter
         self.x_ice: np.ndarray = x_ice
         self.y_ice: np.ndarray = y_ice
         self.y_variances: np.ndarray = y_variances
@@ -38,16 +40,16 @@ class ICECurve(Plottable):
              line_color="red",
              gradient_color="xkcd:light red",
              with_confidence=False,
-             x_hyperparameters: SelectedHyperparameterType = None,
              ax: Optional[plt.Axes] = None):
         ax = get_ax(ax)
-        x_hyperparameters = get_hyperparameters(x_hyperparameters, self.conig_space)
-        idx = get_selected_idx(x_hyperparameters, self.conig_space)
+        check_and_set_axis(ax, self.selected_hyperparameter)
+
+        idx = get_selected_idx(self.selected_hyperparameter, self.config_space)
         sigmas = np.sqrt(self.y_variances)
-        x_unscaled = unscale(self.x_ice, self.conig_space)
+        x_unscaled = unscale(self.x_ice, self.config_space)
 
         # Switch cases for number of dimensions
-        n_hyperparameters = len(x_hyperparameters)
+        n_hyperparameters = len(self.selected_hyperparameter)
         if n_hyperparameters == 1:  # 1D
             x = x_unscaled[:, idx[0]]
             if with_confidence:
@@ -73,8 +75,9 @@ class ICE(Algorithm):
                  surrogate_model: SurrogateModel,
                  selected_hyperparameter: SelectedHyperparameterType,
                  num_samples: int = 1000,
-                 num_grid_points_per_axis: int = 20):
-        super().__init__(surrogate_model, selected_hyperparameter, num_samples, num_grid_points_per_axis)
+                 num_grid_points_per_axis: int = 20,
+                 seed=None):
+        super().__init__(surrogate_model, selected_hyperparameter, num_samples, num_grid_points_per_axis, seed=seed)
         self.centered = False  # Can be set directly in class
 
         # Properties
@@ -87,6 +90,7 @@ class ICE(Algorithm):
 
     def __getitem__(self, idx: int):
         return ICECurve(self.config_space,
+                        self.selected_hyperparameter,
                         self.x_ice[idx],
                         self.y_ice[idx],
                         self.y_variances[idx],
@@ -162,6 +166,7 @@ class ICE(Algorithm):
              ax: Optional[plt.Axes] = None):
         # Resolve arguments
         ax = get_ax(ax)
+        check_and_set_axis(ax, self.selected_hyperparameter)
 
         # Plot
         if self.n_selected_hyperparameter == 1:  # 1D

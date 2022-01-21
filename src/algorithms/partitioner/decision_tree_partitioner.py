@@ -7,8 +7,7 @@ import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 import numpy as np
 
-from src.algorithms import Algorithm
-from src.utils.plotting import Plottable
+from src.utils.plotting import Plottable, get_ax, check_and_set_axis
 from src.surrogate_models import SurrogateModel
 from src.utils.typing import SelectedHyperparameterType
 
@@ -33,6 +32,8 @@ class DTRegion(Region, Plottable):
         """
         :param color: If None: Take random color
         """
+        ax = get_ax(ax)
+        # check_and_set_axis(ax, )
         pass
 
 

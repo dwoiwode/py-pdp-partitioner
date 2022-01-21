@@ -7,49 +7,46 @@ from src.demo_data.hpo_bench import get_SVMBenchmarkMF
 from src.sampler import BayesianOptimizationSampler, LowerConfidenceBound, RandomSampler
 from src.algorithms.pdp import PDP
 from src.surrogate_models import GaussianProcessSurrogate
+from test import PlottableTest
 
 
-class TestHPOBench(TestCase):
+class TestHPOBench(PlottableTest):
     def test_svm_task_2079(self):
         """
         Took ~3 min for me (dwoiwode)
         """
-        cs, f = get_SVMBenchmarkMF(2079)
+        seed = 0
+        self.initialize_figure()
+        cs, f = get_SVMBenchmarkMF(2079, seed=seed)
         # Paper configurations
-        bo_sampling_points = 250  # [80, 150, 250]
-        dimensions = len(cs.get_hyperparameters())
+        bo_sampling_points = 80  # [80, 150, 250]
 
         # Static paper configurations (not changed throughout the paper)
-        selected_hyperparameter = cs.get_hyperparameters()[0]
-        n_samples = 1000
-        n_grid_points = 20
-
-        seed = 0
+        selected_hyperparameter = cs.get_hyperparameter("C")
 
         # Sampler
         sampler = BayesianOptimizationSampler(f, cs, seed=seed)
-        sampler.sample(bo_sampling_points)
-        sampler.plot(x_hyperparameters=selected_hyperparameter)
+        for i in range(3):
+            sampler.sample(bo_sampling_points)
+            sampler.plot(x_hyperparameters=selected_hyperparameter)
 
-        # Surrogate model
-        surrogate_model = GaussianProcessSurrogate(cs)
-        surrogate_model.fit(sampler.X, sampler.y)
-        surrogate_model.plot(x_hyperparameters=selected_hyperparameter)
+            # Surrogate model
+            surrogate_model = GaussianProcessSurrogate(cs, seed=seed)
+            surrogate_model.fit(sampler.X, sampler.y)
+            surrogate_model.plot(x_hyperparameters=selected_hyperparameter)
 
-        # ICE
-        ice = ICE(surrogate_model, selected_hyperparameter)
-        ice.plot(color="orange")
+            # ICE
+            ice = ICE(surrogate_model, selected_hyperparameter, seed=seed)
+            ice.plot(color="orange")
 
-        # PDP
-        pdp = PDP.from_ICE(ice)
-        pdp.plot("black", "grey", with_confidence=True)
+            # PDP
+            pdp = PDP.from_ICE(ice)
+            pdp.plot("black", "grey", with_confidence=True)
 
-        # Partitioner
-        # dt_partitioner = DTPartitioner(surrogate_model, selected_hyperparamter)
+            # Partitioner
+            # dt_partitioner = DTPartitioner(surrogate_model, selected_hyperparamter)
 
-        # Finish plot
-        plt.legend()
-        plt.tight_layout()
-        plt.show()
+            # Finish plot
+            self.save_fig()
 
 

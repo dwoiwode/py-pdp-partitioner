@@ -14,6 +14,7 @@ from src.utils.utils import get_uniform_distributed_ranges, get_stds
 from src.utils.typing import ColorType
 
 
+# Abstract plottable class
 class Plottable(ABC):
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -36,6 +37,72 @@ class Plottable(ABC):
                                       "Please select a specific hp by setting `x_hyperparemeters`")
 
 
+# Resolve/Getter functions (that resolve function inputs)
+def get_color(color: ColorType) -> Tuple[float, float, float]:
+    """
+    Input can be either string (name or hex) or rgb-tuple (scale between 0..1).
+    Output is always rgb-tuple scaled between 0..1
+    """
+    return mc.to_rgb(color)
+
+
+def get_ax(ax: Optional[plt.Axes]) -> plt.Axes:
+    """
+    Return input axis. If it is None, return current axis instead (plt.gca())
+    """
+    if ax is None:
+        fig = plt.gcf()
+        assert isinstance(fig, plt.Figure)
+        ax = fig.gca()
+
+    assert isinstance(ax, plt.Axes)
+    return ax
+
+
+def check_and_set_axis(ax: plt.Axes, hyperparameters: List[CSH.Hyperparameter]):
+    """
+    Set axis labels and types (e.g. log) for all selected hyperparameters.
+    If this does not fit with current configuration raise Error instead
+    """
+    assert isinstance(ax, plt.Axes)
+
+    n_hyperparameters = len(hyperparameters)
+    if n_hyperparameters == 1:
+        hp = hyperparameters[0]
+        current_label = ax.get_xlabel()
+        new_label = hp.name
+        if current_label != "" and current_label != new_label:
+            raise ValueError(f"Current label is {current_label}, but tried to set label to {new_label}. "
+                             f"Did you mess up the plots?")
+        ax.set_xlabel(new_label)
+        if isinstance(hp, CSH.NumericalHyperparameter):
+            if hp.log:
+                ax.set_xscale("log")
+            ax.set_xlim(hp.lower, hp.upper)
+    elif n_hyperparameters == 2:
+        hp1 = hyperparameters[0]
+        hp2 = hyperparameters[1]
+        current_label = ax.get_xlabel(), ax.get_ylabel()
+        new_label = hp1.name, hp2.name
+        if current_label != ("", "") and current_label != new_label:
+            raise ValueError(f"Current label is {current_label}, but tried to set label to {new_label}. "
+                             f"Did you mess up the plots?")
+        # Label
+        ax.set_xlabel(new_label[0])
+        ax.set_ylabel(new_label[1])
+
+        # Numerical axis
+        if isinstance(hp1, CSH.NumericalHyperparameter):
+            if hp1.log:
+                ax.set_xscale("log")
+            ax.set_xlim(hp1.lower, hp1.upper)
+        if isinstance(hp2, CSH.NumericalHyperparameter):
+            if hp2.log:
+                ax.set_yscale("log")
+            ax.set_ylim(hp2.lower, hp2.upper)
+
+
+# Utils
 def adjust_lightness(color: ColorType,
                      amount=0.5) -> Tuple[float, float, float]:
     """
@@ -63,13 +130,7 @@ def adjust_lightness(color: ColorType,
     return colorsys.hls_to_rgb(h, max(0., min(1., amount * l)), s)
 
 
-def get_color(color: ColorType) -> Tuple[float, float, float]:
-    """
-    :return: color as rgb-tuple scaled between 0..1
-    """
-    return mc.to_rgb(color)
-
-
+# Plotting helper
 def plot_function(f: Callable[[Any], float],
                   cs: CS.ConfigurationSpace,
                   samples_per_axis=100,
@@ -85,7 +146,7 @@ def plot_function(f: Callable[[Any], float],
     ranges = get_uniform_distributed_ranges(cs, samples_per_axis=samples_per_axis)
 
     x = ranges[0]
-    ax.set_xlabel(parameters[0].name)
+    check_and_set_axis(ax, parameters)
     if n_parameter == 1:
         # plot ground truth lines
         y = [f(p) for p in x]
@@ -108,52 +169,10 @@ def plot_function(f: Callable[[Any], float],
 def plot_line(x: np.ndarray,
               y: np.ndarray,
               color: ColorType = "black",
-              label:Optional[str] = None,
+              label: Optional[str] = None,
               ax: Optional[plt.Axes] = None):
     ax = get_ax(ax)
     ax.plot(x, y, color=color, label=label)
-
-
-# def plot_model_confidence(optimizer: Sampler, cs: CS.ConfigurationSpace,
-#                           samples_per_axis=100, ax: Optional[plt.Axes] = None) -> plt.Axes:
-#     ax = get_ax(ax)
-#
-#     if len(cs.get_hyperparameters()) != 1:
-#         raise ValueError("Number of hyperparameters for plotting model confidence has to be 1")
-#
-#     ranges = get_uniform_distributed_ranges(cs, samples_per_axis, scaled=False)
-#     scaled_ranges = get_uniform_distributed_ranges(cs, samples_per_axis, scaled=True)
-#     mu, std = optimizer.surrogate_score([Configuration(cs, vector=vector) for vector in np.asarray(scaled_ranges).T])
-#
-#     plot_confidence_lists(ranges[0], mu, std, ax=ax)
-#     return ax
-
-
-# def plot_acquisition(acquisition_function: AcquisitionFunction, cs: CS.ConfigurationSpace,
-#                      samples_per_axis=100, ax: Optional[plt.Axes] = None) -> plt.Axes:
-#     if len(cs.get_hyperparameters()) != 1:
-#         raise ValueError("Number of hyperparameters for plotting model confidence has to be 1")
-#
-#     ax = get_ax(ax)
-#
-#     # ranges = _get_uniform_distributed_ranges(cs, samples_per_axis, scaled=False)[0]
-#     # scaled_ranges = _get_uniform_distributed_ranges(cs, samples_per_axis, scaled=True)
-#     configs = cs.sample_configuration(samples_per_axis)
-#     acquisition_y = np.asarray([acquisition_function(x) for x in configs]).reshape(-1)
-#     ranges = np.asarray([list(config.values())[0] for config in configs])
-#
-#     order = np.argsort(ranges)
-#     ranges = ranges[order]
-#     acquisition_y = acquisition_y[order]
-#
-#     ax.fill_between(ranges, acquisition_y, color="darkgreen", alpha=0.3)
-#     ax.plot(ranges, acquisition_y, color="darkgreen", label=acquisition_function.__class__.__name__)
-#
-#     config = acquisition_function.get_optimum()
-#     ax.plot(list(config.values())[0], acquisition_function(config), "*", color="red", label="next best candidate",
-#             markersize=15)
-#
-#     return ax
 
 
 def plot_1D_confidence_color_gradients(x: np.ndarray,
@@ -199,13 +218,3 @@ def plot_1D_confidence_lines(x: np.ndarray,
             label = f"{name}-$\mu\pm${k_sigma:.2f}$\sigma$"
         ax.plot(x, means - stds, color=color, alpha=1 / k_sigma * 0.2, label=label)
         ax.plot(x, means + stds, color=color, alpha=1 / k_sigma * 0.2)
-
-
-def get_ax(ax: Optional[plt.Axes]) -> plt.Axes:
-    if ax is None:
-        fig = plt.gcf()
-        assert isinstance(fig, plt.Figure)
-        ax = fig.gca()
-
-    assert isinstance(ax, plt.Axes)
-    return ax

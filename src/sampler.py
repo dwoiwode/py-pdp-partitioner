@@ -8,15 +8,11 @@ import ConfigSpace.hyperparameters as CSH
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.stats import norm
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import Matern
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
 
 from src.surrogate_models import SurrogateModel, GaussianProcessSurrogate
-from src.utils.plotting import Plottable, get_ax
-from src.utils.utils import config_list_to_2d_arr, get_hyperparameters, get_uniform_distributed_ranges, get_selected_idx
+from src.utils.plotting import Plottable, get_ax, check_and_set_axis
 from src.utils.typing import ColorType
+from src.utils.utils import config_list_to_2d_arr, get_hyperparameters, get_selected_idx
 
 
 class Sampler(Plottable, ABC):
@@ -81,9 +77,7 @@ class Sampler(Plottable, ABC):
             label = f"Sampled points ({self.__class__.__name__})"
 
         # Check whether plot is possible
-        # TODO: New method: Check whether labels fit with new plotting labels and add if missing
-        # x_label
-        # y_label
+        check_and_set_axis(ax, x_hyperparameters)
 
         # Plot
         plotting_kwargs = {
@@ -101,9 +95,9 @@ class Sampler(Plottable, ABC):
             ax.plot(x[order], self.y[order], **plotting_kwargs)
         elif n_hyperparameters == 2:  # 2D
             hp1, hp2 = x_hyperparameters
-            x1, x2 = zip(*[(config[hp1], config[hp2]) for config in self.config_list])
-            colors = self.y  # TODO: How to plot values
-            ax.scatter(x1, x2, c=colors, **plotting_kwargs)
+            x1, x2 = zip(*[(config[hp1.name], config[hp2.name]) for config in self.config_list])
+            # colors = self.y  # TODO: How to plot values? color=colors is possible, not visible on ground truth
+            ax.scatter(x1, x2)
         else:
             raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
                                       "Please select a specific hp by setting `x_hyperparemeters`")
@@ -127,6 +121,7 @@ class RandomSampler(Sampler):
         self.rng = np.random.RandomState(self.seed)
 
     def sample(self, n_points: int = 1):
+        self.logger.debug(f"Sample {n_points}")
         n_features = len(self.config_space.get_hyperparameters())
         samples = self.rng.random((n_points, n_features))
         origin = self.__class__.__name__
@@ -153,6 +148,7 @@ class BayesianOptimizationSampler(Sampler):
         # Surrogate model
         if surrogate_model is None:
             surrogate_model = GaussianProcessSurrogate(self.config_space, seed=seed)
+            self.logger.info(f"Surrogate model is None. Taking {surrogate_model} as default")
         self.surrogate_model = surrogate_model
         self._model_fitted_hash: str = ""
 
@@ -193,6 +189,7 @@ class BayesianOptimizationSampler(Sampler):
 
     def sample(self, n_points: int = 1):
         # Sample initial random points if not already done or given
+        self.logger.info(f"Sample {n_points} new points")
         already_sampled = 0
         current_points = len(self)
         if current_points < self.initial_points:
@@ -274,6 +271,7 @@ class AcquisitionFunction(Plottable, ABC):
              ax: Optional[plt.Axes] = None):
         ax = get_ax(ax)
         x_hyperparameters = get_hyperparameters(x_hyperparameters, self.config_space)
+        check_and_set_axis(ax, x_hyperparameters)
 
         # Sample configs and get values of acquisition function
         configs = self.config_space.sample_configuration(self.n_samples_for_optimization * len(x_hyperparameters))
@@ -308,7 +306,7 @@ class ExpectedImprovement(AcquisitionFunction):
     def __init__(self,
                  config_space,
                  surrogate_model: SurrogateModel,
-                 eps: float=0.0,  # Exploration parameter
+                 eps: float = 0.0,  # Exploration parameter
                  samples_for_optimization=100,
                  minimize_objective=True,
                  seed=None):

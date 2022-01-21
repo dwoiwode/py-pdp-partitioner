@@ -17,7 +17,7 @@ class PDP(Algorithm):
                  selected_hyperparameter: SelectedHyperparameterType,
                  num_samples: int = 1000,
                  num_grid_points_per_axis: int = 20):
-        super(PDP, self).__init__(surrogate_model, selected_hyperparameter, num_samples, num_grid_points_per_axis)
+        super().__init__(surrogate_model, selected_hyperparameter, num_samples, num_grid_points_per_axis)
         self._ice = None
 
     @property
@@ -52,6 +52,8 @@ class PDP(Algorithm):
              gradient_color="xkcd:light red",
              with_confidence=True,
              ax: Optional[plt.Axes] = None):
-        pdp = ICECurve(self.config_space, self.x_pdp, self.y_pdp, self.y_variances, name="PDP")
-        pdp.plot(line_color=line_color, gradient_color=gradient_color, with_confidence=with_confidence,
-                 x_hyperparameters=self.selected_hyperparameter, ax=ax)
+        pdp = ICECurve(self.config_space, self.selected_hyperparameter,
+                       self.x_pdp, self.y_pdp, self.y_variances,
+                       name="PDP")
+        pdp.plot(line_color=line_color, gradient_color=gradient_color,
+                 with_confidence=with_confidence, ax=ax)

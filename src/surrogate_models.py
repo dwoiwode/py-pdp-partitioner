@@ -11,7 +11,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from src.utils.plotting import Plottable, plot_1D_confidence_lines, plot_1D_confidence_color_gradients, get_ax, \
-    plot_line
+    plot_line, check_and_set_axis
 from src.utils.typing import SelectedHyperparameterType
 from src.utils.utils import convert_config_list_to_np, get_uniform_distributed_ranges, get_hyperparameters
 
@@ -21,6 +21,7 @@ class SurrogateModel(Plottable, ABC):
         super().__init__()
         self.config_space = cs
         self.seed = seed
+        self.num_fitted_points = 0
 
     def __call__(self,
                  X: Union[np.ndarray, CS.Configuration, List[CS.Configuration]]
@@ -38,6 +39,9 @@ class SurrogateModel(Plottable, ABC):
             raise TypeError(f"Could not interpret {type(X)}")
         return means
 
+    def __str__(self):
+        return f"{self.__class__.__name__}(fitted on {self.num_fitted_points} points)"
+
     @abstractmethod
     def predict(self, X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -48,8 +52,13 @@ class SurrogateModel(Plottable, ABC):
         """
         pass
 
-    @abstractmethod
     def fit(self, X: Union[List[CS.Configuration], np.ndarray], y: Union[List[float], np.ndarray]):
+        X = convert_config_list_to_np(X)
+        self.num_fitted_points = len(y)
+        return self._fit(X, np.asarray(y))
+
+    @abstractmethod
+    def _fit(self, X: np.ndarray, y: np.ndarray):
         pass
 
     def predict_configs(self,
@@ -80,6 +89,7 @@ class SurrogateModel(Plottable, ABC):
              ax: Optional[plt.Axes] = None):
         ax = get_ax(ax)
         x_hyperparameters = get_hyperparameters(x_hyperparameters, self.config_space)
+        check_and_set_axis(ax, x_hyperparameters)
 
         # Switch cases for number of dimensions
         n_hyperparameters = len(x_hyperparameters)
@@ -106,8 +116,7 @@ class SkLearnPipelineSurrogate(SurrogateModel):
         super().__init__(cs, seed=seed)
         self.pipeline = pipeline
 
-    def fit(self, X: Union[List[CS.Configuration], np.ndarray], y: Union[List[float], np.ndarray]):
-        X = convert_config_list_to_np(X)
+    def _fit(self, X: np.ndarray, y: np.ndarray):
         self.pipeline.fit(X, y)
 
     def predict(self, X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -126,7 +135,7 @@ class GaussianProcessSurrogate(SkLearnPipelineSurrogate):
         pipeline = Pipeline([
             ("standardize", StandardScaler()),
             ("GP", GaussianProcessRegressor(kernel=Matern(nu=2.5), normalize_y=True,
-                                            n_restarts_optimizer=10,
+                                            n_restarts_optimizer=20,
                                             random_state=seed)),
         ])
         super().__init__(pipeline, cs, seed=seed)

@@ -95,4 +95,4 @@ class TestAcquisitionFunctions(PlottableTest):
         ax_function.plot(X, y, ".", color="red")  # Plot samples
         lcb.plot(ax=ax_acquisition)
 
-        self.assertAlmostEqual(0, lcb.get_optimum()["x1"], places=1)
+        self.assertAlmostEqual(-5, lcb.get_optimum()["x1"], places=1)

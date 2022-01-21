@@ -45,5 +45,6 @@ class PlottableTest(TestCase):
             self.fig.savefig(folder / f"{self._testMethodName}_{self.fig_idx}.png")
 
     def initialize_figure(self):
+        plt.clf()
         self.fig = plt.figure(figsize=(16, 9))
         self.fig.suptitle(self._testMethodName, fontsize=16)

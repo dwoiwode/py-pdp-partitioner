@@ -45,7 +45,7 @@ class TestPlottingFunctions(PlottableTest):
         self._apply_blackbox_plot(square_2D, cs, "Test Plot Function 2D (low res)", samples_per_axis=10)
 
     def test_plot_square_1D_artificial(self):
-        cs = config_space_nd(2)
+        cs = config_space_nd(1)
 
         self._apply_blackbox_plot(square, cs, "Test Plot Function 1D")
 
@@ -79,20 +79,16 @@ class TestPlottingFunctions(PlottableTest):
         self.save_fig()
         plt.show()
 
-        for _ in range(2):
+        for _ in range(20):
             self.initialize_figure()
-            self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, two points")
+            self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, individual points")
 
             bo.sample(1)
             bo.surrogate_model.plot(with_confidence=True)
             bo.plot()
             self.save_fig()
-            plt.show()
-
-        bo.sample(20)
-        self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, two points")
-        bo.surrogate_model.plot()
-        bo.plot()
+            if _ < 3:
+                plt.show()
 
     def test_plot_ice(self):
         self.initialize_figure()

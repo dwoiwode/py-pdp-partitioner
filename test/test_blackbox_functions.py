@@ -123,7 +123,7 @@ class TestPlotBlackboxFunctions(PlottableTest):
         self._apply_blackbox_plot(ackley_2D, cs, "Ackley 2D")
 
     def test_plot_ackley_1D_zoomed(self):
-        cs = config_space_nd(2, -10, 10)
+        cs = config_space_nd(1, -10, 10)
         self._apply_blackbox_plot(ackley_1D, cs, "Ackley 1D")
 
     def test_plot_ackley_2D_zoomed(self):

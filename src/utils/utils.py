@@ -61,8 +61,19 @@ def get_hyperparameters(hyperparameters: Union[None, CSH.Hyperparameter, Iterabl
         return list(cs.get_hyperparameters())
     elif isinstance(hyperparameters, CSH.Hyperparameter):
         return [hyperparameters]
+    elif isinstance(hyperparameters, str):
+        return [cs.get_hyperparameter(hyperparameters)]
     else:
-        return list(hyperparameters)
+        # Either list of names or list of Hyperparameters
+        hps = []
+        for hp in hyperparameters:
+            if isinstance(hp, str):
+                hps.append(cs.get_hyperparameter(hp))
+            elif isinstance(hp, CSH.Hyperparameter):
+                hps.append(hp)
+            else:
+                raise TypeError(f"Could not identify hyperparameter {hp} (Type: {type(hp)})")
+        return hps
 
 
 def get_uniform_distributed_ranges(cs: CS.ConfigurationSpace,
@@ -81,11 +92,10 @@ def get_uniform_distributed_ranges(cs: CS.ConfigurationSpace,
             ranges.append(np.linspace(0, 1, num=samples_per_axis))
         else:
             if parameter.log:
-                space_function = np.logspace
+                ranges.append(np.logspace(np.log10(parameter.lower), np.log10(parameter.upper), num=samples_per_axis))
             else:
-                space_function = np.linspace
+                ranges.append(np.linspace(parameter.lower, parameter.upper, num=samples_per_axis))
 
-            ranges.append(space_function(parameter.lower, parameter.upper, num=samples_per_axis))
     res = np.asarray(ranges)
     assert len(res) == len(cs.get_hyperparameters())
     return res
