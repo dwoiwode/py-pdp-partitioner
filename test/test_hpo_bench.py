@@ -1,11 +1,7 @@
-from unittest import TestCase
-
-from matplotlib import pyplot as plt
-
 from src.algorithms.ice import ICE
-from src.demo_data.hpo_bench import get_SVMBenchmarkMF
-from src.sampler import BayesianOptimizationSampler, LowerConfidenceBound, RandomSampler
 from src.algorithms.pdp import PDP
+from src.demo_data.hpo_bench import get_SVMBenchmarkMF
+from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.surrogate_models import GaussianProcessSurrogate
 from test import PlottableTest
 

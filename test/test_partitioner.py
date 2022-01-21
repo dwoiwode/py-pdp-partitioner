@@ -7,8 +7,8 @@ from src.algorithms.ice import ICE
 from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
 from src.demo_data.blackbox_functions import square_2D
 from src.demo_data.config_spaces import config_space_nd
-from src.sampler import BayesianOptimizationSampler
 from src.algorithms.pdp import PDP
+from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from test import PlottableTest
 
 

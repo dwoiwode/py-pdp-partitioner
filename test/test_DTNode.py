@@ -1,15 +1,12 @@
 from unittest import TestCase
 
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import Matern
-
 from src.algorithms.ice import ICE
+from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
 from src.demo_data import blackbox_functions
 from src.demo_data.config_spaces import config_space_nd
-from src.sampler import LowerConfidenceBound, BayesianOptimizationSampler
-from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
-from src.algorithms.pdp import PDP
-from src.surrogate_models import SkLearnPipelineSurrogate, GaussianProcessSurrogate
+from src.sampler.acquisition_function import LowerConfidenceBound
+from src.sampler.bayesian_optimization import BayesianOptimizationSampler
+from src.surrogate_models import GaussianProcessSurrogate
 
 
 class TestDTNode(TestCase):

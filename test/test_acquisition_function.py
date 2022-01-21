@@ -1,13 +1,8 @@
-import unittest
-
-import ConfigSpace as CS
-import ConfigSpace.hyperparameters as CSH
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.gaussian_process import GaussianProcessRegressor
 
 from src.demo_data.config_spaces import config_space_nd
-from src.sampler import ExpectedImprovement, ProbabilityOfImprovement, LowerConfidenceBound
+from src.sampler.acquisition_function import ExpectedImprovement, ProbabilityOfImprovement, LowerConfidenceBound
 from src.surrogate_models import GaussianProcessSurrogate
 from test import PlottableTest
 

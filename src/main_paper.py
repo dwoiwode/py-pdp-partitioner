@@ -8,7 +8,7 @@ from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
 from src.algorithms.pdp import PDP
 from src.demo_data import blackbox_functions
 from src.demo_data.config_spaces import config_space_nd
-from src.sampler import BayesianOptimizationSampler
+from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.surrogate_models import GaussianProcessSurrogate
 
 seed = 0

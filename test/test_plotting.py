@@ -6,7 +6,8 @@ from src.algorithms.ice import ICE
 from src.algorithms.pdp import PDP
 from src.demo_data.blackbox_functions import neg_square, square_2D, square
 from src.demo_data.config_spaces import config_space_nd
-from src.sampler import BayesianOptimizationSampler, RandomSampler
+from src.sampler.bayesian_optimization import BayesianOptimizationSampler
+from src.sampler.random_sampler import RandomSampler
 from src.surrogate_models import GaussianProcessSurrogate
 from src.utils.plotting import plot_function
 from test import PlottableTest

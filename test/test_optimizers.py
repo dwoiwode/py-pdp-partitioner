@@ -1,6 +1,7 @@
 from src.demo_data.blackbox_functions import square, neg_square
 from src.demo_data.config_spaces import config_space_nd
-from src.sampler import BayesianOptimizationSampler, ProbabilityOfImprovement
+from src.sampler.acquisition_function import ProbabilityOfImprovement
+from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.utils.plotting import plot_function
 from test import PlottableTest
 

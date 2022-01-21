@@ -4,7 +4,7 @@ from src.algorithms.ice import ICE
 from src.algorithms.pdp import PDP
 from src.demo_data import blackbox_functions
 from src.demo_data.config_spaces import config_space_nd
-from src.sampler import RandomSampler
+from src.sampler.random_sampler import RandomSampler
 from src.surrogate_models import GaussianProcessSurrogate
 
 seed = 0
@@ -21,15 +21,15 @@ sampler.plot(x_hyperparameters=selected_hyperparameter)
 # Surrogate model
 surrogate_model = GaussianProcessSurrogate(cs)
 surrogate_model.fit(sampler.X, sampler.y)
-surrogate_model.plot(x_hyperparameters=selected_hyperparameter)
+# surrogate_model.plot(x_hyperparameters=selected_hyperparameter)
 
 # ICE
 ice = ICE(surrogate_model, selected_hyperparameter)
-ice.plot(color="orange")
+# ice.plot(color="orange")
 
 # PDP
 pdp = PDP.from_ICE(ice)
-pdp.plot("black", "grey", with_confidence=True)
+# pdp.plot("black", "grey", with_confidence=True)
 
 # Partitioner
 # dt_partitioner = DTPartitioner(surrogate_model, selected_hyperparameter)
