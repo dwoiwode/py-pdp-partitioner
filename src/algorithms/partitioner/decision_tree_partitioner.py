@@ -264,6 +264,7 @@ class DTPartitioner(Partitioner):
              color_list: Optional[List[ColorType]] = None,
              alpha: float = 0.1,
              ax: Optional[plt.Axes] = None):
+        ax = get_ax(ax)
         assert self.leaves is not None and len(self.leaves) != 0, 'Please call partition before plotting'
 
         if color_list is None:

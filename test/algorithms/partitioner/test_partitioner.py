@@ -56,5 +56,5 @@ class TestPartitioner(PlottableTest):
         colors = ['red', 'orange', 'green', 'blue', 'grey', 'black', 'magenta', 'yellow']
         color_list = colors[:len(regions)]
         partitioner.plot(color_list=color_list)
-        self.save_fig()
+        # self.save_fig()
         plt.show()
