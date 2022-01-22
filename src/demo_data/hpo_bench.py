@@ -14,7 +14,8 @@ Viable OpenML Task IDs:
 """
 
 
-def _hpo_blackbox_function(benchmark: Union[AbstractBenchmark, AbstractBenchmarkClient], seed=0) -> Callable[[Any], float]:
+def _hpo_blackbox_function(benchmark: Union[AbstractBenchmark, AbstractBenchmarkClient], seed=0) \
+        -> Callable[[Any], float]:
     """
     Converts an objective function that takes a config as input in to a blackbox function
     that takes keyword arguments as input

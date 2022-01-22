@@ -102,6 +102,8 @@ class ExpectedImprovement(AcquisitionFunction):
                          surrogate_model,
                          samples_for_optimization,
                          minimize_objective, seed=seed)
+        if not minimize_objective:
+            raise NotImplementedError('EI for maximization')
         self.eta = 0
         self.exploration = eps
 
@@ -125,7 +127,7 @@ class ProbabilityOfImprovement(AcquisitionFunction):
     def __init__(self,
                  config_space: CS.ConfigurationSpace,
                  surrogate_model: SurrogateModel,
-                 eps: float = 0.0,  # Exploration parameter
+                 eps: float = 0.1,  # Exploration parameter
                  samples_for_optimization: int = 100,
                  minimize_objective=True,
                  seed=None):

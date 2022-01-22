@@ -1,20 +1,20 @@
 import hashlib
 import warnings
-from typing import Callable, Any, List, Tuple, Union
+from typing import Callable, Any, List, Tuple, Union, Optional
 
 import ConfigSpace as CS
 import numpy as np
 
 from src.sampler import Sampler
 from src.sampler.acquisition_function import LowerConfidenceBound, AcquisitionFunction
-from src.surrogate_models import GaussianProcessSurrogate
+from src.surrogate_models import GaussianProcessSurrogate, SurrogateModel
 
 
 class BayesianOptimizationSampler(Sampler):
     def __init__(self,
                  obj_func: Callable[[Any], float],
                  config_space: CS.ConfigurationSpace,
-                 surrogate_model=None,
+                 surrogate_model: Optional[SurrogateModel] = None,
                  initial_points: int = 5,
                  acq_class=None,
                  acq_class_kwargs=None,

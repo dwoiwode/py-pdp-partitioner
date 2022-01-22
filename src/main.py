@@ -16,7 +16,7 @@ selected_hyperparameter = cs.get_hyperparameter("x1")
 # Sampler
 sampler = RandomSampler(f, cs, seed=seed)
 sampler.sample(100)
-sampler.plot(x_hyperparameters=selected_hyperparameter)
+# sampler.plot(x_hyperparameters=selected_hyperparameter)
 
 # Surrogate model
 surrogate_model = GaussianProcessSurrogate(cs)

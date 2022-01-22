@@ -33,6 +33,7 @@ class TestAcquisitionFunctions(PlottableTest):
         surrogate.plot(ax=ax_function, x_hyperparameters=selected_hyperparameter)
         ax_function.plot(X, y, ".", color="red")  # Plot samples
         ei.plot(ax=ax_acquisition)
+        self.save_fig()
 
         self.assertAlmostEqual(0, ei.get_optimum()["x1"], places=1)
 
@@ -42,7 +43,7 @@ class TestAcquisitionFunctions(PlottableTest):
         selected_hyperparameter = cs.get_hyperparameter("x1")
 
         surrogate = GaussianProcessSurrogate(cs)
-        pi = ProbabilityOfImprovement(cs, surrogate, samples_for_optimization=2000)
+        pi = ProbabilityOfImprovement(cs, surrogate, eps=1, samples_for_optimization=2000)
 
         X = np.asarray([-2, -1, 1, 2, 3, 4]).reshape((-1, 1))
         y = [4, 1, 1, 4, 9, 16]
@@ -61,6 +62,7 @@ class TestAcquisitionFunctions(PlottableTest):
         surrogate.plot(ax=ax_function, x_hyperparameters=selected_hyperparameter)
         ax_function.plot(X, y, ".", color="red")  # Plot samples
         pi.plot(ax=ax_acquisition)
+        self.save_fig()
 
         self.assertAlmostEqual(0, pi.get_optimum()["x1"], places=1)
 
@@ -89,5 +91,6 @@ class TestAcquisitionFunctions(PlottableTest):
         surrogate.plot(ax=ax_function, x_hyperparameters=selected_hyperparameter)
         ax_function.plot(X, y, ".", color="red")  # Plot samples
         lcb.plot(ax=ax_acquisition)
+        self.save_fig()
 
         self.assertAlmostEqual(-5, lcb.get_optimum()["x1"], places=1)

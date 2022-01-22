@@ -1,7 +1,7 @@
+from typing import List, Iterable, Union, Optional
+
 import ConfigSpace as CS
 import numpy as np
-from typing import List, Iterable, Union, Optional, Tuple
-
 from ConfigSpace import hyperparameters as CSH
 
 
@@ -27,6 +27,15 @@ def get_selected_idx(selected_hyperparameter: Iterable[CSH.Hyperparameter],
         for hp in selected_hyperparameter
     ]
 
+def scale_float(value: float, cs: CS.ConfigurationSpace, hp: CSH.Hyperparameter):
+    cs_hp = cs.get_hyperparameter(hp.name)
+    normalized_value = (value - cs_hp.lower) / (cs_hp.upper - cs_hp.lower)
+    return normalized_value
+
+def unscale_float(normalized_value: float, cs: CS.ConfigurationSpace, hp: CSH.Hyperparameter):
+    cs_hp = cs.get_hyperparameter(hp.name)
+    value = normalized_value * (cs_hp.upper - cs_hp.lower) + cs_hp.lower
+    return value
 
 def unscale(x: np.ndarray, cs: CS.ConfigurationSpace):
     """
@@ -74,7 +83,6 @@ def get_hyperparameters(hyperparameters: Union[None, CSH.Hyperparameter, Iterabl
             else:
                 raise TypeError(f"Could not identify hyperparameter {hp} (Type: {type(hp)})")
         return hps
-
 
 def get_uniform_distributed_ranges(cs: CS.ConfigurationSpace,
                                    samples_per_axis: int = 100,

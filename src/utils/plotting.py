@@ -1,5 +1,7 @@
 import colorsys
 import logging
+from random import random
+
 import matplotlib.colors as mc
 
 from abc import ABC, abstractmethod
@@ -45,6 +47,10 @@ def get_color(color: ColorType) -> Tuple[float, float, float]:
     """
     return mc.to_rgb(color)
 
+def get_random_color() -> ColorType:
+    rgb = np.random.uniform(size=3)
+    return tuple(rgb)
+
 
 def get_ax(ax: Optional[plt.Axes]) -> plt.Axes:
     """
@@ -79,6 +85,7 @@ def check_and_set_axis(ax: plt.Axes, hyperparameters: List[CSH.Hyperparameter]):
             if hp.log:
                 ax.set_xscale("log")
             ax.set_xlim(hp.lower, hp.upper)
+        ax.set_ylabel('Prediction')
     elif n_hyperparameters == 2:
         hp1 = hyperparameters[0]
         hp2 = hyperparameters[1]

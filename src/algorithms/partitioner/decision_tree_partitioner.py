@@ -1,85 +1,182 @@
-from src.algorithms.ice import ICE
-from src.algorithms.partitioner import Region, Partitioner
-from abc import ABC, abstractmethod
-from typing import List, Tuple, Optional, Union, Iterable, Any
+from typing import List, Tuple, Optional, Any
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 import numpy as np
+from matplotlib import pyplot as plt
 
-from src.utils.plotting import Plottable, get_ax, check_and_set_axis
+from src.algorithms.ice import ICE
+from src.algorithms.partitioner import Region, Partitioner
 from src.surrogate_models import SurrogateModel
-from src.utils.typing import SelectedHyperparameterType
+from src.utils.plotting import Plottable, get_ax, check_and_set_axis, get_random_color
+from src.utils.typing import SelectedHyperparameterType, ColorType
+from src.utils.utils import scale_float, unscale_float, unscale
 
+
+class SplitCondition:
+    def __init__(self,
+                 config_space: CS.ConfigurationSpace,
+                 hp: CSH.Hyperparameter,
+                 value: Optional[Any] = None,
+                 normalized_value: Optional[Any] = None,
+                 less_equal: Optional[bool] = None):
+
+        assert value is not None or normalized_value is not None, 'Either value or normalized value has to be specified'
+        assert value is None or normalized_value is None, 'Only one of value or normalized value should be given'
+        if normalized_value is None:
+            normalized_value = scale_float(value, config_space, hp)
+
+        assert not isinstance(normalized_value, float) or less_equal is not None, 'floating values need less_equal'
+
+        self.config_space = config_space
+        self.hyperparameter = hp
+        self._normalized_value = normalized_value
+        self.less_equal = less_equal
+
+    @property
+    def normalized_value(self):
+        return self._normalized_value
+
+    @property
+    def value(self):
+        if isinstance(self._normalized_value, float):
+            return unscale_float(self._normalized_value, self.config_space, self.hyperparameter)
+        else:
+            return self._normalized_value
+
+    def is_satisfied(self, configuration: CS.Configuration):
+        config_value = configuration.get(self.hyperparameter.name)
+        if isinstance(self.value, float):
+            if self.less_equal:
+                return config_value <= self.value
+            else:
+                return config_value > self.value
+        else:
+            return self.value == config_value
+
+    def __str__(self):
+        if self.less_equal is not None:
+            if self.less_equal:
+                op_str = '<='
+            else:
+                op_str = '>'
+        else:
+            op_str = 'in'
+        return f'{self.hyperparameter.name} {op_str} {self.value}'
 
 class DTRegion(Region, Plottable):
     def __init__(self,
                  x_points: np.ndarray,
                  y_points: np.ndarray,
                  y_variances: np.ndarray,
-                 split_conditions: List[Tuple[CSH.Hyperparameter, Any]]):
+                 split_conditions: List[SplitCondition],
+                 full_config_space: CS.ConfigurationSpace,
+                 selected_hyperparameter: SelectedHyperparameterType):
         Region.__init__(self, x_points, y_points, y_variances)
         Plottable.__init__(self)
 
         self.split_conditions = split_conditions
+        self.full_config_space = full_config_space
+        self.selected_hyperparameter = list(selected_hyperparameter)
+
+    def __contains__(self, item: CS.Configuration):
+        for condition in self.split_conditions:
+            if not condition.is_satisfied(item):
+                return False
+        return True
 
     @property
-    def config_space(self) -> CS.ConfigurationSpace:
-        # TODO take form split_conditions
+    def implied_config_space(self) -> CS.ConfigurationSpace:
+        # TODO take from split_conditions
         pass
 
-    def plot(self, color=None, ax=None):
-        """
-        :param color: If None: Take random color
-        """
+    def filter_by_condition(self, condition: SplitCondition) -> "DTRegion":
+        hyperparameter_idx = self.full_config_space.get_idx_by_hyperparameter_name(condition.hyperparameter.name)
+        instance_vals_at_idx = self.x_points[:, 0, hyperparameter_idx]  # second dimension does not matter
+        if condition.less_equal:
+            func_split_cond = (instance_vals_at_idx <= condition.normalized_value)
+        else:
+            func_split_cond = (instance_vals_at_idx > condition.normalized_value)
+
+        new_x_points = np.copy(self.x_points[func_split_cond])
+        new_y_points = np.copy(self.y_points[func_split_cond])
+        new_y_variances = np.copy(self.y_variances[func_split_cond])
+        new_conditions = self.split_conditions + [condition]
+        new_region = DTRegion(new_x_points, new_y_points, new_y_variances, new_conditions, self.full_config_space,
+                              self.selected_hyperparameter)
+
+        return new_region
+
+    def plot(self,
+             color: ColorType = 'red',
+             alpha: float = 0.1,
+             ax: Optional[plt.Axes] = None):
         ax = get_ax(ax)
-        # check_and_set_axis(ax, )
-        pass
+        check_and_set_axis(ax, self.selected_hyperparameter)
+        n_selected_hyperparameter = len(self.selected_hyperparameter)
+
+        # Plot
+        if n_selected_hyperparameter == 1:  # 1D
+            x_unscaled = unscale(self.x_points, self.full_config_space)#
+            hp = self.selected_hyperparameter[0]
+            hp_idx = self.full_config_space.get_idx_by_hyperparameter_name(hp.name)
+
+            ax.plot(x_unscaled[:, :, hp_idx].T, self.y_points.T, alpha=alpha, color=color)
+        elif n_selected_hyperparameter == 2:  # 2D
+            raise NotImplementedError("2D currently not implemented (#TODO)")
+        else:
+            raise NotImplementedError(f"Plotting for {n_selected_hyperparameter} dimensions not implemented. "
+                                      "Please select a specific hp by setting `selected_hyperparameters`")
 
 
 class DTNode:
-    def __init__(self, parent: Optional["DTNode"], index_arr: np.ndarray, depth: int, max_depth: int):
+    def __init__(self,
+                 parent: Optional["DTNode"],
+                 region: DTRegion,
+                 depth: int,
+                 max_depth: int,
+                 config_space: CS.ConfigurationSpace,
+                 selected_hyperparameter: SelectedHyperparameterType):
         self.parent = parent
-        self.index_arr = index_arr  # matrix determining samples included in split
+        self.region = region
         self.depth = depth
         self.max_depth = max_depth
+        self.config_space = config_space
+        self.selected_hyperparameter = selected_hyperparameter
 
         self.left_child: Optional[DTNode] = None  # <= split_value
         self.right_child: Optional[DTNode] = None  # > split_value
-        self.split_value: Optional[float] = None  # float
-        self.split_indices: Optional[Tuple[int, int]] = None  # t, j
-        self.loss_val: float = Optional[None]  # l2 loss regarding variance impurity
 
     def __contains__(self, item: CS.Configuration) -> bool:
-        if self.is_root():
-            return True
-        config_array = item.get_array()
+        return item in self.region
 
-        parent_split_value = self.parent.split_value
-        we_are_left_child = self.parent.left_child == self
-        if we_are_left_child:
-            return config_array[self.parent.split_indices[1]] <= parent_split_value and (item in self.parent)
-        else:  # we are right_child
-            return config_array[self.parent.split_indices[1]] > parent_split_value and (item in self.parent)
+    def __len__(self):
+        return len(self.region)
 
     def is_terminal(self) -> bool:
         # either max depth or single instance
-        return self.depth >= self.max_depth or np.sum(self.index_arr) == 1
+        return self.depth >= self.max_depth or len(self.region) == 1
 
     def is_root(self) -> bool:
         return self.parent is None
 
-    def filter_ice(self, x_ice, y_ice, variances):
-        x_filtered = x_ice[self.index_arr]
-        y_filtered = y_ice[self.index_arr]
-        variances_filtered = variances[self.index_arr]
-        return x_filtered, y_filtered, variances_filtered
+    def split_at_idx(self, hyperparameter: CSH.Hyperparameter, instance_idx: int) -> Tuple["DTNode", "DTNode"]:
+        hyperparameter_idx = self.config_space.get_idx_by_hyperparameter_name(hyperparameter.name)
+        split_val = self.region.x_points[instance_idx, 0, hyperparameter_idx]  # index in second dim does not matter
 
-    def filter_pdp(self, x_ice, y_ice, variances):
-        x_filtered = np.mean(x_ice[self.index_arr], axis=0)
-        y_filtered = np.mean(y_ice[self.index_arr], axis=0)
-        variances_filtered = np.mean(variances[self.index_arr], axis=0)
-        return x_filtered, y_filtered, variances_filtered
+        left_split_condition = SplitCondition(self.config_space, hyperparameter, normalized_value=split_val,
+                                              less_equal=True)
+        left_region = self.region.filter_by_condition(left_split_condition)
+        left_node = DTNode(self, left_region, self.depth + 1, self.max_depth, self.config_space,
+                           self.selected_hyperparameter)
+
+        right_split_condition = SplitCondition(self.config_space, hyperparameter, normalized_value=split_val,
+                                               less_equal=False)
+        right_region = self.region.filter_by_condition(right_split_condition)
+        right_node = DTNode(self, right_region, self.depth + 1, self.max_depth, self.config_space,
+                            self.selected_hyperparameter)
+
+        return left_node, right_node
 
 
 class DTPartitioner(Partitioner):
@@ -91,19 +188,8 @@ class DTPartitioner(Partitioner):
                  ):
         super().__init__(surrogate_model, selected_hyperparameter, num_samples, num_grid_points_per_axis)
 
-        self.possible_split_params = list(set(range(self.num_features)) - {idx})
-        self.root: Optional[DTNode] = DTNode(None, index_arr, depth=0)
+        self.root: Optional[DTNode] = None
         self.leaves: List[DTNode] = []
-        self._ice = None
-
-    @property
-    def ice(self):
-        if self._ice is None:
-            self._ice = ICE(self.surrogate_model,
-                            self.selected_hyperparameter,
-                            self.num_samples,
-                            self.num_grid_points_per_axis)
-        return self._ice
 
     @classmethod
     def from_ICE(cls, ice: ICE) -> "DTPartitioner":
@@ -114,12 +200,14 @@ class DTPartitioner(Partitioner):
         partitioner._ice = ice
         return partitioner
 
-    def partition(self, max_depth: int = 1) -> Tuple[np.ndarray, np.ndarray]:
-        assert max_depth > 0, f'Cannot split partition for depth < 1, but got {max_depth}'
+    def partition(self, max_depth: int = 1) -> List[DTRegion]:
+        assert max_depth > 0, 'Can only split for depth > 0'
 
-        # create root node
-        index_arr = np.ones((self.num_instances,), dtype=bool)
-        self.root = DTNode(None, index_arr, depth=0, max_depth=max_depth)
+        # create root node and leaves
+        dt_region = DTRegion(self.ice.x_ice, self.ice.y_ice, self.ice.y_variances, [], self.config_space,
+                             self.selected_hyperparameter)
+        self.root = DTNode(None, dt_region, depth=0, max_depth=max_depth, config_space=self.config_space,
+                           selected_hyperparameter=self.selected_hyperparameter)
         self.leaves = []
 
         queue = [self.root]
@@ -136,82 +224,52 @@ class DTPartitioner(Partitioner):
                 queue.append(right_child)
             else:
                 self.leaves.append(right_child)
-
-        # calculate mean variance per partition
-        partition_means = np.zeros((len(self.leaves),), dtype=float)
-        partition_indices = np.zeros((len(self.leaves), self.num_instances), dtype=bool)
-        for i, node in enumerate(self.leaves):
-            partition_means[i] = self.calc_partition_mean(node)
-            partition_indices[i] = node.index_arr
-
-        # sort according to mean variance
-        order = np.argsort(partition_means)
-        partition_means = partition_means[order]
-        partition_indices = partition_indices[order]
-
-        return partition_indices, partition_means
+        leaf_regions = [leaf.region for leaf in self.leaves]
+        return leaf_regions
 
     def calc_best_split(self, node: DTNode) -> Tuple[DTNode, DTNode]:
-        best_j = -1
-        best_t = -1
+        assert not node.is_terminal(), 'Cannot split a terminal node'
+
         best_loss = np.inf
-        for j in self.possible_split_params:
-            for t in range(self.num_instances):
+        best_left_child = None
+        best_right_child = None
+        for hyperparameter_idx in self.possible_split_param_idx:
+            hyperparameter_str = self.config_space.get_hyperparameter_by_idx(hyperparameter_idx)
+            hyperparameter = self.config_space.get_hyperparameter(hyperparameter_str)
+
+            for instance_idx in range(len(node)):
                 # get children after split
-                left_indices, right_indices = self.calc_children_indices(node, j, t)
+                left_child, right_child = node.split_at_idx(hyperparameter, instance_idx)
 
                 # calculate loss
-                left_loss = self.calc_loss(left_indices)
-                right_loss = self.calc_loss(right_indices)
-                loss = left_loss + right_loss
+                left_loss = left_child.region.loss
+                right_loss = right_child.region.loss
+                total_loss = left_loss + right_loss
 
-                # update if necessary
-                if loss < best_loss:
-                    best_j = j
-                    best_t = t
-                    best_loss = loss
+                # update best values if necessary
+                if total_loss < best_loss:
+                    best_loss = total_loss
+                    best_left_child = left_child
+                    best_right_child = right_child
 
-        # split according to best values
-        left_indices, right_indices = self.calc_children_indices(node, best_j, best_t)
-        left_child = DTNode(node, left_indices, node.depth + 1, node.max_depth)
-        right_child = DTNode(node, right_indices, node.depth + 1, node.max_depth)
-        left_child.loss_val = self.calc_loss(left_indices)
-        right_child.loss_val = self.calc_loss(right_indices)
+        assert best_left_child is not None and best_right_child is not None
 
         # update attributes of parent node
-        node.left_child = left_child
-        node.right_child = right_child
-        node.split_value = self.x[best_t, 0, best_j]
-        node.split_indices = (best_t, best_j)
-        node.loss_val = best_loss
+        node.left_child = best_left_child
+        node.right_child = best_right_child
 
-        return left_child, right_child
+        return best_left_child, best_right_child
 
-    def calc_children_indices(self, node, j, t) -> Tuple[np.ndarray, np.ndarray]:
-        # get split values
-        split_val = self.x[t, 0, j]  # index in second dim does not matter
-        instance_vals = self.x[:, 0, j]
-        split_cond = (instance_vals <= split_val)
+    def plot(self,
+             color_list: Optional[List[ColorType]] = None,
+             alpha: float = 0.1,
+             ax: Optional[plt.Axes] = None):
+        assert self.leaves is not None and len(self.leaves) != 0, 'Please call partition before plotting'
 
-        # indices after split
-        left_indices = np.copy(node.index_arr)
-        left_indices[~split_cond] = 0
-        right_indices = np.copy(node.index_arr)
-        right_indices[split_cond] = 0
+        if color_list is None:
+            color_list = [get_random_color() for _ in self.leaves]
+        assert len(color_list) == len(self.leaves), 'Color list needs a color for every leaf'
 
-        return left_indices, right_indices
+        for i, leaf in enumerate(self.leaves):
+            leaf.region.plot(color=color_list[i], alpha=alpha, ax=ax)
 
-    def calc_loss(self, indices: np.ndarray) -> float:
-        # l2 loss calculation according to paper
-        variance_grid_points = self.variances[indices, :]
-        mean_variances = np.mean(variance_grid_points, axis=0)
-
-        pointwise_l2_loss = (variance_grid_points - mean_variances) ** 2
-        # pointwise_l2_loss = (self.variances - mean_variances) ** 2
-        loss_sum = np.sum(pointwise_l2_loss, axis=None)
-
-        return loss_sum.item()
-
-    def calc_partition_mean(self, node) -> float:
-        variances_in_partition = self.variances[node.index_arr]
-        return np.mean(variances_in_partition, axis=None).item()

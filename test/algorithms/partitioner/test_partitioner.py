@@ -1,5 +1,3 @@
-from unittest import TestCase
-
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -7,7 +5,6 @@ from src.algorithms.ice import ICE
 from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
 from src.demo_data.blackbox_functions import square_2D
 from src.demo_data.config_spaces import config_space_nd
-from src.algorithms.pdp import PDP
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from test import PlottableTest
 
@@ -23,18 +20,21 @@ class TestPartitioner(PlottableTest):
 
         ice = ICE(bo.surrogate_model,  selected_hp)
         partitioner = DTPartitioner.from_ICE(ice)
-        indices, means = partitioner.partition()
-        from sklearn.inspection import plot_partial_dependence
-        plot_partial_dependence()
+        regions = partitioner.partition()
 
-        self.assertTrue(np.all(np.abs(np.diff(means)) > 0))
-        self.assertTrue(np.sum(indices) == ice.num_samples)
+        num_points = 0
+        for region in regions:
+            num_points += len(region)
+        self.assertEqual(ice.num_samples, num_points)
+
+        mean_confidences = np.asarray([region.mean_confidence for region in regions])
+        self.assertTrue(np.all(np.abs(mean_confidences)))
 
         # plotting in different colors
         colors = ['green', 'blue']
-        ax = None
-        for i, index in enumerate(indices):
-            ax = plot_ice(x_ice[index], y_ice[index], idx, ax=ax, color=colors[i])
+        for i, region in enumerate(regions):
+            region.plot(colors[i])
+        self.save_fig()
         plt.show()
 
     def test_dt_partitioner_multiple_splits(self):
@@ -46,14 +46,15 @@ class TestPartitioner(PlottableTest):
         ice = ICE(bo.surrogate_model,  selected_hp)
 
         partitioner = DTPartitioner.from_ICE(ice)
-        indices, means = partitioner.partition(max_depth=3)
+        regions = partitioner.partition(max_depth=3)
 
-        self.assertTrue(np.all(np.abs(np.diff(means)) > 0))
-        self.assertTrue(np.sum(indices) == ice.num_samples)
+        num_points = 0
+        for region in regions:
+            num_points += len(region)
+        self.assertEqual(ice.num_samples, num_points)
 
         colors = ['red', 'orange', 'green', 'blue', 'grey', 'black', 'magenta', 'yellow']
-        ax = None
-        for i, index in enumerate(indices):
-            ax = plot_ice(x_ice[index], y_ice[index], idx, ax=ax, color=colors[i])
+        color_list = colors[:len(regions)]
+        partitioner.plot(color_list=color_list)
+        self.save_fig()
         plt.show()
-

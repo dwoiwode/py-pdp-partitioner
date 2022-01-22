@@ -29,7 +29,7 @@ class TestDTNode(TestCase):
         ice = ICE(bo.surrogate_model, self.selected_hyperparameter)
 
         self.partitioner = DTPartitioner.from_ICE(ice)
-        self.partitioner.partition(2)
+        self.regions = self.partitioner.partition(max_depth=2)
 
     def test_contains_root_node(self):
         root = self.partitioner.root
