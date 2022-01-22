@@ -85,10 +85,35 @@ class DTRegion(Region, Plottable):
                 return False
         return True
 
-    @property
-    def implied_config_space(self) -> CS.ConfigurationSpace:
-        # TODO take from split_conditions
-        pass
+    def implied_config_space(self, seed: int) -> CS.ConfigurationSpace:
+        # copy cs
+        hp_dic = {}
+        for hp in self.full_config_space.get_hyperparameters():
+            if isinstance(hp, CSH.UniformFloatHyperparameter):
+                new_hp = CSH.UniformFloatHyperparameter(hp.name, hp.lower, hp.upper)
+                hp_dic[hp.name] = new_hp
+            else:
+                raise NotImplementedError()
+
+        # adjust upper and lower of new cs
+        for cond in self.split_conditions:
+            hp = hp_dic[cond.hyperparameter.name]
+            if isinstance(cond.value, float):
+                if cond.less_equal and cond.value < hp.upper:
+                    hp.upper = cond.value
+                    hp.default_value = hp.lower
+                elif not cond.less_equal and cond.value > hp.lower:
+                    hp.lower = cond.value
+                    hp.default_value = hp.lower
+            else:
+                raise NotImplementedError
+
+        # add new hp to new cs
+        cs = CS.ConfigurationSpace(seed=seed)
+        for hp in hp_dic.values():
+            cs.add_hyperparameter(hp)
+
+        return cs
 
     def filter_by_condition(self, condition: SplitCondition) -> "DTRegion":
         hyperparameter_idx = self.full_config_space.get_idx_by_hyperparameter_name(condition.hyperparameter.name)

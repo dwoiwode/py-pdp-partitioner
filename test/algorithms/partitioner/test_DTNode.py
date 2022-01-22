@@ -46,3 +46,22 @@ class TestDTNode(TestCase):
 
             self.assertEqual(1, n_contained_leaves)
 
+    def test_implied_cs(self):
+        root = self.partitioner.root
+        root_cs = root.region.implied_config_space(seed=0)
+
+        # root cs should be the same as the original
+        for hp in root_cs.get_hyperparameters():
+            original_hp = self.cs.get_hyperparameter(hp.name)
+            self.assertEqual(hp.upper, original_hp.upper)
+            self.assertEqual(hp.lower, original_hp.lower)
+
+        # cs of every leaf node should be different to original
+        for leaf in self.partitioner.leaves:
+            leaf_cs = leaf.region.implied_config_space(seed=0)
+            is_different = False
+            for hp in leaf_cs.get_hyperparameters():
+                original_hp = self.cs.get_hyperparameter(hp.name)
+                if original_hp.lower != hp.lower or original_hp.upper != hp.upper:
+                    is_different = True
+            self.assertTrue(is_different)

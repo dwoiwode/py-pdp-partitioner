@@ -88,6 +88,10 @@ class SurrogateModel(Plottable, ABC):
              x_hyperparameters: SelectedHyperparameterType = None,
              ax: Optional[plt.Axes] = None):
         ax = get_ax(ax)
+
+        num_features = len(self.config_space.get_hyperparameters())
+        assert num_features < 3, 'Surrogate model only supports plotting less than 3 feature dimensions'
+
         x_hyperparameters = get_hyperparameters(x_hyperparameters, self.config_space)
         check_and_set_axis(ax, x_hyperparameters)
 

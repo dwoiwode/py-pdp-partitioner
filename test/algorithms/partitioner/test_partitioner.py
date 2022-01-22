@@ -38,6 +38,7 @@ class TestPartitioner(PlottableTest):
         plt.show()
 
     def test_dt_partitioner_multiple_splits(self):
+        self.initialize_figure()
         cs = config_space_nd(2, lower=-1, upper=1)
         selected_hp = cs.get_hyperparameters()[0]
 
@@ -56,5 +57,5 @@ class TestPartitioner(PlottableTest):
         colors = ['red', 'orange', 'green', 'blue', 'grey', 'black', 'magenta', 'yellow']
         color_list = colors[:len(regions)]
         partitioner.plot(color_list=color_list)
-        # self.save_fig()
+        self.save_fig()
         plt.show()
