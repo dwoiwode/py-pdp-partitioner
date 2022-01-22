@@ -61,7 +61,7 @@ class TestBayesianOptimizer(PlottableTest):
                                          config_space=cs,
                                          initial_points=initial_points,
                                          acq_class=ProbabilityOfImprovement,
-                                         acq_class_kwargs={"eps": 0.1})
+                                         acq_class_kwargs={"eps": 0.01})
         bo.sample(50)
 
         best_config, best_val = bo.incumbent
