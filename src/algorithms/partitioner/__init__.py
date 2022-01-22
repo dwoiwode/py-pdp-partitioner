@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import Tuple, Optional, List, Set
+from typing import Tuple, Optional, List
 
 import numpy as np
+import ConfigSpace.hyperparameters as CSH
 
 from src.algorithms import Algorithm
 from src.algorithms.ice import ICE
@@ -60,8 +61,10 @@ class Partitioner(Algorithm, ABC):
 
         # get indices of selected hyperparameters
         cs = self.surrogate_model.config_space
-        self.selected_idx: List[int] = get_selected_idx(self.selected_hyperparameter, cs)
-        self.possible_split_param_idx: List[int] = list(set(range(self.num_features)) - set(self.selected_idx))
+        self.possible_split_parameters: List[CSH.Hyperparameter] = [
+            hp for hp in cs.get_hyperparameters()
+            if hp.name != selected_hyperparameter.name
+        ]
 
     @property
     def ice(self) -> ICE:

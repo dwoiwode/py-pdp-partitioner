@@ -57,12 +57,12 @@ class SplitCondition:
     def __str__(self):
         if self.less_equal is not None:
             if self.less_equal:
-                op_str = '<='
-            else:
                 op_str = '>'
+            else:
+                op_str = '<='
         else:
             op_str = 'in'
-        return f'{self.hyperparameter.name} {op_str} {self.value}'
+        return f'SplitCondition({self.value} {op_str} {self.hyperparameter.name})'
 
 
 class DTRegion(Region, Plottable):
@@ -160,13 +160,11 @@ class DTNode:
                  parent: Optional["DTNode"],
                  region: DTRegion,
                  depth: int,
-                 max_depth: int,
                  config_space: CS.ConfigurationSpace,
                  selected_hyperparameter: SelectedHyperparameterType):
         self.parent = parent
         self.region = region
         self.depth = depth
-        self.max_depth = max_depth
         self.config_space = config_space
         self.selected_hyperparameter = selected_hyperparameter
 
@@ -179,9 +177,8 @@ class DTNode:
     def __len__(self):
         return len(self.region)
 
-    def is_terminal(self) -> bool:
-        # either max depth or single instance
-        return self.depth >= self.max_depth or len(self.region) == 1
+    def is_splittable(self) -> bool:
+        return len(self.region) > 1
 
     def is_root(self) -> bool:
         return self.parent is None
@@ -193,13 +190,13 @@ class DTNode:
         left_split_condition = SplitCondition(self.config_space, hyperparameter, normalized_value=split_val,
                                               less_equal=True)
         left_region = self.region.filter_by_condition(left_split_condition)
-        left_node = DTNode(self, left_region, self.depth + 1, self.max_depth, self.config_space,
+        left_node = DTNode(self, left_region, self.depth + 1, self.config_space,
                            self.selected_hyperparameter)
 
         right_split_condition = SplitCondition(self.config_space, hyperparameter, normalized_value=split_val,
                                                less_equal=False)
         right_region = self.region.filter_by_condition(right_split_condition)
-        right_node = DTNode(self, right_region, self.depth + 1, self.max_depth, self.config_space,
+        right_node = DTNode(self, right_region, self.depth + 1, self.config_space,
                             self.selected_hyperparameter)
 
         return left_node, right_node
@@ -239,30 +236,23 @@ class DTPartitioner(Partitioner):
         queue = [self.root]
         while len(queue) > 0:
             node = queue.pop()
+            if not node.is_splittable() or node.depth >= max_depth:
+                self.leaves.append(node)
+                continue
 
             # calculate children
-            left_child, right_child = self.calc_best_split(node)
-            if not left_child.is_terminal():
-                queue.append(left_child)
-            else:
-                self.leaves.append(left_child)
-            if not right_child.is_terminal():
-                queue.append(right_child)
-            else:
-                self.leaves.append(right_child)
+            queue += self.calc_best_split(node)
+
         leaf_regions = [leaf.region for leaf in self.leaves]
         return leaf_regions
 
     def calc_best_split(self, node: DTNode) -> Tuple[DTNode, DTNode]:
-        assert not node.is_terminal(), 'Cannot split a terminal node'
+        assert node.is_splittable(), 'Cannot split a terminal node'
 
         best_loss = np.inf
         best_left_child = None
         best_right_child = None
-        for hyperparameter_idx in self.possible_split_param_idx:
-            hyperparameter_str = self.config_space.get_hyperparameter_by_idx(hyperparameter_idx)
-            hyperparameter = self.config_space.get_hyperparameter(hyperparameter_str)
-
+        for hyperparameter in self.possible_split_parameters:
             for instance_idx in range(len(node)):
                 # get children after split
                 left_child, right_child = node.split_at_idx(hyperparameter, instance_idx)
