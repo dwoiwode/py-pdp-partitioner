@@ -16,33 +16,34 @@ class TestHPOBench(PlottableTest):
         # Paper configurations
         bo_sampling_points = 80  # [80, 160, 240]
 
-        # Static paper configurations (not changed throughout the paper)
-        selected_hyperparameter = cs.get_hyperparameter("C")
-
         # Sampler
         sampler = BayesianOptimizationSampler(f, cs, seed=seed)
         for i in range(3):
-            self.initialize_figure()
             sampler.sample(bo_sampling_points)
-            sampler.plot(x_hyperparameters=selected_hyperparameter)
 
             # Surrogate model
             surrogate_model = GaussianProcessSurrogate(cs, seed=seed)
             surrogate_model.fit(sampler.X, sampler.y)
-            surrogate_model.plot(x_hyperparameters=selected_hyperparameter)
+            for selected_hyperparameter in cs.get_hyperparameters():
+                self.initialize_figure()
+                self.fig.suptitle(f"HPOBench Task 2079 - {selected_hyperparameter.name} - {len(sampler)} samples")
 
-            # ICE
-            ice = ICE(surrogate_model, selected_hyperparameter, seed=seed)
-            ice.plot(color="orange")
+                # Plot sampler/surrogate
+                sampler.plot(x_hyperparameters=selected_hyperparameter)
+                surrogate_model.plot(x_hyperparameters=selected_hyperparameter)
 
-            # PDP
-            pdp = PDP.from_ICE(ice)
-            pdp.plot("black", "grey", with_confidence=True)
+                # ICE
+                ice = ICE(surrogate_model, selected_hyperparameter, seed=seed)
+                ice.plot(color="orange")
 
-            # Partitioner
-            # dt_partitioner = DTPartitioner(surrogate_model, selected_hyperparamter)
+                # PDP
+                pdp = PDP.from_ICE(ice)
+                pdp.plot("black", "grey", with_confidence=True)
 
-            # Finish plot
-            self.save_fig()
+                # Partitioner
+                # dt_partitioner = DTPartitioner(surrogate_model, selected_hyperparamter)
+
+                # Finish plot
+                self.save_fig()
 
 

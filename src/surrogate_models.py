@@ -13,7 +13,8 @@ from sklearn.preprocessing import StandardScaler
 from src.utils.plotting import Plottable, plot_1D_confidence_lines, plot_1D_confidence_color_gradients, get_ax, \
     plot_line, check_and_set_axis
 from src.utils.typing import SelectedHyperparameterType
-from src.utils.utils import convert_config_list_to_np, get_uniform_distributed_ranges, get_hyperparameters
+from src.utils.utils import convert_config_list_to_np, get_uniform_distributed_ranges, get_hyperparameters, \
+    get_selected_idx
 
 
 class SurrogateModel(Plottable, ABC):
@@ -93,6 +94,7 @@ class SurrogateModel(Plottable, ABC):
         assert num_features < 3, 'Surrogate model only supports plotting less than 3 feature dimensions'
 
         x_hyperparameters = get_hyperparameters(x_hyperparameters, self.config_space)
+        idx = get_selected_idx(x_hyperparameters, self.config_space)
         check_and_set_axis(ax, x_hyperparameters)
 
         # Switch cases for number of dimensions
@@ -103,7 +105,7 @@ class SurrogateModel(Plottable, ABC):
             mu, std = self.predict(scaled_ranges.T)  # Transpose so that per hp axis -> per config axis
 
             name = self.__class__.__name__
-            x = ranges[0]
+            x = ranges[idx[0]]
             if with_confidence:
                 plot_1D_confidence_color_gradients(x, mu, std, color=gradient_color, ax=ax)
                 plot_1D_confidence_lines(x, mu, std, k_sigmas=(1, 2), color=line_color, ax=ax, name=name)
