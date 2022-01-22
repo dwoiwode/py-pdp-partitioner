@@ -12,10 +12,9 @@ class TestHPOBench(PlottableTest):
         Took ~3 min for me (dwoiwode)
         """
         seed = 0
-        self.initialize_figure()
         cs, f = get_SVMBenchmarkMF(2079, seed=seed)
         # Paper configurations
-        bo_sampling_points = 80  # [80, 150, 250]
+        bo_sampling_points = 80  # [80, 160, 240]
 
         # Static paper configurations (not changed throughout the paper)
         selected_hyperparameter = cs.get_hyperparameter("C")
@@ -23,6 +22,7 @@ class TestHPOBench(PlottableTest):
         # Sampler
         sampler = BayesianOptimizationSampler(f, cs, seed=seed)
         for i in range(3):
+            self.initialize_figure()
             sampler.sample(bo_sampling_points)
             sampler.plot(x_hyperparameters=selected_hyperparameter)
 

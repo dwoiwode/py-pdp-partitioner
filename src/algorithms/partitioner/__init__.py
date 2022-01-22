@@ -26,23 +26,15 @@ class Region:
 
         assert len(self.x_points) == len(self.y_points) == len(self.y_variances)
 
-        # properties
-        self._loss: Optional[float] = None
-
     def __len__(self):
         return len(self.x_points)
 
     @cached_property
     def mean_confidence(self) -> float:
-        return np.mean(self.y_variances, axis=None).item()
+        return np.mean(self.y_variances).item()
 
-    @property
-    def loss(self):
-        if self._loss is None:
-            self._loss = self._calculate_loss()
-        return self._loss
-
-    def _calculate_loss(self) -> float:
+    @cached_property
+    def loss(self) -> float:
         # l2 loss calculation according to paper
         mean_variances = np.mean(self.y_variances, axis=0)
         pointwise_l2_loss = (self.y_variances - mean_variances) ** 2

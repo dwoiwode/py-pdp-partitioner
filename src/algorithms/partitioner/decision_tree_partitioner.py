@@ -44,7 +44,7 @@ class SplitCondition:
         else:
             return self._normalized_value
 
-    def is_satisfied(self, configuration: CS.Configuration):
+    def is_satisfied(self, configuration: CS.Configuration) -> bool:
         config_value = configuration.get(self.hyperparameter.name)
         if isinstance(self.value, float):
             if self.less_equal:
@@ -64,6 +64,7 @@ class SplitCondition:
             op_str = 'in'
         return f'{self.hyperparameter.name} {op_str} {self.value}'
 
+
 class DTRegion(Region, Plottable):
     def __init__(self,
                  x_points: np.ndarray,
@@ -79,7 +80,7 @@ class DTRegion(Region, Plottable):
         self.full_config_space = full_config_space
         self.selected_hyperparameter = list(selected_hyperparameter)
 
-    def __contains__(self, item: CS.Configuration):
+    def __contains__(self, item: CS.Configuration) -> bool:
         for condition in self.split_conditions:
             if not condition.is_satisfied(item):
                 return False
@@ -89,8 +90,8 @@ class DTRegion(Region, Plottable):
         # copy cs
         hp_dic = {}
         for hp in self.full_config_space.get_hyperparameters():
-            if isinstance(hp, CSH.UniformFloatHyperparameter):
-                new_hp = CSH.UniformFloatHyperparameter(hp.name, hp.lower, hp.upper)
+            if isinstance(hp, CSH.NumericalHyperparameter):
+                new_hp = CSH.UniformFloatHyperparameter(hp.name, lower=hp.lower, upper=hp.upper, log=hp.log)
                 hp_dic[hp.name] = new_hp
             else:
                 raise NotImplementedError()
@@ -142,7 +143,7 @@ class DTRegion(Region, Plottable):
 
         # Plot
         if n_selected_hyperparameter == 1:  # 1D
-            x_unscaled = unscale(self.x_points, self.full_config_space)#
+            x_unscaled = unscale(self.x_points, self.full_config_space)
             hp = self.selected_hyperparameter[0]
             hp_idx = self.full_config_space.get_idx_by_hyperparameter_name(hp.name)
 
@@ -298,4 +299,3 @@ class DTPartitioner(Partitioner):
 
         for i, leaf in enumerate(self.leaves):
             leaf.region.plot(color=color_list[i], alpha=alpha, ax=ax)
-
