@@ -34,21 +34,21 @@ class TestSampler(PlottableTest):
         f = styblinski_tang_2D
         cs = config_space_nd(2)
         n = 150  # Sampler
-        m = 300  # Uniform
+        m = 1000  # Uniform
 
         # Random
         random_sampler = RandomSampler(f, cs)
         random_sampler.sample(n)
-        l2_distance = random_sampler.median_distance_between_points()
-        print("L2_random", l2_distance)
+        # l2_distance = random_sampler.median_distance_between_points()
+        # print("L2_random", l2_distance)
         mmd_random = random_sampler.maximum_mean_discrepancy(m=m)
         print(mmd_random)
 
         # Bayesian Optimization
         bo = BayesianOptimizationSampler(f, cs)
         bo.sample(n)
-        l2_distance = bo.median_distance_between_points()
-        print("L2_bo", l2_distance)
+        # l2_distance = bo.median_distance_between_points()
+        # print("L2_bo", l2_distance)
         mmd_bo = bo.maximum_mean_discrepancy(m=m)
         print(mmd_bo)
 

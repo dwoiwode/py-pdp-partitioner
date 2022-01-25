@@ -73,7 +73,7 @@ class DTRegion(Region, Plottable):
                  split_conditions: List[SplitCondition],
                  full_config_space: CS.ConfigurationSpace,
                  selected_hyperparameter: SelectedHyperparameterType):
-        Region.__init__(self, x_points, y_points, y_variances)
+        Region.__init__(self, x_points, y_points, y_variances, full_config_space, selected_hyperparameter)
         Plottable.__init__(self)
 
         self.split_conditions = split_conditions
@@ -206,10 +206,13 @@ class DTPartitioner(Partitioner):
     def __init__(self,
                  surrogate_model: SurrogateModel,
                  selected_hyperparameter: SelectedHyperparameterType,
+                 num_grid_points_per_axis: int = 20,
                  num_samples: int = 1000,
-                 num_grid_points_per_axis: int = 20
                  ):
-        super().__init__(surrogate_model, selected_hyperparameter, num_samples, num_grid_points_per_axis)
+        super().__init__(surrogate_model=surrogate_model,
+                         selected_hyperparameter=selected_hyperparameter,
+                         num_grid_points=num_grid_points_per_axis,
+                         num_samples=num_samples)
 
         self.root: Optional[DTNode] = None
         self.leaves: List[DTNode] = []
@@ -229,7 +232,7 @@ class DTPartitioner(Partitioner):
         # create root node and leaves
         dt_region = DTRegion(self.ice.x_ice, self.ice.y_ice, self.ice.y_variances, [], self.config_space,
                              self.selected_hyperparameter)
-        self.root = DTNode(None, dt_region, depth=0, max_depth=max_depth, config_space=self.config_space,
+        self.root = DTNode(None, dt_region, depth=0, config_space=self.config_space,
                            selected_hyperparameter=self.selected_hyperparameter)
         self.leaves = []
 
@@ -245,6 +248,12 @@ class DTPartitioner(Partitioner):
 
         leaf_regions = [leaf.region for leaf in self.leaves]
         return leaf_regions
+
+    def get_incumbent_region(self, incumbent: CS.Configuration) -> DTRegion:
+        assert self.leaves is not None and len(self.leaves) > 0, 'Cannot compute incumbent region before partitioning'
+        for leaf in self.leaves:
+            if incumbent in leaf:
+                return leaf.region
 
     def calc_best_split(self, node: DTNode) -> Tuple[DTNode, DTNode]:
         assert node.is_splittable(), 'Cannot split a terminal node'

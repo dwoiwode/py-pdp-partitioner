@@ -5,7 +5,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from src.demo_data.blackbox_functions import levy_1D, levy_2D, ackley_1D, ackley_2D, cross_in_tray, styblinski_tang, \
-    square_2D, square, neg_square
+    square_2D, square, neg_square, styblinski_tang_3D_int_1D, styblinski_tang_3D_int_2D, styblinski_tang_integral, \
+    styblinski_tang_2D
 from src.demo_data.config_spaces import config_space_nd
 from src.utils.plotting import plot_function
 from test import PlottableTest
@@ -84,6 +85,36 @@ class TestStyblinskiTang(TestCase):
             self.assertEqual(len(x), d)
             self.assertAlmostEqual(f(*x), d * self.minimum)
 
+    def test_integral_1d(self):
+        f = styblinski_tang
+        mean = 0.1 * (styblinski_tang_integral(5) - styblinski_tang_integral(-5))
+        f_int = styblinski_tang_3D_int_1D
+
+        x = np.linspace(-5, 5, num=100)
+        x = np.expand_dims(x, axis=1)
+
+        for i in range(len(x)):
+            f_x = f(x[i])
+            f_int_x = f_int(x[i]) - 2 * mean
+            self.assertAlmostEqual(f_x, f_int_x, places=5)
+
+    def test_integral_2d(self):
+        f = styblinski_tang_2D
+        mean = 0.1 * (styblinski_tang_integral(5) - styblinski_tang_integral(-5))
+        f_int = styblinski_tang_3D_int_2D
+
+        x1 = np.linspace(-5, 5, num=100)
+        x1 = np.expand_dims(x1, axis=1)
+
+        x2 = np.linspace(-5, 5, num=100)
+        x2 = np.expand_dims(x2, axis=1)
+
+        for i in range(len(x1)):
+            for j in range(len(x2)):
+                f_x = f(x1[i], x2[j])
+                f_int_x = f_int(x1[i], x2[j]) - mean
+                self.assertAlmostEqual(f_x, f_int_x, places=5)
+
 
 class TestPlotBlackboxFunctions(PlottableTest):
     def _apply_blackbox_plot(self, f: callable, cs: CS.ConfigurationSpace, name: str, **kwargs):
@@ -148,3 +179,17 @@ class TestPlotBlackboxFunctions(PlottableTest):
 
         cs = config_space_nd(2)
         self._apply_blackbox_plot(styblinski_tang_2D, cs, "Styblinski Tang 2D")
+
+    def test_plot_styblinski_tang_3D_int_1D(self):
+        cs = config_space_nd(1)
+        self._apply_blackbox_plot(styblinski_tang_3D_int_1D, cs, "Styblinski Tang Integral 1D")
+
+    def test_plot_styblinski_tang_3D_int_2D(self):
+        cs = config_space_nd(2)
+        self._apply_blackbox_plot(styblinski_tang_3D_int_2D, cs, "Styblinski Tang Integral 2D")
+
+    def test_plot_styblinski_tang_integral(self):
+        def norm_integral(x1: float):
+            return 0.1 * styblinski_tang_integral(x1)
+        cs = config_space_nd(1)
+        self._apply_blackbox_plot(norm_integral, cs, "Styblinski Tang Integral 1D")

@@ -60,9 +60,6 @@ class Sampler(Plottable, ABC):
         """ Samples n_points new points """
         pass
 
-    def median_distance_between_points(self) -> float:
-        return median_distance_between_points(self.X)
-
     def maximum_mean_discrepancy(self, m: int = 200) -> float:
         # Get and transform samples
         X_samples = config_list_to_array(self.X)
@@ -70,7 +67,7 @@ class Sampler(Plottable, ABC):
         X = np.concatenate((X_samples, X_uniform))
 
         # Calculate
-        median_l2 = median_distance_between_points(self.X)
+        median_l2 = median_distance_between_points(X_uniform)
         rbf = RBF(median_l2)
 
         covariances = rbf(X)

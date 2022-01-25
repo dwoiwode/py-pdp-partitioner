@@ -1,6 +1,8 @@
 """
 Collection of blackbox functions that can be minimized
 """
+import math
+
 import numpy as np
 
 
@@ -96,6 +98,11 @@ def styblinski_tang(*x: float) -> float:
 
     return np.sum(np.power(x, 4) - 16 * np.power(x, 2) + 5 * x) / 2
 
+# Integral helper functions
+def styblinski_tang_integral(x1: float) -> float:
+    return 0.5 * (0.2 * np.power(x1, 5) - 16/3 * np.power(x1, 3) + 2.5 * np.power(x1, 2))
+
+
 
 # Shortcuts
 def levy_1D(x1: float) -> float:
@@ -120,10 +127,35 @@ def styblinski_tang_2D(x1: float, x2: float) -> float:
 def styblinski_tang_3D(x1: float, x2: float, x3: float) -> float:
     return styblinski_tang(x1, x2, x3)
 
-
 def styblinski_tang_5D(x1: float, x2: float, x3: float, x4: float, x5: float) -> float:
     return styblinski_tang(x1, x2, x3, x4, x5)
 
-
 def styblinski_tang_8D(x1: float, x2: float, x3: float, x4: float, x5: float, x6: float, x7: float, x8: float) -> float:
     return styblinski_tang(x1, x2, x3, x4, x5, x6, x7, x8)
+
+def styblinski_tang_3D_int_2D(x1: float, x2: float, lower: float = -5, upper: float = 5) -> float:
+    lower_term = styblinski_tang_2D(x1, x2) * lower + styblinski_tang_integral(lower)
+    upper_term = styblinski_tang_2D(x1, x2) * upper + styblinski_tang_integral(upper)
+    return (upper_term - lower_term) / (upper - lower)  # normalization
+
+def styblinski_tang_3D_int_1D(x1: float, lower_x2: float = -5, upper_x2: float = 5, lower_x3: float = -5,
+                              upper_x3: float = 5) -> float:
+    term_x1_lower_lower = styblinski_tang(x1) * lower_x2 * lower_x3
+    term_x1_lower_upper = styblinski_tang(x1) * lower_x2 * upper_x3
+    term_x1_upper_lower = styblinski_tang(x1) * upper_x2 * lower_x3
+    term_x1_upper_upper = styblinski_tang(x1) * upper_x2 * upper_x3
+    term_x1 = term_x1_upper_upper - term_x1_upper_lower - term_x1_lower_upper + term_x1_lower_lower
+
+    term_x2_lower_lower = styblinski_tang_integral(lower_x2) * lower_x3
+    term_x2_lower_upper = styblinski_tang_integral(lower_x2) * upper_x3
+    term_x2_upper_lower = styblinski_tang_integral(upper_x2) * lower_x3
+    term_x2_upper_upper = styblinski_tang_integral(upper_x2) * upper_x3
+    term_x2 = term_x2_upper_upper - term_x2_upper_lower - term_x2_lower_upper + term_x2_lower_lower
+
+    term_x3_lower_lower = styblinski_tang_integral(lower_x3) * lower_x2
+    term_x3_lower_upper = styblinski_tang_integral(lower_x3) * upper_x2
+    term_x3_upper_lower = styblinski_tang_integral(upper_x3) * lower_x2
+    term_x3_upper_upper = styblinski_tang_integral(upper_x3) * upper_x2
+    term_x3 = term_x3_upper_upper - term_x3_upper_lower - term_x3_lower_upper + term_x3_lower_lower
+
+    return (term_x1 + term_x2 + term_x3) / ((upper_x2 - lower_x2) * (upper_x3 - lower_x3))
