@@ -5,10 +5,11 @@ import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 import numpy as np
 from matplotlib import pyplot as plt
+from sklearn.gaussian_process.kernels import RBF
 
 from src.utils.plotting import Plottable, get_ax, check_and_set_axis
 from src.utils.typing import ColorType
-from src.utils.utils import config_list_to_2d_arr, get_hyperparameters
+from src.utils.utils import config_list_to_array, get_hyperparameters, median_distance_between_points
 
 
 class Sampler(Plottable, ABC):
@@ -35,7 +36,7 @@ class Sampler(Plottable, ABC):
 
     @property
     def X(self) -> np.ndarray:
-        return config_list_to_2d_arr(self.config_list)
+        return config_list_to_array(self.config_list)
 
     @property
     def y(self) -> np.ndarray:
@@ -58,6 +59,30 @@ class Sampler(Plottable, ABC):
     def sample(self, n_points: int = 1):
         """ Samples n_points new points """
         pass
+
+    def median_distance_between_points(self) -> float:
+        return median_distance_between_points(self.X)
+
+    def maximum_mean_discrepancy(self, m: int = 200) -> float:
+        # Get and transform samples
+        X_samples = config_list_to_array(self.X)
+        X_uniform = config_list_to_array(self.config_space.sample_configuration(m))
+        X = np.concatenate((X_samples, X_uniform))
+
+        # Calculate
+        median_l2 = median_distance_between_points(self.X)
+        rbf = RBF(median_l2)
+
+        covariances = rbf(X)
+        n = len(X_samples)
+        term1 = np.sum((1 - np.eye(n)) * covariances[:n, :n]) / (n * (n - 1))
+        term2 = np.sum((1 - np.eye(m)) * covariances[n:, n:]) / (m * (m - 1))
+        term3 = np.sum(covariances[:n, n:]) * 2 / (n * m)
+
+        term_sum = term1 + term2 - term3
+        if term_sum < 0:
+            return 0
+        return np.sqrt(term_sum)
 
     def plot(self,
              color: ColorType = "red",

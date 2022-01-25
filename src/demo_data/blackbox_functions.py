@@ -114,6 +114,9 @@ def ackley_2D(x1: float, x2: float) -> float:
     return ackley(x1, x2)
 
 
+def styblinski_tang_2D(x1: float, x2: float) -> float:
+    return styblinski_tang(x1, x2)
+
 def styblinski_tang_3D(x1: float, x2: float, x3: float) -> float:
     return styblinski_tang(x1, x2, x3)
 

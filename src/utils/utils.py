@@ -9,15 +9,11 @@ def config_to_array(config: CS.Configuration) -> np.ndarray:
     return config.get_array()
 
 
-def convert_config_list_to_np(X: Union[List[CS.Configuration], List[Iterable[float]], np.ndarray]) -> np.ndarray:
+def config_list_to_array(X: Union[List[CS.Configuration], List[Iterable[float]], np.ndarray]) -> np.ndarray:
     if isinstance(X, list):
         if isinstance(X[0], CS.Configuration):
-            X = [x.values() for x in X]
+            X = [config.get_array() for config in X]
     return np.asarray(X)
-
-
-def config_list_to_2d_arr(config_list: List[CS.Configuration]) -> np.ndarray:
-    return np.asarray([config.get_array() for config in config_list])
 
 
 def get_selected_idx(selected_hyperparameter: Iterable[CSH.Hyperparameter],
@@ -27,15 +23,18 @@ def get_selected_idx(selected_hyperparameter: Iterable[CSH.Hyperparameter],
         for hp in selected_hyperparameter
     ]
 
+
 def scale_float(value: float, cs: CS.ConfigurationSpace, hp: CSH.Hyperparameter):
     cs_hp = cs.get_hyperparameter(hp.name)
     normalized_value = (value - cs_hp.lower) / (cs_hp.upper - cs_hp.lower)
     return normalized_value
 
+
 def unscale_float(normalized_value: float, cs: CS.ConfigurationSpace, hp: CSH.Hyperparameter):
     cs_hp = cs.get_hyperparameter(hp.name)
     value = normalized_value * (cs_hp.upper - cs_hp.lower) + cs_hp.lower
     return value
+
 
 def unscale(x: np.ndarray, cs: CS.ConfigurationSpace):
     """
@@ -84,6 +83,7 @@ def get_hyperparameters(hyperparameters: Union[None, CSH.Hyperparameter, Iterabl
                 raise TypeError(f"Could not identify hyperparameter {hp} (Type: {type(hp)})")
         return hps
 
+
 def get_uniform_distributed_ranges(cs: CS.ConfigurationSpace,
                                    samples_per_axis: int = 100,
                                    scaled=False) -> np.ndarray:
@@ -107,3 +107,11 @@ def get_uniform_distributed_ranges(cs: CS.ConfigurationSpace,
     res = np.asarray(ranges)
     assert len(res) == len(cs.get_hyperparameters())
     return res
+
+
+def median_distance_between_points(X:np.ndarray) -> float:
+    X = np.expand_dims(X, axis=0)
+    dif = X - X.transpose((1, 0, 2))
+    dif_2 = np.sum(np.square(dif), axis=2)
+    distances = np.sqrt(dif_2)
+    return np.median(distances[distances != 0]).item()

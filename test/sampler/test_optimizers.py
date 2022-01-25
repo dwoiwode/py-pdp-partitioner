@@ -6,7 +6,7 @@ from src.utils.plotting import plot_function
 from test import PlottableTest
 
 
-class TestBayesianOptimizer(PlottableTest):
+class TestBayesianSampler(PlottableTest):
     def test_initial_sampling(self):
         initial_points = 2
         bo = BayesianOptimizationSampler(obj_func=square, config_space=config_space_nd(1),

@@ -10,6 +10,9 @@ class TestHPOBench(PlottableTest):
     def test_svm_task_2079(self):
         """
         Took ~3 min for me (dwoiwode)
+
+        Task 2079 has 2 hyperparameter: C, gamma
+        Each parameter is ranged from ~0 -> 1024 in log-space
         """
         seed = 0
         cs, f = get_SVMBenchmarkMF(2079, seed=seed)
@@ -30,7 +33,6 @@ class TestHPOBench(PlottableTest):
 
                 # Plot sampler/surrogate
                 sampler.plot(x_hyperparameters=selected_hyperparameter)
-                surrogate_model.plot(x_hyperparameters=selected_hyperparameter)
 
                 # ICE
                 ice = ICE(surrogate_model, selected_hyperparameter, seed=seed)

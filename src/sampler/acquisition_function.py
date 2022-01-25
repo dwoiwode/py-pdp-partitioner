@@ -158,19 +158,19 @@ class LowerConfidenceBound(AcquisitionFunction):
     def __init__(self,
                  config_space: CS.ConfigurationSpace,
                  surrogate_model: SurrogateModel,
-                 theta: float = 5,
+                 tau: float = 5,
                  samples_for_optimization=100,
                  minimize_objective=True,
                  seed=None):
         super().__init__(config_space, surrogate_model, samples_for_optimization, minimize_objective=minimize_objective,
                          seed=seed)
-        self.theta = theta
+        self.tau = tau
 
     def __call__(self, configuration: Union[CS.Configuration, np.ndarray]):
         x = self.convert_configs(configuration)
 
         mean, sigma = self.surrogate_model.predict(x)
         if self.minimize_objective:
-            return - mean + self.theta * sigma
+            return - mean + self.tau * sigma
         else:
-            return mean + self.theta * sigma
+            return mean + self.tau * sigma
