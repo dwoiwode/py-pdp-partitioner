@@ -156,7 +156,7 @@ def plot_function(f: Callable[[Any], float],
     check_and_set_axis(ax, parameters)
     if n_parameter == 1:
         # plot ground truth lines
-        y = [f(p) for p in x]
+        y = [f(**{parameters[0].name:p}) for p in x]
         ax.plot(x, y, label=f.__name__, c='black')
     elif n_parameter == 2:
         # plot ground truth lines

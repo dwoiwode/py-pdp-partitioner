@@ -1,7 +1,6 @@
 from matplotlib import pyplot as plt
 
-from src.demo_data.blackbox_functions import styblinski_tang_2D, styblinski_tang_5D
-from src.demo_data.config_spaces import config_space_nd
+from src.blackbox_functions.synthetic_functions import StyblinskiTang
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.sampler.random_sampler import RandomSampler
 from src.utils.plotting import plot_function
@@ -10,8 +9,8 @@ from test import PlottableTest
 
 class TestSampler(PlottableTest):
     def test_mmd_random(self):
-        f = styblinski_tang_2D
-        cs = config_space_nd(2)
+        f = StyblinskiTang(2)
+        cs = f.config_space
         n = 250  # Sampler
         m = 500  # Uniform
 
@@ -31,8 +30,8 @@ class TestSampler(PlottableTest):
         self.assertAlmostEqual(0, mmd_random, places=3)
 
     def test_mmd_compare(self):
-        f = styblinski_tang_2D
-        cs = config_space_nd(2)
+        f = StyblinskiTang(2)
+        cs = f.config_space
         n = 150  # Sampler
         m = 1000  # Uniform
 
@@ -64,16 +63,15 @@ class TestSampler(PlottableTest):
         self.assertGreater(mmd_bo, mmd_random)
 
     def test_mmd_bayesian(self):
-        f = styblinski_tang_5D
-        d = 5
-        cs = config_space_nd(d)
+        f = StyblinskiTang(5)
+        cs = f.config_space
         n = 150  # Sampler
         m = 500  # Uniform
 
         for tau in (0.1, 2, 5):
             # Bayesian
             random_sampler = BayesianOptimizationSampler(f, cs,
-                                                         initial_points=d * 4,
+                                                         initial_points=f.ndim * 4,
                                                          acq_class_kwargs={"tau": tau})
             random_sampler.sample(n)
             mmd_bayesian = random_sampler.maximum_mean_discrepancy(m=m)

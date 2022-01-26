@@ -57,9 +57,9 @@ class SplitCondition:
     def __str__(self):
         if self.less_equal is not None:
             if self.less_equal:
-                op_str = '>'
+                op_str = '>='
             else:
-                op_str = '<='
+                op_str = '<'
         else:
             op_str = 'in'
         return f'SplitCondition({self.value} {op_str} {self.hyperparameter.name})'

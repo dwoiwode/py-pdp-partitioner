@@ -3,15 +3,15 @@ import unittest
 import numpy as np
 
 from src.algorithms.ice import ICE
-from src.demo_data.blackbox_functions import square, square_2D
-from src.demo_data.config_spaces import config_space_nd
+from src.blackbox_functions.synthetic_functions import Square
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 
 
 class TestICE(unittest.TestCase):
     def test_create_ice_1D(self):
-        cs = config_space_nd(1)
-        bo = BayesianOptimizationSampler(square, config_space=cs)
+        f = Square(1)
+        cs = f.config_space
+        bo = BayesianOptimizationSampler(f, config_space=cs)
         selected_hp = cs.get_hyperparameter("x1")
 
         bo.sample(10)
@@ -40,8 +40,9 @@ class TestICE(unittest.TestCase):
             self.assertTrue(np.all(np.diff(x_ice[i, :, 0]) > 0))
 
     def test_create_ice_2D(self):
-        cs = config_space_nd(2)
-        bo = BayesianOptimizationSampler(square_2D, config_space=cs)
+        f = Square(2)
+        cs = f.config_space
+        bo = BayesianOptimizationSampler(f, config_space=cs)
         selected_hyperparameter = cs.get_hyperparameter("x1")
 
         bo.sample(10)
@@ -65,8 +66,9 @@ class TestICE(unittest.TestCase):
             self.assertTrue(np.all(np.diff(x_ice[i, :, 1]) == 0))
 
     def test_create_ice_centered(self):
-        cs = config_space_nd(2)
-        bo = BayesianOptimizationSampler(square_2D, config_space=cs)
+        f = Square(2)
+        cs = f.config_space
+        bo = BayesianOptimizationSampler(f, config_space=cs)
         selected_hp = cs.get_hyperparameters()[0]
 
         bo.sample(10)

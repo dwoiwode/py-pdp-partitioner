@@ -28,9 +28,12 @@ class PlottableTest(TestCase):
             plt.show()
         plt.clf()
 
-    def save_fig(self, iterate=True):
+    def save_fig(self, iterate=True,name=None):
         if self.fig is None:
             raise ValueError("Figure is None")
+
+        if name is None:
+            name = self._testMethodName
 
         # Create folder
         folder = self.SAVE_FOLDER / self.__class__.__name__
@@ -39,10 +42,10 @@ class PlottableTest(TestCase):
         # Save fig
         self.fig.legend()  # Add legend
         if self.fig_idx == 0 and not iterate:
-            self.fig.savefig(folder / f"{self._testMethodName}.png")
+            self.fig.savefig(folder / f"{name}.png")
         else:
             self.fig_idx += 1
-            self.fig.savefig(folder / f"{self._testMethodName}_{self.fig_idx}.png")
+            self.fig.savefig(folder / f"{name}_{self.fig_idx}.png")
 
     def initialize_figure(self):
         plt.clf()

@@ -8,29 +8,26 @@ from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.container.client_abstract_benchmark import AbstractBenchmarkClient
 import ConfigSpace as CS
 
+from src.blackbox_functions import BlackboxFunction
+
 """
 Viable OpenML Task IDs:
 2079: 2D Configspace
 """
 
 
-def _hpo_blackbox_function(benchmark: Union[AbstractBenchmark, AbstractBenchmarkClient], seed=0) \
-        -> Callable[[Any], float]:
-    """
-    Converts an objective function that takes a config as input in to a blackbox function
-    that takes keyword arguments as input
-    :param benchmark: Used benchmark
-    :param seed: Seed for experiment
-    """
-    cs = benchmark.get_configuration_space(seed=seed)
+class HPOBenchBlackbox(BlackboxFunction):
+    def __init__(self, benchmark: Union[AbstractBenchmark, AbstractBenchmarkClient], *, seed=None):
+        self.benchmark = benchmark
+        super(HPOBenchBlackbox, self).__init__(benchmark.get_configuration_space(seed))
+        self.__seed = seed
 
-    def bb_function(**kwargs):
-        config = CS.Configuration(cs, values=kwargs)
-        result_dict = benchmark.objective_function(configuration=config, rng=seed)
+    def __repr__(self) -> str:
+        return f"HPOBenchmark(benchmark={self.benchmark.__class__.__name__})"
+
+    def value_from_config(self, config: CS.Configuration) -> float:
+        result_dict = self.benchmark.objective_function(configuration=config, rng=self.__seed)
         return result_dict["function_value"]
-
-    bb_function.__name__ = benchmark.__class__.__name__
-    return bb_function
 
 
 def get_Cifar100NasBench201Benchmark(seed=0) -> Tuple[CS.ConfigurationSpace, Callable[[Any], float]]:
@@ -42,9 +39,10 @@ def get_Cifar100NasBench201Benchmark(seed=0) -> Tuple[CS.ConfigurationSpace, Cal
     """
     from hpobench.benchmarks.nas.nasbench_201 import Cifar100NasBench201Benchmark
     b = Cifar100NasBench201Benchmark(rng=seed)
-    cs = b.get_configuration_space(seed)
+    f = HPOBenchBlackbox(b, seed=seed)
+    cs = f.config_space
 
-    return cs, _hpo_blackbox_function(b, seed)
+    return cs, f
 
 
 def get_BNNOnBostonHousing(seed=0):
@@ -53,9 +51,10 @@ def get_BNNOnBostonHousing(seed=0):
     """
     from hpobench.benchmarks.ml.pybnn import BNNOnBostonHousing
     b = BNNOnBostonHousing(rng=seed)
-    cs = b.get_configuration_space(seed)
+    f = HPOBenchBlackbox(b, seed=seed)
+    cs = f.config_space
 
-    return cs, _hpo_blackbox_function(b, seed)
+    return cs, f
 
 
 def get_Paramnet(seed=0):
@@ -63,9 +62,10 @@ def get_Paramnet(seed=0):
     """
     from hpobench.benchmarks.surrogates.paramnet_benchmark import ParamNetAdultOnTimeBenchmark
     b = ParamNetAdultOnTimeBenchmark(rng=seed)
-    cs = b.get_configuration_space(seed)
+    f = HPOBenchBlackbox(b, seed=seed)
+    cs = f.config_space
 
-    return cs, _hpo_blackbox_function(b, seed)
+    return cs, f
 
 
 def get_Cartpole(seed=0, reduced=True):
@@ -79,12 +79,13 @@ def get_Cartpole(seed=0, reduced=True):
         from hpobench.benchmarks.rl.cartpole import CartpoleFull
         b = CartpoleFull(rng=seed)
 
-    cs = b.get_configuration_space(seed)
+    f = HPOBenchBlackbox(b, seed=seed)
+    cs = f.config_space
 
-    return cs, _hpo_blackbox_function(b, seed)
+    return cs, f
 
 
-def get_SVMBenchmarkMF(task_id:int=2079, seed=0):
+def get_SVMBenchmarkMF(task_id: int = 2079, seed=0):
     """
     task_id: see https://openml.github.io/openml-python/develop/examples/30_extended/tasks_tutorial.html
     Requires openml
@@ -92,6 +93,7 @@ def get_SVMBenchmarkMF(task_id:int=2079, seed=0):
     from hpobench.benchmarks.ml import SVMBenchmarkMF
     b = SVMBenchmarkMF(task_id, rng=seed)
 
-    cs = b.get_configuration_space(seed)
+    f = HPOBenchBlackbox(b, seed=seed)
+    cs = f.config_space
 
-    return cs, _hpo_blackbox_function(b, seed)
+    return cs, f

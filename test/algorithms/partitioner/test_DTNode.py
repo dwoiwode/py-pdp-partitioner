@@ -2,8 +2,8 @@ from unittest import TestCase
 
 from src.algorithms.ice import ICE
 from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
-from src.demo_data import blackbox_functions
-from src.demo_data.config_spaces import config_space_nd
+from src.blackbox_functions import synthetic_functions, config_space_nd
+from src.blackbox_functions.synthetic_functions import Square
 from src.sampler.acquisition_function import LowerConfidenceBound
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.surrogate_models import GaussianProcessSurrogate
@@ -12,12 +12,11 @@ from src.surrogate_models import GaussianProcessSurrogate
 class TestDTNode(TestCase):
     def setUp(self) -> None:
         # Paper configurations
+        f = Square(2)
         bo_sampling_points = 10  # [80, 150, 250]
-        dimensions = 2
-        f = blackbox_functions.square_2D
 
         # Static paper configurations (not changed throughout the paper)
-        self.cs = config_space_nd(dimensions)
+        self.cs = f.config_space
         self.selected_hyperparameter = self.cs.get_hyperparameter("x1")
 
         self.surrogate_model = GaussianProcessSurrogate(self.cs)

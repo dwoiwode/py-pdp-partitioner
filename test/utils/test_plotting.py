@@ -4,8 +4,7 @@ import matplotlib.pyplot as plt
 
 from src.algorithms.ice import ICE
 from src.algorithms.pdp import PDP
-from src.demo_data.blackbox_functions import neg_square, square_2D, square
-from src.demo_data.config_spaces import config_space_nd
+from src.blackbox_functions import config_space_nd
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.sampler.random_sampler import RandomSampler
 from src.surrogate_models import GaussianProcessSurrogate
@@ -23,12 +22,18 @@ class TestPlottingFunctions(PlottableTest):
         plt.tight_layout()
 
     def test_plot_square_function_1D(self):
+        def square(x1: float) -> float:
+            return x1 ** 2
+
         x = CSH.UniformFloatHyperparameter("x1", lower=-10, upper=10)
         cs = CS.ConfigurationSpace()
         cs.add_hyperparameter(x)
         self._apply_blackbox_plot(square, cs, "Test Plot Function 1D")
 
     def test_plot_square_function_1D_low_res(self):
+        def square(x1: float) -> float:
+            return x1 ** 2
+
         x = CSH.UniformFloatHyperparameter("x1", lower=-10, upper=10)
         cs = CS.ConfigurationSpace()
         cs.add_hyperparameter(x)
@@ -36,16 +41,25 @@ class TestPlottingFunctions(PlottableTest):
         self._apply_blackbox_plot(square, cs, "Test Plot Function 1D (low res)", samples_per_axis=10)
 
     def test_plot_square_function_2D(self):
+        def square_2D(x1: float, x2: float) -> float:
+            return x1 ** 2 + x2 ** 2
+
         cs = config_space_nd(2)
 
         self._apply_blackbox_plot(square_2D, cs, "Test Plot Function 2D")
 
     def test_plot_square_function_2D_low_res(self):
+        def square_2D(x1: float, x2: float) -> float:
+            return x1 ** 2 + x2 ** 2
+
         cs = config_space_nd(2)
 
         self._apply_blackbox_plot(square_2D, cs, "Test Plot Function 2D (low res)", samples_per_axis=10)
 
     def test_plot_square_1D_artificial(self):
+        def square(x1: float) -> float:
+            return x1 ** 2
+
         cs = config_space_nd(1)
 
         self._apply_blackbox_plot(square, cs, "Test Plot Function 1D")
@@ -55,6 +69,9 @@ class TestPlottingFunctions(PlottableTest):
         sampler.plot(color="red")
 
     def test_plot_square_2D_artificial(self):
+        def square_2D(x1: float, x2: float) -> float:
+            return x1 ** 2 + x2 ** 2
+
         cs = config_space_nd(2)
 
         self._apply_blackbox_plot(square_2D, cs, "Test Plot Function 2D")
@@ -64,6 +81,9 @@ class TestPlottingFunctions(PlottableTest):
         sampler.plot(color="red")
 
     def test_plot_square_neg_1D_confidence(self):
+        def neg_square(x1: float) -> float:
+            return 1 - x1 ** 2
+
         self.initialize_figure()
         cs = config_space_nd(1)
 
@@ -92,6 +112,9 @@ class TestPlottingFunctions(PlottableTest):
                 plt.show()
 
     def test_plot_ice(self):
+        def square_2D(x1: float, x2: float) -> float:
+            return x1 ** 2 + x2 ** 2
+
         self.initialize_figure()
         cs = config_space_nd(2)
         selected_hp = cs.get_hyperparameter("x1")
@@ -106,6 +129,9 @@ class TestPlottingFunctions(PlottableTest):
         ice.plot()
 
     def test_plot_single_ice_with_confidence(self):
+        def square_2D(x1: float, x2: float) -> float:
+            return x1 ** 2 + x2 ** 2
+
         self.initialize_figure()
         cs = config_space_nd(2)
         selected_hp = cs.get_hyperparameter("x1")
@@ -121,6 +147,9 @@ class TestPlottingFunctions(PlottableTest):
         ice_curve.plot(with_confidence=True)
 
     def test_plot_pdp(self):
+        def square_2D(x1: float, x2: float) -> float:
+            return x1 ** 2 + x2 ** 2
+
         self.initialize_figure()
         cs = config_space_nd(2)
         selected_hp = cs.get_hyperparameter("x1")
@@ -135,6 +164,9 @@ class TestPlottingFunctions(PlottableTest):
         pdp.plot(with_confidence=False)
 
     def test_plot_pdp_with_confidence(self):
+        def square_2D(x1: float, x2: float) -> float:
+            return x1 ** 2 + x2 ** 2
+
         self.initialize_figure()
         cs = config_space_nd(2)
         selected_hp = cs.get_hyperparameter("x1")

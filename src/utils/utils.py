@@ -27,6 +27,8 @@ def get_selected_idx(selected_hyperparameter: Iterable[CSH.Hyperparameter],
 def scale_float(value: float, cs: CS.ConfigurationSpace, hp: CSH.Hyperparameter):
     cs_hp = cs.get_hyperparameter(hp.name)
     normalized_value = (value - cs_hp.lower) / (cs_hp.upper - cs_hp.lower)
+    if hp.log:
+        return np.log10(normalized_value)
     return normalized_value
 
 
@@ -43,12 +45,17 @@ def unscale(x: np.ndarray, cs: CS.ConfigurationSpace):
     x_copy = x.copy()
     num_dims = len(x.shape)
     for i, hp in enumerate(cs.get_hyperparameters()):
+        assert isinstance(hp, CSH.NumericalHyperparameter), "Currently only Numerical Hyperparameters are supported"
+        if hp.log:
+            unscaler = lambda values: np.power(10, values * (hp.upper - hp.lower) + hp.lower)
+        else:
+            unscaler = lambda values: values * (hp.upper - hp.lower) + hp.lower
         if num_dims == 1:
-            x_copy[i] = x[i] * (hp.upper - hp.lower) + hp.lower
+            x_copy[i] = unscaler(x[i])
         elif num_dims == 2:
-            x_copy[:, i] = x[:, i] * (hp.upper - hp.lower) + hp.lower
+            x_copy[:, i] = unscaler(x[:, i])
         elif num_dims == 3:
-            x_copy[:, :, i] = x[:, :, i] * (hp.upper - hp.lower) + hp.lower
+            x_copy[:, :, i] = unscaler(x[:, :, i])
         else:
             raise Exception(f'Only up to three dimensions are supported in undo_normalize, but got {num_dims}')
     return x_copy

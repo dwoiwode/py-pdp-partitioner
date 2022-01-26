@@ -87,9 +87,10 @@ class Partitioner(Algorithm, ABC):
 
         # get indices of selected hyperparameters
         cs = self.surrogate_model.config_space
+        selected_hyperparameter_names = {hp.name for hp in self.selected_hyperparameter}
         self.possible_split_parameters: List[CSH.Hyperparameter] = [
             hp for hp in cs.get_hyperparameters()
-            if hp.name != selected_hyperparameter.name
+            if hp.name not in selected_hyperparameter_names
         ]
 
     @property

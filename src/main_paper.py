@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List
 
 from matplotlib import pyplot as plt
 from tqdm import tqdm
@@ -6,8 +7,8 @@ from tqdm import tqdm
 from src.algorithms.ice import ICE
 from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
 from src.algorithms.pdp import PDP
-from src.demo_data import blackbox_functions
-from src.demo_data.config_spaces import config_space_nd
+from src.blackbox_functions import synthetic_functions, BlackboxFunction, config_space_nd
+from src.blackbox_functions.synthetic_functions import StyblinskiTang
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.surrogate_models import GaussianProcessSurrogate
 
@@ -22,7 +23,7 @@ def plot_full_bayesian(bo: BayesianOptimizationSampler) -> plt.Figure:
     assert isinstance(ax_function, plt.Axes)
     assert isinstance(ax_acquisition, plt.Axes)
 
-    bo.surrogate_model.plot(ax=ax_function, x_hyperparameters="x1")
+    bo.surrogate_model.plot(ax=ax_function)
     bo.plot(ax=ax_function, x_hyperparameters="x1")
     bo.acq_func.plot(ax=ax_acquisition, x_hyperparameters="x1")
     plt.legend()
@@ -76,13 +77,13 @@ def run_algorithm(f, cs, bo_samples):
 
 
 if __name__ == '__main__':
-    functions = [
-        (blackbox_functions.styblinski_tang_3D, config_space_nd(3)),
-        (blackbox_functions.styblinski_tang_5D, config_space_nd(5)),
-        (blackbox_functions.styblinski_tang_8D, config_space_nd(8)),
+    functions:List[BlackboxFunction] = [
+        StyblinskiTang(3),
+        StyblinskiTang(5),
+        StyblinskiTang(8),
     ]
     bo_sampling_points = [80, 150, 250]
 
-    for f, cs in tqdm(functions, desc="Function"):
+    for f in tqdm(functions, desc="Function"):
         for sampling_points in tqdm(bo_sampling_points, desc="Bayesian sampling points"):
-            run_algorithm(f, cs, sampling_points)
+            run_algorithm(f, f.config_space, sampling_points)

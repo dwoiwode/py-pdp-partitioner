@@ -3,7 +3,7 @@ from unittest import TestCase
 from ConfigSpace import Configuration
 
 from src.algorithms.partitioner.decision_tree_partitioner import SplitCondition
-from src.demo_data.config_spaces import config_space_nd
+from src.blackbox_functions import config_space_nd
 
 
 class TestSplitCondition(TestCase):

@@ -1,24 +1,21 @@
 import unittest
 
 from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
-from src.demo_data.blackbox_functions import styblinski_tang_5D, styblinski_tang_3D, styblinski_tang_3D_int_2D, \
-    styblinski_tang_3D_int_1D
-from src.demo_data.config_spaces import config_space_nd
+from src.blackbox_functions.synthetic_functions import styblinski_tang_3D_int_1D, StyblinskiTang
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 
 
 class TestICE(unittest.TestCase):
     def test_nll(self):
-        f = styblinski_tang_3D
-        d = 3
-        cs = config_space_nd(d)
+        f = StyblinskiTang(3)
+        cs = f.config_space
         n = 80
         tau = 2
         selected_hyperparameter = cs.get_hyperparameter("x1")
 
         # Bayesian
         random_sampler = BayesianOptimizationSampler(f, cs,
-                                                     initial_points=d * 4,
+                                                     initial_points=f.ndim * 4,
                                                      acq_class_kwargs={"tau": tau})
         random_sampler.sample(n)
 

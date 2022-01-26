@@ -3,14 +3,13 @@ import matplotlib.pyplot as plt
 from src.algorithms.ice import ICE
 from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
 from src.algorithms.pdp import PDP
-from src.demo_data import blackbox_functions
-from src.demo_data.config_spaces import config_space_nd
+from src.blackbox_functions import synthetic_functions
 from src.sampler.random_sampler import RandomSampler
 from src.surrogate_models import GaussianProcessSurrogate
 
-seed = 0
-f = blackbox_functions.styblinski_tang_3D
-cs = config_space_nd(3, seed=seed)
+seed = 0  # TODO: Use seed!!
+f = blackbox_functions.StyblinskiTang(3)
+cs = f.config_space
 
 selected_hyperparameter = cs.get_hyperparameter("x1")
 
