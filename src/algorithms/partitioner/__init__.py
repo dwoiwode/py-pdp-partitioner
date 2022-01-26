@@ -63,8 +63,9 @@ class Region:
         # regions pdp estimate:
         pdp_y_points = np.mean(self.y_points, axis=0)
         pdp_y_variances = np.mean(self.y_variances, axis=0)
+        pdp_y_std = np.sqrt(pdp_y_variances)
 
-        log_prob = norm.logpdf(true_y, loc=pdp_y_points, scale=pdp_y_variances)
+        log_prob = norm.logpdf(true_y, loc=pdp_y_points, scale=pdp_y_std)
         result = - np.mean(log_prob)
         return result
 

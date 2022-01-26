@@ -109,9 +109,10 @@ def get_uniform_distributed_ranges(cs: CS.ConfigurationSpace,
     return res
 
 
-def median_distance_between_points(X:np.ndarray) -> float:
+def median_distance_between_points(X: np.ndarray) -> float:
     X = np.expand_dims(X, axis=0)
     dif = X - X.transpose((1, 0, 2))
     dif_2 = np.sum(np.square(dif), axis=2)
     distances = np.sqrt(dif_2)
-    return np.median(distances[distances != 0]).item()
+    median = np.median(distances[distances != 0]).item()
+    return median

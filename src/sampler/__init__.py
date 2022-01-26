@@ -9,7 +9,7 @@ from sklearn.gaussian_process.kernels import RBF
 
 from src.utils.plotting import Plottable, get_ax, check_and_set_axis
 from src.utils.typing import ColorType
-from src.utils.utils import config_list_to_array, get_hyperparameters, median_distance_between_points
+from src.utils.utils import config_list_to_array, get_hyperparameters, median_distance_between_points, unscale
 
 
 class Sampler(Plottable, ABC):
@@ -67,7 +67,8 @@ class Sampler(Plottable, ABC):
         X = np.concatenate((X_samples, X_uniform))
 
         # Calculate
-        median_l2 = median_distance_between_points(X_uniform)
+        X_uniform_unscaled = unscale(X_uniform, self.config_space)
+        median_l2 = median_distance_between_points(X_uniform_unscaled)
         rbf = RBF(median_l2)
 
         covariances = rbf(X)
