@@ -11,7 +11,7 @@ from src.algorithms.ice import ICE
 from src.blackbox_functions import BlackboxFunction
 from src.surrogate_models import SurrogateModel
 from src.utils.typing import SelectedHyperparameterType
-from src.utils.utils import get_selected_idx, unscale_float
+from src.utils.utils import unscale_float
 
 from scipy.stats import norm
 
@@ -65,7 +65,7 @@ class Region:
             if hp.name not in selected_hyperparameter_names
         ]
 
-        integral = true_function.pd_integral(*not_selected_hp)
+        integral = true_function.pd_integral(*not_selected_hp)  # TODO: Add seed here (from algorithm?)
 
         for i in range(num_grid_points):
             unscaled_x = unscale_float(self.x_points[0, i, hyperparameter_idx], self.config_space,

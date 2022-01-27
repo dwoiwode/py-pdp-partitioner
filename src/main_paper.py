@@ -72,8 +72,8 @@ def run_algorithm(f, cs, bo_samples, n_splits=1, tau=0.1):
     best_region = dt_partitioner.get_incumbent_region(bo_sampler.incumbent[0])
 
     # metrics
-    mc_root = dt_partitioner.root.region.mean_confidence
-    nll_root = dt_partitioner.root.region.negative_log_likelihood(f)
+    mc_root = dt_partitioner.root.mean_confidence
+    nll_root = dt_partitioner.root.negative_log_likelihood(f)
     nll = best_region.negative_log_likelihood(f)
     mc = best_region.mean_confidence
     delta_mc = mc / mc_root

@@ -55,18 +55,24 @@ class SplitCondition:
             return self.value == config_value
 
     def __str__(self):
+        """
+        E.g. SplitCondition(x1 > 3.0)
+        """
         if self.less_equal is not None:
             if self.less_equal:
-                op_str = '>='
+                op_str = '<='
             else:
-                op_str = '<'
+                op_str = '>'
+            return f'SplitCondition({self.hyperparameter.name} {op_str} {self.value})'
         else:
-            op_str = 'in'
-        return f'SplitCondition({self.value} {op_str} {self.hyperparameter.name})'
+            return f'SplitCondition({self.value} in {self.hyperparameter.name})'
 
 
 class DTRegion(Region, Plottable):
     def __init__(self,
+                 parent: Optional['DTRegion'],
+                 depth: int,
+                 config_space: CS.ConfigurationSpace,
                  x_points: np.ndarray,
                  y_points: np.ndarray,
                  y_variances: np.ndarray,
@@ -75,6 +81,14 @@ class DTRegion(Region, Plottable):
                  selected_hyperparameter: SelectedHyperparameterType):
         Region.__init__(self, x_points, y_points, y_variances, full_config_space, selected_hyperparameter)
         Plottable.__init__(self)
+
+        self.parent = parent
+        self.depth = depth
+        self.config_space = config_space
+        self.selected_hyperparameter = selected_hyperparameter
+
+        self.left_child: Optional[DTRegion] = None  # <= split_value
+        self.right_child: Optional[DTRegion] = None  # > split_value
 
         self.split_conditions = split_conditions
         self.full_config_space = full_config_space
@@ -128,10 +142,39 @@ class DTRegion(Region, Plottable):
         new_y_points = np.copy(self.y_points[func_split_cond])
         new_y_variances = np.copy(self.y_variances[func_split_cond])
         new_conditions = self.split_conditions + [condition]
-        new_region = DTRegion(new_x_points, new_y_points, new_y_variances, new_conditions, self.full_config_space,
+        new_region = DTRegion(self,
+                              self.depth + 1,
+                              self.config_space,
+                              new_x_points,
+                              new_y_points,
+                              new_y_variances,
+                              new_conditions,
+                              self.full_config_space,
                               self.selected_hyperparameter)
 
         return new_region
+
+    def is_splittable(self) -> bool:
+        return len(self) > 1
+
+    def is_root(self) -> bool:
+        return self.parent is None
+
+    def split_at_idx(self, hyperparameter: CSH.Hyperparameter, instance_idx: int) -> Tuple["DTRegion", "DTRegion"]:
+        hyperparameter_idx = self.config_space.get_idx_by_hyperparameter_name(hyperparameter.name)
+        split_val = self.x_points[instance_idx, 0, hyperparameter_idx]  # index in second dim does not matter
+
+        # Left side
+        left_split_condition = SplitCondition(self.config_space, hyperparameter, normalized_value=split_val,
+                                              less_equal=True)
+        left_region = self.filter_by_condition(left_split_condition)
+
+        # Right side
+        right_split_condition = SplitCondition(self.config_space, hyperparameter, normalized_value=split_val,
+                                               less_equal=False)
+        right_region = self.filter_by_condition(right_split_condition)
+
+        return left_region, right_region
 
     def plot(self,
              color: ColorType = 'red',
@@ -155,53 +198,6 @@ class DTRegion(Region, Plottable):
                                       "Please select a specific hp by setting `selected_hyperparameters`")
 
 
-class DTNode:
-    def __init__(self,
-                 parent: Optional["DTNode"],
-                 region: DTRegion,
-                 depth: int,
-                 config_space: CS.ConfigurationSpace,
-                 selected_hyperparameter: SelectedHyperparameterType):
-        self.parent = parent
-        self.region = region
-        self.depth = depth
-        self.config_space = config_space
-        self.selected_hyperparameter = selected_hyperparameter
-
-        self.left_child: Optional[DTNode] = None  # <= split_value
-        self.right_child: Optional[DTNode] = None  # > split_value
-
-    def __contains__(self, item: CS.Configuration) -> bool:
-        return item in self.region
-
-    def __len__(self):
-        return len(self.region)
-
-    def is_splittable(self) -> bool:
-        return len(self.region) > 1
-
-    def is_root(self) -> bool:
-        return self.parent is None
-
-    def split_at_idx(self, hyperparameter: CSH.Hyperparameter, instance_idx: int) -> Tuple["DTNode", "DTNode"]:
-        hyperparameter_idx = self.config_space.get_idx_by_hyperparameter_name(hyperparameter.name)
-        split_val = self.region.x_points[instance_idx, 0, hyperparameter_idx]  # index in second dim does not matter
-
-        left_split_condition = SplitCondition(self.config_space, hyperparameter, normalized_value=split_val,
-                                              less_equal=True)
-        left_region = self.region.filter_by_condition(left_split_condition)
-        left_node = DTNode(self, left_region, self.depth + 1, self.config_space,
-                           self.selected_hyperparameter)
-
-        right_split_condition = SplitCondition(self.config_space, hyperparameter, normalized_value=split_val,
-                                               less_equal=False)
-        right_region = self.region.filter_by_condition(right_split_condition)
-        right_node = DTNode(self, right_region, self.depth + 1, self.config_space,
-                            self.selected_hyperparameter)
-
-        return left_node, right_node
-
-
 class DTPartitioner(Partitioner):
     def __init__(self,
                  surrogate_model: SurrogateModel,
@@ -214,8 +210,8 @@ class DTPartitioner(Partitioner):
                          num_grid_points=num_grid_points_per_axis,
                          num_samples=num_samples)
 
-        self.root: Optional[DTNode] = None
-        self.leaves: List[DTNode] = []
+        self.root: Optional[DTRegion] = None
+        self.leaves: List[DTRegion] = []
 
     @classmethod
     def from_ICE(cls, ice: ICE) -> "DTPartitioner":
@@ -230,10 +226,15 @@ class DTPartitioner(Partitioner):
         assert max_depth > 0, 'Can only split for depth > 0'
 
         # create root node and leaves
-        dt_region = DTRegion(self.ice.x_ice, self.ice.y_ice, self.ice.y_variances, [], self.config_space,
-                             self.selected_hyperparameter)
-        self.root = DTNode(None, dt_region, depth=0, config_space=self.config_space,
-                           selected_hyperparameter=self.selected_hyperparameter)
+        self.root = DTRegion(None,
+                             depth=0,
+                             config_space=self.config_space,
+                             full_config_space=self.config_space,
+                             x_points=self.ice.x_ice,
+                             y_points=self.ice.y_ice,
+                             y_variances=self.ice.y_variances,
+                             split_conditions=[],
+                             selected_hyperparameter=self.selected_hyperparameter)
         self.leaves = []
 
         queue = [self.root]
@@ -246,16 +247,15 @@ class DTPartitioner(Partitioner):
             # calculate children
             queue += self.calc_best_split(node)
 
-        leaf_regions = [leaf.region for leaf in self.leaves]
-        return leaf_regions
+        return self.leaves
 
     def get_incumbent_region(self, incumbent: CS.Configuration) -> DTRegion:
         assert self.leaves is not None and len(self.leaves) > 0, 'Cannot compute incumbent region before partitioning'
         for leaf in self.leaves:
             if incumbent in leaf:
-                return leaf.region
+                return leaf
 
-    def calc_best_split(self, node: DTNode) -> Tuple[DTNode, DTNode]:
+    def calc_best_split(self, node: DTRegion) -> Tuple[DTRegion, DTRegion]:
         assert node.is_splittable(), 'Cannot split a terminal node'
 
         best_loss = np.inf
@@ -267,8 +267,8 @@ class DTPartitioner(Partitioner):
                 left_child, right_child = node.split_at_idx(hyperparameter, instance_idx)
 
                 # calculate loss
-                left_loss = left_child.region.loss
-                right_loss = right_child.region.loss
+                left_loss = left_child.loss
+                right_loss = right_child.loss
                 total_loss = left_loss + right_loss
 
                 # update best values if necessary
@@ -297,4 +297,4 @@ class DTPartitioner(Partitioner):
         assert len(color_list) == len(self.leaves), 'Color list needs a color for every leaf'
 
         for i, leaf in enumerate(self.leaves):
-            leaf.region.plot(color=color_list[i], alpha=alpha, ax=ax)
+            leaf.plot(color=color_list[i], alpha=alpha, ax=ax)

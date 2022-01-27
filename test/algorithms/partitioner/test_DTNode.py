@@ -47,7 +47,7 @@ class TestDTNode(TestCase):
 
     def test_implied_cs(self):
         root = self.partitioner.root
-        root_cs = root.region.implied_config_space(seed=0)
+        root_cs = root.implied_config_space(seed=0)
 
         # root cs should be the same as the original
         for hp in root_cs.get_hyperparameters():
@@ -57,7 +57,7 @@ class TestDTNode(TestCase):
 
         # cs of every leaf node should be different to original
         for leaf in self.partitioner.leaves:
-            leaf_cs = leaf.region.implied_config_space(seed=0)
+            leaf_cs = leaf.implied_config_space(seed=0)
             is_different = False
             for hp in leaf_cs.get_hyperparameters():
                 original_hp = self.cs.get_hyperparameter(hp.name)
