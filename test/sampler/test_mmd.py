@@ -9,7 +9,7 @@ from test import PlottableTest
 
 class TestSampler(PlottableTest):
     def test_mmd_random(self):
-        f = StyblinskiTang(2)
+        f = StyblinskiTang.for_n_dimensions(2)
         cs = f.config_space
         n = 250  # Sampler
         m = 500  # Uniform
@@ -27,10 +27,10 @@ class TestSampler(PlottableTest):
         plt.legend()
 
         # Assertion
-        self.assertAlmostEqual(0, mmd_random, places=3)
+        self.assertAlmostEqual(0, mmd_random, places=2)
 
     def test_mmd_compare(self):
-        f = StyblinskiTang(2)
+        f = StyblinskiTang.for_n_dimensions(2)
         cs = f.config_space
         n = 150  # Sampler
         m = 1000  # Uniform
@@ -38,16 +38,12 @@ class TestSampler(PlottableTest):
         # Random
         random_sampler = RandomSampler(f, cs)
         random_sampler.sample(n)
-        # l2_distance = random_sampler.median_distance_between_points()
-        # print("L2_random", l2_distance)
         mmd_random = random_sampler.maximum_mean_discrepancy(m=m)
         print(mmd_random)
 
         # Bayesian Optimization
         bo = BayesianOptimizationSampler(f, cs)
         bo.sample(n)
-        # l2_distance = bo.median_distance_between_points()
-        # print("L2_bo", l2_distance)
         mmd_bo = bo.maximum_mean_discrepancy(m=m)
         print(mmd_bo)
 
@@ -63,7 +59,7 @@ class TestSampler(PlottableTest):
         self.assertGreater(mmd_bo, mmd_random)
 
     def test_mmd_bayesian(self):
-        f = StyblinskiTang(5)
+        f = StyblinskiTang.for_n_dimensions(5)
         cs = f.config_space
         n = 150  # Sampler
         m = 500  # Uniform

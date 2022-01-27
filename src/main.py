@@ -8,7 +8,7 @@ from src.sampler.random_sampler import RandomSampler
 from src.surrogate_models import GaussianProcessSurrogate
 
 seed = 0  # TODO: Use seed!!
-f = blackbox_functions.StyblinskiTang(3)
+f = synthetic_functions.StyblinskiTang.for_n_dimensions(3)
 cs = f.config_space
 
 selected_hyperparameter = cs.get_hyperparameter("x1")

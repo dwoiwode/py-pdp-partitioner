@@ -5,9 +5,8 @@ import numpy as np
 import pytest
 from matplotlib import pyplot as plt
 
-from src.blackbox_functions.synthetic_functions import styblinski_tang_3D_int_1D, styblinski_tang_3D_int_2D, \
-    styblinski_tang_integral, Levy, Ackley, CrossInTray, Square, NegativeSquare, StyblinskiTang
 from src.blackbox_functions import BlackboxFunction, config_space_nd
+from src.blackbox_functions.synthetic_functions import Levy, Ackley, CrossInTray, Square, NegativeSquare, StyblinskiTang
 from src.utils.plotting import plot_function
 from test import PlottableTest
 
@@ -89,28 +88,90 @@ class TestStyblinskiTang(TestCase):
             self.assertAlmostEqual(f(**x), d * self.minimum)
 
     def test_integral_1d(self):
-        f = StyblinskiTang(1)
-        mean = 0.1 * (styblinski_tang_integral(5) - styblinski_tang_integral(-5))
-        f_int = styblinski_tang_3D_int_1D
+        """
+        f(x1, x2, x3) = stybli..
+        F(x1) = f(x1, x2, x3) dx2 dx3
+        """
+        def styblinski_tang_3D_int_1D(x1: float, lower_x2: float = -5, upper_x2: float = 5, lower_x3: float = -5,
+                                      upper_x3: float = 5) -> float:
+            styblinski_tang = StyblinskiTang.for_n_dimensions(1)
+            term_x1_lower_lower = styblinski_tang(x1=x1) * lower_x2 * lower_x3
+            term_x1_lower_upper = styblinski_tang(x1=x1) * lower_x2 * upper_x3
+            term_x1_upper_lower = styblinski_tang(x1=x1) * upper_x2 * lower_x3
+            term_x1_upper_upper = styblinski_tang(x1=x1) * upper_x2 * upper_x3
+            term_x1 = term_x1_upper_upper - term_x1_upper_lower - term_x1_lower_upper + term_x1_lower_lower
 
+            styblinski_tang_integral = StyblinskiTang._styblinski_tang_integral
+
+            term_x2_lower_lower = styblinski_tang_integral(lower_x2) * lower_x3
+            term_x2_lower_upper = styblinski_tang_integral(lower_x2) * upper_x3
+            term_x2_upper_lower = styblinski_tang_integral(upper_x2) * lower_x3
+            term_x2_upper_upper = styblinski_tang_integral(upper_x2) * upper_x3
+            term_x2 = term_x2_upper_upper - term_x2_upper_lower - term_x2_lower_upper + term_x2_lower_lower
+
+            term_x3_lower_lower = styblinski_tang_integral(lower_x3) * lower_x2
+            term_x3_lower_upper = styblinski_tang_integral(lower_x3) * upper_x2
+            term_x3_upper_lower = styblinski_tang_integral(upper_x3) * lower_x2
+            term_x3_upper_upper = styblinski_tang_integral(upper_x3) * upper_x2
+            term_x3 = term_x3_upper_upper - term_x3_upper_lower - term_x3_lower_upper + term_x3_lower_lower
+
+            return (term_x1 + term_x2 + term_x3) / ((upper_x2 - lower_x2) * (upper_x3 - lower_x3))
+
+        f = StyblinskiTang.for_n_dimensions(3)
+        f_int_specific = styblinski_tang_3D_int_1D
+        f_int_general = f.pd_integral('x2', 'x3')
         x = np.linspace(-5, 5, num=100)
-        x = np.expand_dims(x, axis=1)
 
-        for i in range(len(x)):
-            f_x = f(x1=x[i][0])
-            f_int_x = f_int(x[i][0]) - 2 * mean
-            self.assertAlmostEqual(f_x, f_int_x, places=5)
+        for x1 in x:
+            f_int_specific_x = f_int_specific(x1=x1)
+            f_int_general_x = f_int_general(x1=x1)
+            self.assertAlmostEqual(f_int_specific_x, f_int_general_x, places=5)
 
-    def test_integral_2d(self):
-        f = StyblinskiTang.from_n_dimensions(3)
-        mean = 0.1 * (styblinski_tang_integral(5) - styblinski_tang_integral(-5))
-        f_int = styblinski_tang_3D_int_2D
+    def test_integral_2d_x3(self):
+        """
+        f(x1, x2, x3) = stybl...
+        F(x1, x2) = f(x1, x2, x3) dx3
+        """
+        f = StyblinskiTang.for_n_dimensions(3)
+
+        # Shortcuts
+        def styblinski_tang_3D_int_2D(x1: float, x2: float, lower: float = -5, upper: float = 5) -> float:
+            styblinski_tang_2D = StyblinskiTang.for_n_dimensions(2)
+            lower_term = styblinski_tang_2D(x1=x1, x2=x2) * lower + f._styblinski_tang_integral(lower)
+            upper_term = styblinski_tang_2D(x1=x1, x2=x2) * upper + f._styblinski_tang_integral(upper)
+            return (upper_term - lower_term) / (upper - lower)  # normalization
+
+        f_int_specific = styblinski_tang_3D_int_2D
+        f_int_general = f.pd_integral(f.config_space.get_hyperparameter('x3'))
 
         for x1 in np.linspace(-5, 5, num=100):
             for x2 in np.linspace(-5, 5, num=100):
-                f_x = f(x1=x1, x2=x2)
-                f_int_x = f_int(x1, x2) - mean
-                self.assertAlmostEqual(f_x, f_int_x, places=5)
+                f_int_specific_x = f_int_specific(x1=x1, x2=x2)
+                f_int_general_x = f_int_general(x1=x1, x2=x2)
+                self.assertAlmostEqual(f_int_specific_x, f_int_general_x, places=5)
+
+    def test_integral_2d_x2(self):
+        """
+        f(x1, x2, x3) = stybl...
+        F(x1, x3) = f(x1, x2, x3) dx2
+        """
+        f = StyblinskiTang.for_n_dimensions(3)
+
+        # Shortcuts
+        def styblinski_tang_3D_int_2D(x1: float, x3: float, lower: float = -5, upper: float = 5) -> float:
+            styblinski_tang_2D = StyblinskiTang.for_n_dimensions(2)
+            lower_term = styblinski_tang_2D(x1=x1, x2=x3) * lower + f._styblinski_tang_integral(lower)
+            upper_term = styblinski_tang_2D(x1=x1, x2=x3) * upper + f._styblinski_tang_integral(upper)
+            return (upper_term - lower_term) / (upper - lower)  # normalization
+
+        f_int_specific = styblinski_tang_3D_int_2D
+        f_int_general = f.pd_integral(f.config_space.get_hyperparameter('x2'))
+
+        for x1 in np.linspace(-5, 5, num=100):
+            for x3 in np.linspace(-5, 5, num=100):
+                f_int_specific_x = f_int_specific(x1=x1, x3=x3)
+                f_int_general_x = f_int_general(x1=x1, x3=x3)
+                self.assertAlmostEqual(f_int_specific_x, f_int_general_x, places=5)
 
 
 class TestPlotBlackboxFunctions(PlottableTest):
@@ -123,38 +184,42 @@ class TestPlotBlackboxFunctions(PlottableTest):
         plt.tight_layout()
 
     def test_plot_ackley_1D_zoomed(self):
-        f = Ackley(1, lower=-10, upper=10)
+        f = Ackley.for_n_dimensions(1, lower=-10, upper=10)
         cs = f.config_space
         self._apply_blackbox_plot(f, cs, "Ackley 1D")
 
     def test_plot_ackley_2D_zoomed(self):
-        f = Ackley(2, lower=-10, upper=10)
+        f = Ackley.for_n_dimensions(2, lower=-10, upper=10)
         cs = f.config_space
         self._apply_blackbox_plot(f, cs, "Ackley 1D")
 
     def test_plot_styblinski_tang_3D_int_1D(self):
-        cs = config_space_nd(1)
-        self._apply_blackbox_plot(styblinski_tang_3D_int_1D, cs, "Styblinski Tang Integral 1D")
+        f = StyblinskiTang.for_n_dimensions(3)
+        f_int = f.pd_integral('x2', 'x3')
+        self._apply_blackbox_plot(f_int, f_int.config_space, "Styblinski Tang Integral 1D")
 
     def test_plot_styblinski_tang_3D_int_2D(self):
-        cs = config_space_nd(2)
-        self._apply_blackbox_plot(styblinski_tang_3D_int_2D, cs, "Styblinski Tang Integral 2D")
+        f = StyblinskiTang.for_n_dimensions(3)
+        f_int = f.pd_integral('x3')
+        self._apply_blackbox_plot(f_int, f_int.config_space, "Styblinski Tang Integral 2D")
 
     def test_plot_styblinski_tang_integral(self):
-        def norm_integral(x1: float):
-            return 0.1 * styblinski_tang_integral(x1)
+        f = StyblinskiTang.for_n_dimensions(2)
+        f_int = f.pd_integral('x2')
+        self._apply_blackbox_plot(f_int, f_int.config_space, "Styblinski Tang Integral 1D")
 
+    def test_integral_function(self):
         cs = config_space_nd(1)
-        self._apply_blackbox_plot(norm_integral, cs, "Styblinski Tang Integral 1D")
+        self._apply_blackbox_plot(StyblinskiTang._styblinski_tang_integral, cs, "Styblinski Tang Integral Function 1D")
 
 
 @pytest.mark.parametrize("f", [
-    Square(1), Square(2),
-    NegativeSquare(1), NegativeSquare(2),
-    Ackley(1), Ackley(2),
+    Square.for_n_dimensions(1), Square.for_n_dimensions(2),
+    NegativeSquare.for_n_dimensions(1), NegativeSquare.for_n_dimensions(2),
+    Ackley.for_n_dimensions(1), Ackley.for_n_dimensions(2),
     CrossInTray(),
-    Levy(1), Levy(2),
-    StyblinskiTang(1), StyblinskiTang(2)
+    Levy.for_n_dimensions(1), Levy.for_n_dimensions(2),
+    StyblinskiTang.for_n_dimensions(1), StyblinskiTang.for_n_dimensions(2)
 ])
 def test_plot_all(f: BlackboxFunction):
     plt.figure(figsize=(16, 9))

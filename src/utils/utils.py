@@ -123,3 +123,15 @@ def median_distance_between_points(X: np.ndarray) -> float:
     distances = np.sqrt(dif_2)
     median = np.median(distances[distances != 0]).item()
     return median
+
+def convert_hyperparameters(hyperparameters: Iterable[Union[CSH.Hyperparameter, str]],
+                            config_space: CS.ConfigurationSpace) -> List[CSH.Hyperparameter]:
+    hps = []
+    for hp in hyperparameters:
+        if isinstance(hp, str):
+            hps.append(config_space.get_hyperparameter(hp))
+        elif isinstance(hp, CSH.Hyperparameter):
+            hps.append(hp)
+        else:
+            raise TypeError(f'Could not interpret hp: {hp}')
+    return hps

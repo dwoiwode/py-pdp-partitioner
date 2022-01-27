@@ -67,8 +67,8 @@ class Sampler(Plottable, ABC):
         X = np.concatenate((X_samples, X_uniform))
 
         # Calculate
-        X_uniform_unscaled = unscale(X_uniform, self.config_space)
-        median_l2 = median_distance_between_points(X_uniform_unscaled)
+        X_unscaled = unscale(X, self.config_space)
+        median_l2 = median_distance_between_points(X_unscaled)
         rbf = RBF(median_l2)
 
         covariances = rbf(X)

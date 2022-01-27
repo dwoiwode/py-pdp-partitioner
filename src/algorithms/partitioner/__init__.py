@@ -8,6 +8,7 @@ import ConfigSpace.hyperparameters as CSH
 
 from src.algorithms import Algorithm
 from src.algorithms.ice import ICE
+from src.blackbox_functions import BlackboxFunction
 from src.surrogate_models import SurrogateModel
 from src.utils.typing import SelectedHyperparameterType
 from src.utils.utils import get_selected_idx, unscale_float
@@ -29,7 +30,9 @@ class Region:
         self.y_points = y_points
         self.y_variances = y_variances
         self.config_space = config_space
-        self.selected_hyperparameter = selected_hyperparameter
+        if isinstance(selected_hyperparameter, CSH.Hyperparameter):
+            selected_hyperparameter = [selected_hyperparameter]
+        self.selected_hyperparameter = tuple(selected_hyperparameter)
 
         assert len(self.x_points) == len(self.y_points) == len(self.y_variances)
         assert self.x_points.shape[1] == self.y_points.shape[1] == self.y_variances.shape[1]
@@ -49,16 +52,26 @@ class Region:
         loss_sum = np.sum(pointwise_l2_loss, axis=None)
         return loss_sum.item()
 
-    def negative_log_likelihood(self, true_pd_function: Callable[[float], float]) -> float:
+    def negative_log_likelihood(self, true_function: BlackboxFunction) -> float:
         num_grid_points = self.x_points.shape[1]
 
         # true pd should have one or two inputs depending on dimensions chosen TODO: 2d
-        hyperparameter_idx = self.config_space.get_idx_by_hyperparameter_name(list(self.selected_hyperparameter)[0].name)
+        hyperparameter_idx = self.config_space.get_idx_by_hyperparameter_name(self.selected_hyperparameter[0].name)
         true_y = np.ndarray(shape=(num_grid_points,))
+        selected_hyperparameter_names = {hp.name for hp in self.selected_hyperparameter}
+        not_selected_hp = [
+            hp
+            for hp in self.config_space.get_hyperparameters()
+            if hp.name not in selected_hyperparameter_names
+        ]
+
+        integral = true_function.pd_integral(*not_selected_hp)
+
         for i in range(num_grid_points):
             unscaled_x = unscale_float(self.x_points[0, i, hyperparameter_idx], self.config_space,
-                                       list(self.selected_hyperparameter)[0])
-            true_y[i] = true_pd_function(unscaled_x)
+                                       self.selected_hyperparameter[0])
+
+            true_y[i] = integral(**{self.selected_hyperparameter[0].name: unscaled_x})
 
         # regions pdp estimate:
         pdp_y_points = np.mean(self.y_points, axis=0)

@@ -8,6 +8,7 @@ import ConfigSpace.hyperparameters as CSH
 import numpy as np
 
 from src.blackbox_functions import BlackboxFunction, config_space_nd, CallableBlackboxFunction
+from src.utils.utils import convert_hyperparameters
 
 
 class Square(BlackboxFunction):
@@ -147,6 +148,8 @@ class StyblinskiTang(BlackboxFunction):
         if len(hyperparameters) == 0:
             raise ValueError("Requires at least one hyperparameter for pd_integral")
 
+        hyperparameters = convert_hyperparameters(hyperparameters, self.config_space)
+
         hp = hyperparameters[0]
         assert isinstance(hp, CSH.NumericalHyperparameter)
         lower = hp.lower
@@ -170,37 +173,7 @@ class StyblinskiTang(BlackboxFunction):
         return CallableBlackboxFunction(integral, reduced_cs)
 
 
-# Shortcuts
-def styblinski_tang_3D_int_2D(x1: float, x2: float, lower: float = -5, upper: float = 5) -> float:
-    """
-    F(x1,x2) = f(x...) d x3
-    :return:
-    """
-    styblinski_tang_2D = StyblinskiTang(2)
-    lower_term = styblinski_tang_2D(x1=x1, x2=x2) * lower + styblinski_tang_integral(lower)
-    upper_term = styblinski_tang_2D(x1=x1, x2=x2) * upper + styblinski_tang_integral(upper)
-    return (upper_term - lower_term) / (upper - lower)  # normalization
 
 
-def styblinski_tang_3D_int_1D(x1: float, lower_x2: float = -5, upper_x2: float = 5, lower_x3: float = -5,
-                              upper_x3: float = 5) -> float:
-    styblinski_tang = StyblinskiTang(1)
-    term_x1_lower_lower = styblinski_tang(x1=x1) * lower_x2 * lower_x3
-    term_x1_lower_upper = styblinski_tang(x1=x1) * lower_x2 * upper_x3
-    term_x1_upper_lower = styblinski_tang(x1=x1) * upper_x2 * lower_x3
-    term_x1_upper_upper = styblinski_tang(x1=x1) * upper_x2 * upper_x3
-    term_x1 = term_x1_upper_upper - term_x1_upper_lower - term_x1_lower_upper + term_x1_lower_lower
 
-    term_x2_lower_lower = styblinski_tang_integral(lower_x2) * lower_x3
-    term_x2_lower_upper = styblinski_tang_integral(lower_x2) * upper_x3
-    term_x2_upper_lower = styblinski_tang_integral(upper_x2) * lower_x3
-    term_x2_upper_upper = styblinski_tang_integral(upper_x2) * upper_x3
-    term_x2 = term_x2_upper_upper - term_x2_upper_lower - term_x2_lower_upper + term_x2_lower_lower
 
-    term_x3_lower_lower = styblinski_tang_integral(lower_x3) * lower_x2
-    term_x3_lower_upper = styblinski_tang_integral(lower_x3) * upper_x2
-    term_x3_upper_lower = styblinski_tang_integral(upper_x3) * lower_x2
-    term_x3_upper_upper = styblinski_tang_integral(upper_x3) * upper_x2
-    term_x3 = term_x3_upper_upper - term_x3_upper_lower - term_x3_lower_upper + term_x3_lower_lower
-
-    return (term_x1 + term_x2 + term_x3) / ((upper_x2 - lower_x2) * (upper_x3 - lower_x3))

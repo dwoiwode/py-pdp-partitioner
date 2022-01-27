@@ -1,13 +1,13 @@
 import unittest
 
 from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
-from src.blackbox_functions.synthetic_functions import styblinski_tang_3D_int_1D, StyblinskiTang
+from src.blackbox_functions.synthetic_functions import StyblinskiTang
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 
 
-class TestICE(unittest.TestCase):
+class TestNLL(unittest.TestCase):
     def test_nll(self):
-        f = StyblinskiTang(3)
+        f = StyblinskiTang.for_n_dimensions(3)
         cs = f.config_space
         n = 80
         tau = 2
@@ -23,8 +23,7 @@ class TestICE(unittest.TestCase):
         leaf_list = dt_partitioner.partition(max_depth=1)
         best_region = dt_partitioner.get_incumbent_region(random_sampler.incumbent[0])
 
-        true_pd = styblinski_tang_3D_int_1D
-        nll = best_region.negative_log_likelihood(true_pd_function=true_pd)
+        nll = best_region.negative_log_likelihood(true_function=f)
 
         print(nll)
 
