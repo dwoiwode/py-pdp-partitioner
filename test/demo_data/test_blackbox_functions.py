@@ -13,7 +13,7 @@ from test import PlottableTest
 
 class TestLevy(TestCase):
     def test_levy1D(self):
-        f = Levy(1)
+        f = Levy.for_n_dimensions(1)
 
         self.assertAlmostEqual(f(x1=1), 0)  # Minimum
 
@@ -23,7 +23,7 @@ class TestLevy(TestCase):
             self.assertGreater(y, 0)
 
     def test_levy2D(self):
-        f = Levy(2, lower=-10, upper=10)
+        f = Levy.for_n_dimensions(2, lower=-10, upper=10)
         self.assertAlmostEqual(f(x1=1, x2=1), 0)  # Minimum
 
         # Cannot be smaller than 0
@@ -35,7 +35,7 @@ class TestLevy(TestCase):
 
 class TestAckley(TestCase):
     def test_ackley1D(self):
-        f = Ackley(1)
+        f = Ackley.for_n_dimensions(1)
 
         self.assertAlmostEqual(f(x1=0), 0)  # Minimum
 
@@ -45,7 +45,7 @@ class TestAckley(TestCase):
             self.assertGreater(y, 0)
 
     def test_ackley2D(self):
-        f = Ackley(2)
+        f = Ackley.for_n_dimensions(2)
         self.assertAlmostEqual(f(x1=0, x2=0), 0)  # Minimum
 
         # Cannot be smaller than 0
@@ -76,12 +76,12 @@ class TestStyblinskiTang(TestCase):
     minimum_at = -2.90353401818596
 
     def test_styblinski_tang_1D(self):
-        f = StyblinskiTang(1)
+        f = StyblinskiTang.for_n_dimensions(1)
         self.assertAlmostEqual(f(x1=self.minimum_at), self.minimum)
 
     def test_minima(self):
         for d in range(1, 11):  # Test multiple dimensions
-            f = StyblinskiTang(d)
+            f = StyblinskiTang.for_n_dimensions(d)
             x = {f"x{i + 1}": self.minimum_at for i in range(d)}
             print(f"Dimensions: {d:2d}, Input: {x}")
             self.assertEqual(len(x), d)

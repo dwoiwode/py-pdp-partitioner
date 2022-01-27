@@ -124,8 +124,18 @@ def median_distance_between_points(X: np.ndarray) -> float:
     median = np.median(distances[distances != 0]).item()
     return median
 
-def convert_hyperparameters(hyperparameters: Iterable[Union[CSH.Hyperparameter, str]],
+def convert_hyperparameters(hyperparameters: Union[str, CSH.Hyperparameter, Iterable[Union[CSH.Hyperparameter, str]]],
                             config_space: CS.ConfigurationSpace) -> List[CSH.Hyperparameter]:
+    """
+    Converts either
+        * a single hyperparameter (CSH.Hyperparameter)
+        * a single hyperparameter name (str)
+        * an iterable (list, tuple, etc.) of hyperparameters (CSH.Hyperparameter)
+        * an iterable of hyperparameter names (str)
+    to a list of hyperparameters (CSH.Hyperparameter)
+    """
+    if isinstance(hyperparameters, (str, CSH.Hyperparameter)):
+        hyperparameters = (hyperparameters,)
     hps = []
     for hp in hyperparameters:
         if isinstance(hp, str):

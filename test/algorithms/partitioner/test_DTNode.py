@@ -12,7 +12,7 @@ from src.surrogate_models import GaussianProcessSurrogate
 class TestDTNode(TestCase):
     def setUp(self) -> None:
         # Paper configurations
-        f = Square(2)
+        f = Square.for_n_dimensions(2)
         bo_sampling_points = 10  # [80, 150, 250]
 
         # Static paper configurations (not changed throughout the paper)

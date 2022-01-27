@@ -5,6 +5,7 @@ import ConfigSpace.hyperparameters as CSH
 from src.surrogate_models import SurrogateModel
 from src.utils.plotting import Plottable
 from src.utils.typing import SelectedHyperparameterType
+from src.utils.utils import convert_hyperparameters
 
 
 class Algorithm(Plottable, ABC):
@@ -22,10 +23,7 @@ class Algorithm(Plottable, ABC):
         self.num_grid_points_per_axis = num_grid_points_per_axis
         self.seed = seed
 
-        # Selected hyperparameter
-        if isinstance(selected_hyperparameter, CSH.Hyperparameter):
-            selected_hyperparameter = (selected_hyperparameter,)
-        self.selected_hyperparameter = tuple(selected_hyperparameter)
+        self.selected_hyperparameter = convert_hyperparameters(selected_hyperparameter, self.config_space)
 
         self.num_grid_points = num_grid_points_per_axis * self.n_selected_hyperparameter
 

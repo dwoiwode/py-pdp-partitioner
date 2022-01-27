@@ -8,7 +8,7 @@ from test import PlottableTest
 
 class TestBayesianSampler(PlottableTest):
     def test_initial_sampling(self):
-        f = Square(1)
+        f = Square.for_n_dimensions(1)
         cs = f.config_space
         initial_points = 2
         bo = BayesianOptimizationSampler(obj_func=f, config_space=cs,
@@ -20,7 +20,7 @@ class TestBayesianSampler(PlottableTest):
 
     def test_find_max_optimum(self):
         self.initialize_figure()
-        f = NegativeSquare(1)
+        f = NegativeSquare.for_n_dimensions(1)
         cs = f.config_space
 
         initial_points = 20
@@ -39,7 +39,7 @@ class TestBayesianSampler(PlottableTest):
 
     def test_find_min_optimum(self):
         self.initialize_figure()
-        f = Square(1)
+        f = Square.for_n_dimensions(1)
         cs = f.config_space
 
         initial_points = 1
@@ -58,7 +58,7 @@ class TestBayesianSampler(PlottableTest):
 
     def test_use_pi(self):
         self.initialize_figure()
-        f = Square(1)
+        f = Square.for_n_dimensions(1)
         cs = f.config_space
 
         initial_points = 1

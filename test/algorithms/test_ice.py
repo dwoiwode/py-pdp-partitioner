@@ -9,7 +9,7 @@ from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 
 class TestICE(unittest.TestCase):
     def test_create_ice_1D(self):
-        f = Square(1)
+        f = Square.for_n_dimensions(1)
         cs = f.config_space
         bo = BayesianOptimizationSampler(f, config_space=cs)
         selected_hp = cs.get_hyperparameter("x1")
@@ -40,7 +40,7 @@ class TestICE(unittest.TestCase):
             self.assertTrue(np.all(np.diff(x_ice[i, :, 0]) > 0))
 
     def test_create_ice_2D(self):
-        f = Square(2)
+        f = Square.for_n_dimensions(2)
         cs = f.config_space
         bo = BayesianOptimizationSampler(f, config_space=cs)
         selected_hyperparameter = cs.get_hyperparameter("x1")
@@ -66,7 +66,7 @@ class TestICE(unittest.TestCase):
             self.assertTrue(np.all(np.diff(x_ice[i, :, 1]) == 0))
 
     def test_create_ice_centered(self):
-        f = Square(2)
+        f = Square.for_n_dimensions(2)
         cs = f.config_space
         bo = BayesianOptimizationSampler(f, config_space=cs)
         selected_hp = cs.get_hyperparameters()[0]

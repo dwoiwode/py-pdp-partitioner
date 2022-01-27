@@ -144,7 +144,7 @@ class StyblinskiTang(BlackboxFunction):
     def _styblinski_tang_integral(x1: float) -> float:
         return 0.5 * (0.2 * np.power(x1, 5) - 16 / 3 * np.power(x1, 3) + 2.5 * np.power(x1, 2))
 
-    def pd_integral(self, *hyperparameters: CSH.Hyperparameter) -> BlackboxFunction:
+    def pd_integral(self, *hyperparameters: Union[str, CSH.Hyperparameter], seed=None) -> BlackboxFunction:
         if len(hyperparameters) == 0:
             raise ValueError("Requires at least one hyperparameter for pd_integral")
 
@@ -158,7 +158,7 @@ class StyblinskiTang(BlackboxFunction):
         mean = (self._styblinski_tang_integral(upper) - self._styblinski_tang_integral(lower)) / diff
 
         hps = self.config_space.get_hyperparameters()
-        reduced_cs = CS.ConfigurationSpace()
+        reduced_cs = CS.ConfigurationSpace(seed=seed)
         hyperparameter_names = {hp.name for hp in hyperparameters}
         for hp in hps:
             if hp.name not in hyperparameter_names:

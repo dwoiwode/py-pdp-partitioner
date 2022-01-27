@@ -12,7 +12,7 @@ from test import PlottableTest
 class TestPartitioner(PlottableTest):
     def test_dt_partitioner_single_split(self):
         self.initialize_figure()
-        f = Square(2)
+        f = Square.for_n_dimensions(2)
         cs = f.config_space
         selected_hp = cs.get_hyperparameter("x1")
 
@@ -40,7 +40,7 @@ class TestPartitioner(PlottableTest):
 
     def test_dt_partitioner_multiple_splits(self):
         self.initialize_figure()
-        f = Square(2, lower=-1, upper=1)
+        f = Square.for_n_dimensions(2, lower=-1, upper=1)
         cs = f.config_space
         selected_hp = cs.get_hyperparameters()[0]
 

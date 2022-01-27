@@ -22,7 +22,7 @@ class BlackboxFunction(ABC):
     def value_from_config(self, config: CS.Configuration) -> float:
         pass
 
-    def pd_integral(self, hyperparameters: Union[List[CSH.Hyperparameter], CSH.Hyperparameter]) -> 'BlackboxFunction':
+    def pd_integral(self, *hyperparameters: Union[str, CSH.Hyperparameter], seed=None) -> 'BlackboxFunction':
         raise NotImplementedError(f"Integral not implemented for {self.__class__.__name__}")
 
 

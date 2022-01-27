@@ -15,7 +15,7 @@ class TestSplitCondition(TestCase):
 
         self.assertEqual(cond.normalized_value, 0.8)
         self.assertEqual(cond.value, 3)
-        self.assertEqual(str(cond), 'x1 <= 3.0')
+        self.assertEqual(str(cond), 'SplitCondition(x1 <= 3.0)')
 
         test_config = Configuration(cs, values={'x1': -1})
         self.assertEqual(test_config.get('x1'), -1)
@@ -35,7 +35,7 @@ class TestSplitCondition(TestCase):
 
         self.assertEqual(cond.normalized_value, 0.4)
         self.assertEqual(cond.value, -1)
-        self.assertEqual(str(cond), 'x1 > -1.0')
+        self.assertEqual(str(cond), 'SplitCondition(x1 > -1.0)')
 
         test_config = Configuration(cs, values={'x1': 3})
         self.assertTrue(cond.is_satisfied(test_config))
