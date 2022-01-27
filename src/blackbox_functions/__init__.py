@@ -22,8 +22,7 @@ class BlackboxFunction(ABC):
     def value_from_config(self, config: CS.Configuration) -> float:
         pass
 
-    def pd_integral(self, hyperparameters: Union[List[CSH.Hyperparameter], CSH.Hyperparameter]) -> Callable[
-        [Any], float]:
+    def pd_integral(self, hyperparameters: Union[List[CSH.Hyperparameter], CSH.Hyperparameter]) -> 'BlackboxFunction':
         raise NotImplementedError(f"Integral not implemented for {self.__class__.__name__}")
 
 
@@ -33,3 +32,13 @@ def config_space_nd(dimensions: int, *, lower: float = -5, upper: float = 5, see
         x = CSH.UniformFloatHyperparameter(f"x{i + 1}", lower=lower, upper=upper)
         cs.add_hyperparameter(x)
     return cs
+
+
+class CallableBlackboxFunction(BlackboxFunction):
+    def __init__(self, function: Callable[[CS.Configuration], float], config_space:CS.ConfigurationSpace):
+        super(CallableBlackboxFunction, self).__init__(config_space)
+        self.f = function
+
+    def value_from_config(self, config: CS.Configuration) -> float:
+        return self.f(config)
+

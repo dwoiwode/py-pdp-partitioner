@@ -102,18 +102,14 @@ class TestStyblinskiTang(TestCase):
             self.assertAlmostEqual(f_x, f_int_x, places=5)
 
     def test_integral_2d(self):
-        f = StyblinskiTang(2)
+        f = StyblinskiTang.from_n_dimensions(3)
         mean = 0.1 * (styblinski_tang_integral(5) - styblinski_tang_integral(-5))
         f_int = styblinski_tang_3D_int_2D
 
-        x1 = np.linspace(-5, 5, num=100)
-
-        x2 = np.linspace(-5, 5, num=100)
-
-        for i in range(len(x1)):
-            for j in range(len(x2)):
-                f_x = f(x1=x1[i], x2=x2[j])
-                f_int_x = f_int(x1[i], x2[j]) - mean
+        for x1 in np.linspace(-5, 5, num=100):
+            for x2 in np.linspace(-5, 5, num=100):
+                f_x = f(x1=x1, x2=x2)
+                f_int_x = f_int(x1, x2) - mean
                 self.assertAlmostEqual(f_x, f_int_x, places=5)
 
 
@@ -161,11 +157,11 @@ class TestPlotBlackboxFunctions(PlottableTest):
     StyblinskiTang(1), StyblinskiTang(2)
 ])
 def test_plot_all(f: BlackboxFunction):
-    fig = plt.figure(figsize=(16, 9))
+    plt.figure(figsize=(16, 9))
     cs = f.config_space
     plot_function(f, cs)
 
     plt.title(str(f))
     plt.tight_layout()
-    plt.savefig(TestPlotBlackboxFunctions.SAVE_FOLDER / TestPlotBlackboxFunctions.__name__ / f"str(f).png")
+    plt.savefig(TestPlotBlackboxFunctions.SAVE_FOLDER / TestPlotBlackboxFunctions.__name__ / f"{str(f)}.png")
     plt.show()

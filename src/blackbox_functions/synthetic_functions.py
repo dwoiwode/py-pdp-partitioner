@@ -1,24 +1,30 @@
 """
 Collection of blackbox functions that can be minimized
 """
+from typing import Union, List
 
 import ConfigSpace as CS
+import ConfigSpace.hyperparameters as CSH
 import numpy as np
 
-from src.blackbox_functions import BlackboxFunction, config_space_nd
+from src.blackbox_functions import BlackboxFunction, config_space_nd, CallableBlackboxFunction
 
 
 class Square(BlackboxFunction):
-    def __init__(self, dimensions: int, *, lower: float = -5, upper: float = 5, seed=None):
-        super().__init__(config_space_nd(dimensions, lower=lower, upper=upper, seed=seed))
+    @classmethod
+    def for_n_dimensions(cls, dimensions: int, *, lower=-5, upper=5, seed=None):
+        cs = config_space_nd(dimensions, lower=lower, upper=upper, seed=seed)
+        return cls(cs)
 
     def value_from_config(self, config: CS.Configuration) -> float:
         return np.sum(np.square(list(config.values()))).item()
 
 
 class NegativeSquare(BlackboxFunction):
-    def __init__(self, dimensions: int, *, lower: float = -5, upper: float = 5, seed=None):
-        super().__init__(config_space_nd(dimensions, lower=lower, upper=upper, seed=seed))
+    @classmethod
+    def for_n_dimensions(cls, dimensions: int, *, lower=-5, upper=5, seed=None):
+        cs = config_space_nd(dimensions, lower=lower, upper=upper, seed=seed)
+        return cls(cs)
 
     def value_from_config(self, config: CS.Configuration) -> float:
         return 1 - np.sum(np.square(list(config.values()))).item()
@@ -36,8 +42,10 @@ class Levy(BlackboxFunction):
     at *x = (1,...,1)
     """
 
-    def __init__(self, dimensions: int, *, lower: float = -10, upper: float = 10, seed=None):
-        super().__init__(config_space_nd(dimensions, lower=lower, upper=upper, seed=seed))
+    @classmethod
+    def for_n_dimensions(cls, dimensions: int, *, lower=-10, upper=10, seed=None):
+        cs = config_space_nd(dimensions, lower=lower, upper=upper, seed=seed)
+        return cls(cs)
 
     def value_from_config(self, config: CS.Configuration) -> float:
         x = np.asarray([config[f"x{i + 1}"] for i in range(self.ndim)])
@@ -69,8 +77,10 @@ class Ackley(BlackboxFunction):
     b = 0.2
     c = 2 * np.pi
 
-    def __init__(self, dimensions: int, *, lower: float = -32.768, upper: float = 32.768, seed=None):
-        super().__init__(config_space_nd(dimensions, lower=lower, upper=upper, seed=seed))
+    @classmethod
+    def for_n_dimensions(cls, dimensions: int, *, lower=-32.768, upper=32.768, seed=None):
+        cs = config_space_nd(dimensions, lower=lower, upper=upper, seed=seed)
+        return cls(cs)
 
     def value_from_config(self, config: CS.Configuration) -> float:
         d = self.ndim
@@ -119,21 +129,53 @@ class StyblinskiTang(BlackboxFunction):
     at (-2.903534, ..., -2.903534)
     """
 
-    def __init__(self, dimensions: int, *, lower=-5, upper=5, seed=None):
-        super().__init__(config_space_nd(dimensions, lower=lower, upper=upper, seed=seed))
+    @classmethod
+    def for_n_dimensions(cls, dimensions: int, *, lower=-5, upper=5, seed=None):
+        cs = config_space_nd(dimensions, lower=lower, upper=upper, seed=seed)
+        return cls(cs)
 
     def value_from_config(self, config: CS.Configuration) -> float:
-        x = np.asarray([config[f"x{i + 1}"] for i in range(self.ndim)])
+        x = np.asarray([config[hp.name] for hp in self.config_space.get_hyperparameters()])
 
         return np.sum(np.power(x, 4) - 16 * np.power(x, 2) + 5 * x) / 2
 
+    @staticmethod
+    def _styblinski_tang_integral(x1: float) -> float:
+        return 0.5 * (0.2 * np.power(x1, 5) - 16 / 3 * np.power(x1, 3) + 2.5 * np.power(x1, 2))
 
-# Integral helper functions
-def styblinski_tang_integral(x1: float) -> float:
-    return 0.5 * (0.2 * np.power(x1, 5) - 16 / 3 * np.power(x1, 3) + 2.5 * np.power(x1, 2))
+    def pd_integral(self, *hyperparameters: CSH.Hyperparameter) -> BlackboxFunction:
+        if len(hyperparameters) == 0:
+            raise ValueError("Requires at least one hyperparameter for pd_integral")
+
+        hp = hyperparameters[0]
+        assert isinstance(hp, CSH.NumericalHyperparameter)
+        lower = hp.lower
+        upper = hp.upper
+        diff = upper - lower
+        mean = (self._styblinski_tang_integral(upper) - self._styblinski_tang_integral(lower)) / diff
+
+        hps = self.config_space.get_hyperparameters()
+        reduced_cs = CS.ConfigurationSpace()
+        hyperparameter_names = {hp.name for hp in hyperparameters}
+        for hp in hps:
+            if hp.name not in hyperparameter_names:
+                reduced_cs.add_hyperparameter(hp)
+
+        k = len(hyperparameters)
+        reduced_f = StyblinskiTang(reduced_cs)
+
+        def integral(config: CS.Configuration):
+            return reduced_f.value_from_config(config) + k * mean
+
+        return CallableBlackboxFunction(integral, reduced_cs)
+
 
 # Shortcuts
 def styblinski_tang_3D_int_2D(x1: float, x2: float, lower: float = -5, upper: float = 5) -> float:
+    """
+    F(x1,x2) = f(x...) d x3
+    :return:
+    """
     styblinski_tang_2D = StyblinskiTang(2)
     lower_term = styblinski_tang_2D(x1=x1, x2=x2) * lower + styblinski_tang_integral(lower)
     upper_term = styblinski_tang_2D(x1=x1, x2=x2) * upper + styblinski_tang_integral(upper)
