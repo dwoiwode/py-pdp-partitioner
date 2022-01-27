@@ -35,7 +35,6 @@ class TestAcquisitionFunctions(PlottableTest):
         self.surrogate.plot(ax=ax_function)
         ax_function.plot(self.X, self.y, ".", color="red")  # Plot samples
         ei.plot(ax=ax_acquisition)
-        self.save_fig()
 
         self.assertAlmostEqual(0, ei.get_optimum()["x1"], places=1)
 
@@ -57,7 +56,6 @@ class TestAcquisitionFunctions(PlottableTest):
         self.surrogate.plot(ax=ax_function)
         ax_function.plot(self.X, self.y, ".", color="red")  # Plot samples
         pi.plot(ax=ax_acquisition)
-        self.save_fig()
 
         self.assertAlmostEqual(0, pi.get_optimum()["x1"], places=1)
 
@@ -80,6 +78,5 @@ class TestAcquisitionFunctions(PlottableTest):
         self.surrogate.plot(ax=ax_function)
         ax_function.plot(self.X, self.y, ".", color="red")  # Plot samples
         lcb.plot(ax=ax_acquisition)
-        self.save_fig()
 
         self.assertAlmostEqual(-5, lcb.get_optimum()["x1"], places=1)

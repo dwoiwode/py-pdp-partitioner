@@ -58,7 +58,7 @@ class TestBayesianSampler(PlottableTest):
 
     def test_use_pi(self):
         self.initialize_figure()
-        f = Square.for_n_dimensions(1)
+        f = Square.for_n_dimensions(1, seed=0)
         cs = f.config_space
 
         initial_points = 1
@@ -77,4 +77,5 @@ class TestBayesianSampler(PlottableTest):
         bo.surrogate_model.plot()
 
         # Check values
-        self.assertAlmostEqual(best_val, 0, delta=1e-3)
+        print(best_val)
+        self.assertAlmostEqual(best_val, 0, delta=1e-4)

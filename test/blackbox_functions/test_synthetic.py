@@ -130,7 +130,8 @@ class TestStyblinskiTang(TestCase):
         hp = cs["x1"]
         f_int = f.pd_integral(hp)
         integral_formula_1_value = f_int()
-        integral_formula_2_value = StyblinskiTang._styblinski_tang_integral(hp.upper) - StyblinskiTang._styblinski_tang_integral(hp.lower)
+        integral_formula_2_value = StyblinskiTang._styblinski_tang_integral(
+            hp.upper) - StyblinskiTang._styblinski_tang_integral(hp.lower)
         print(integral_formula_1_value)
 
         # Calculate ground truth by approximating it with sum of small rectangles
@@ -146,11 +147,8 @@ class TestStyblinskiTang(TestCase):
         print("Partial Dependence Function:", integral_formula_1_value)
         print("1D-Integral Function:", integral_formula_2_value)
 
-        self.assertAlmostEqual(integral_numeric, integral_formula_1_value* (hp.upper - hp.lower), places=3)
+        self.assertAlmostEqual(integral_numeric, integral_formula_1_value * (hp.upper - hp.lower), places=3)
         self.assertAlmostEqual(integral_numeric, integral_formula_2_value, places=3)
-
-
-
 
     def test_integral_1d(self):
         """
@@ -275,7 +273,8 @@ class TestPlotBlackboxFunctions(PlottableTest):
         self._apply_blackbox_plot(f_int, f_int.config_space, "Styblinski Tang Integral 1D")
 
     def test_integral_function(self):
-        cs = config_space_nd(1)
+        cs = CS.ConfigurationSpace()  # Cannot use config_space_nd, because function takes "x" instead of "x1" as input
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter("x", -5, 5))
         self._apply_blackbox_plot(StyblinskiTang._styblinski_tang_integral, cs, "Styblinski Tang Integral Function 1D")
 
 

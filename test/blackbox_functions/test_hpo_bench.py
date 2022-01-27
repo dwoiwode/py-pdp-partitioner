@@ -44,8 +44,3 @@ class TestHPOBench(PlottableTest):
 
                 # Partitioner
                 # dt_partitioner = DTPartitioner(surrogate_model, selected_hyperparamter)
-
-                # Finish plot
-                self.save_fig()
-
-

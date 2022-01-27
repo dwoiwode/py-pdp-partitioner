@@ -34,8 +34,6 @@ class TestPartitioner(PlottableTest):
         colors = ['green', 'blue']
         for i, region in enumerate(regions):
             region.plot(colors[i])
-        self.save_fig()
-        plt.show()
 
     def test_dt_partitioner_multiple_splits(self):
         self.initialize_figure()
@@ -58,5 +56,3 @@ class TestPartitioner(PlottableTest):
         colors = ['red', 'orange', 'green', 'blue', 'grey', 'black', 'magenta', 'yellow']
         color_list = colors[:len(regions)]
         partitioner.plot(color_list=color_list)
-        self.save_fig()
-        plt.show()

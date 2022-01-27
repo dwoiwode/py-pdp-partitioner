@@ -53,7 +53,6 @@ class TestSampler(PlottableTest):
         random_sampler.plot(color="blue")
         bo.plot(color="red")
         plt.legend()
-        self.save_fig()
 
         # Assertions
         self.assertGreater(mmd_bo, mmd_random)
