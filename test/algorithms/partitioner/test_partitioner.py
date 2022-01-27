@@ -4,7 +4,6 @@ from matplotlib import pyplot as plt
 from src.algorithms.ice import ICE
 from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
 from src.blackbox_functions.synthetic_functions import Square
-from src.blackbox_functions import config_space_nd
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from test import PlottableTest
 

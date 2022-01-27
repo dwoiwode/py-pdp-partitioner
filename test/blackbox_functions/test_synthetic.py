@@ -1,6 +1,7 @@
 from unittest import TestCase
 
 import ConfigSpace as CS
+import ConfigSpace.hyperparameters as CSH
 import numpy as np
 import pytest
 from matplotlib import pyplot as plt
@@ -12,6 +13,15 @@ from test import PlottableTest
 
 
 class TestLevy(TestCase):
+    def test_config_space(self):
+        f = Levy()
+        default_cs = f.config_space
+        hp = default_cs.get_hyperparameter("x1")
+        self.assertIsInstance(hp, CSH.NumericalHyperparameter)
+        self.assertEqual(-10, hp.lower)
+        self.assertEqual(10, hp.upper)
+        self.assertFalse(hp.log)
+
     def test_levy1D(self):
         f = Levy.for_n_dimensions(1)
 
@@ -34,6 +44,15 @@ class TestLevy(TestCase):
 
 
 class TestAckley(TestCase):
+    def test_config_space(self):
+        f = Ackley()
+        default_cs = f.config_space
+        hp = default_cs.get_hyperparameter("x1")
+        self.assertIsInstance(hp, CSH.NumericalHyperparameter)
+        self.assertEqual(-32.768, hp.lower)
+        self.assertEqual(32.768, hp.upper)
+        self.assertFalse(hp.log)
+
     def test_ackley1D(self):
         f = Ackley.for_n_dimensions(1)
 
@@ -56,6 +75,15 @@ class TestAckley(TestCase):
 
 
 class TestCrossInTray(TestCase):
+    def test_config_space(self):
+        f = CrossInTray()
+        default_cs = f.config_space
+        hp = default_cs.get_hyperparameter("x1")
+        self.assertIsInstance(hp, CSH.NumericalHyperparameter)
+        self.assertEqual(-10, hp.lower)
+        self.assertEqual(10, hp.upper)
+        self.assertFalse(hp.log)
+
     def tets_cross_in_tray(self):
         f = CrossInTray()
         # Minima
@@ -75,6 +103,15 @@ class TestStyblinskiTang(TestCase):
     minimum = -39.16616570377142
     minimum_at = -2.90353401818596
 
+    def test_config_space(self):
+        f = StyblinskiTang()
+        default_cs = f.config_space
+        hp = default_cs.get_hyperparameter("x1")
+        self.assertIsInstance(hp, CSH.NumericalHyperparameter)
+        self.assertEqual(-5, hp.lower)
+        self.assertEqual(5, hp.upper)
+        self.assertFalse(hp.log)
+
     def test_styblinski_tang_1D(self):
         f = StyblinskiTang.for_n_dimensions(1)
         self.assertAlmostEqual(f(x1=self.minimum_at), self.minimum)
@@ -87,11 +124,40 @@ class TestStyblinskiTang(TestCase):
             self.assertEqual(len(x), d)
             self.assertAlmostEqual(f(**x), d * self.minimum)
 
+    def test_simple_integral_numerical(self):
+        f = StyblinskiTang()
+        cs = f.config_space
+        hp = cs["x1"]
+        f_int = f.pd_integral(hp)
+        integral_formula_1_value = f_int()
+        integral_formula_2_value = StyblinskiTang._styblinski_tang_integral(hp.upper) - StyblinskiTang._styblinski_tang_integral(hp.lower)
+        print(integral_formula_1_value)
+
+        # Calculate ground truth by approximating it with sum of small rectangles
+        n_steps = 5000
+        integral_numeric = 0
+        step_size = (hp.upper - hp.lower) / n_steps
+        for i in range(n_steps):
+            integral_numeric += f(x1=hp.lower + (i + 0.5) * step_size)
+
+        integral_numeric *= step_size
+
+        print("Numeric:", integral_numeric)
+        print("Partial Dependence Function:", integral_formula_1_value)
+        print("1D-Integral Function:", integral_formula_2_value)
+
+        self.assertAlmostEqual(integral_numeric, integral_formula_1_value* (hp.upper - hp.lower), places=3)
+        self.assertAlmostEqual(integral_numeric, integral_formula_2_value, places=3)
+
+
+
+
     def test_integral_1d(self):
         """
         f(x1, x2, x3) = stybli..
         F(x1) = f(x1, x2, x3) dx2 dx3
         """
+
         def styblinski_tang_3D_int_1D(x1: float, lower_x2: float = -5, upper_x2: float = 5, lower_x3: float = -5,
                                       upper_x3: float = 5) -> float:
             styblinski_tang = StyblinskiTang.for_n_dimensions(1)
