@@ -6,6 +6,7 @@ __pycache__/
 *$py.class
 
 .idea
+.plots
 
 # C extensions
 *.so
