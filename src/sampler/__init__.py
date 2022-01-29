@@ -55,6 +55,14 @@ class Sampler(Plottable, ABC):
         incumbent_value = self.y_list[incumbent_index]
         return incumbent_config, incumbent_value
 
+    @property
+    def incumbent_config(self) -> Optional[CS.Configuration]:
+        return self.incumbent[0]
+
+    @property
+    def incumbent_value(self) -> float:
+        return self.incumbent[1]
+
     @abstractmethod
     def sample(self, n_points: int = 1):
         """ Samples n_points new points """
