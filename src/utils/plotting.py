@@ -168,7 +168,7 @@ def plot_function(f: Callable[[Any], float],
             z.append(f(**X))
 
         z = np.reshape(z, xx.shape)
-        plt.pcolormesh(x, y, z, shading='auto')
+        ax.pcolormesh(x, y, z, shading='auto')
 
     return ax
 

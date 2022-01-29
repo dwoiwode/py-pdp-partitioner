@@ -100,7 +100,7 @@ class TestPlottingFunctions(PlottableTest):
         self.save_fig()
         plt.show()
 
-        for _ in range(20):
+        for _ in range(10):
             self.initialize_figure()
             self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, individual points")
 

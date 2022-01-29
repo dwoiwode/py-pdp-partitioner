@@ -26,7 +26,7 @@ class PlottableTest(TestCase):
         # Show plot from last test
         if self.SHOW:
             plt.show()
-        plt.clf()
+        plt.close()
 
     def save_fig(self, iterate=True,name=None):
         if self.fig is None:
@@ -41,6 +41,7 @@ class PlottableTest(TestCase):
 
         # Save fig
         self.fig.legend()  # Add legend
+        plt.tight_layout()
         if self.fig_idx == 0 and not iterate:
             self.fig.savefig(folder / f"{name}.png")
         else:
