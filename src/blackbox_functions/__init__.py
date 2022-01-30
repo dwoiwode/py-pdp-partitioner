@@ -80,6 +80,10 @@ def config_space_nd(dimensions: int, *,
     # Create Configspace
     cs = CS.ConfigurationSpace(seed=seed)
     for i, (low, high, is_log) in enumerate(zip(lower, upper, log)):
-        x = CSH.UniformFloatHyperparameter(f"{variable_prefix}{i + 1}", lower=low, upper=high, log=is_log)
+        name = f"{variable_prefix}{i + 1}"
+        if low == high:
+            x = CSH.Constant(name, value=low)
+        else:
+            x = CSH.UniformFloatHyperparameter(name, lower=low, upper=high, log=is_log)
         cs.add_hyperparameter(x)
     return cs

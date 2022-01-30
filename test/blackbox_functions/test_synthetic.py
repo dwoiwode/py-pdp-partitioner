@@ -59,6 +59,22 @@ class TestConfigspaceND(TestCase):
         self.assertEqual(-2, hps[2].lower)
         self.assertEqual(32.3, hps[2].upper)
 
+    def test_constants(self):
+        cs = config_space_nd(3, lower=(0, 5, -2.32), upper=(0, 5, -2.32))
+        hps = cs.get_hyperparameters()
+
+        # Check Hyperparameter 0
+        self.assertIsInstance(hps[0], CSH.Constant)
+        self.assertEqual(0, hps[0].value)
+
+        # Check Hyperparameter 1
+        self.assertIsInstance(hps[1], CSH.Constant)
+        self.assertEqual(5, hps[1].value)
+
+        # Check Hyperparameter 2
+        self.assertIsInstance(hps[2], CSH.Constant)
+        self.assertEqual(-2.32, hps[2].value)
+
 
 class TestLevy(TestCase):
     def test_config_space(self):

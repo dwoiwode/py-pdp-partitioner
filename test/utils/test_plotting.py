@@ -5,10 +5,11 @@ import matplotlib.pyplot as plt
 from src.algorithms.ice import ICE
 from src.algorithms.pdp import PDP
 from src.blackbox_functions import config_space_nd
+from src.blackbox_functions.synthetic_functions import StyblinskiTang
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.sampler.random_sampler import RandomSampler
 from src.surrogate_models import GaussianProcessSurrogate
-from src.utils.plotting import plot_function
+from src.utils.plotting import plot_function, plot_config_space
 from test import PlottableTest
 
 
@@ -179,3 +180,28 @@ class TestPlottingFunctions(PlottableTest):
         surrogate_model.fit(sampler.X, sampler.y)
         pdp = PDP.from_random_points(surrogate_model, selected_hp)
         pdp.plot(with_confidence=True)
+
+    def test_plot_config_space_1D(self):
+        self.initialize_figure()
+        f = StyblinskiTang.for_n_dimensions(1)
+        reduced_cs = config_space_nd(1, lower=-2, upper=3.25)
+
+        plot_function(f, f.config_space)
+        plot_config_space(reduced_cs)
+
+    def test_plot_config_space_2D(self):
+        self.initialize_figure()
+        f = StyblinskiTang.for_n_dimensions(2)
+        reduced_cs = config_space_nd(2, lower=(-2, 0), upper=(3.25, 4))
+
+        plot_function(f, f.config_space)
+        plot_config_space(reduced_cs)
+
+    def test_plot_config_space_2D_with_constant(self):
+        self.initialize_figure()
+        f = StyblinskiTang.for_n_dimensions(2)
+        reduced_cs = config_space_nd(2, lower=(-2, 2), upper=(3.25, 2))
+
+        plot_function(f, f.config_space)
+        plot_config_space(reduced_cs)
+

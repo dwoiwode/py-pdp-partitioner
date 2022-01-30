@@ -1,19 +1,16 @@
 import colorsys
 import logging
-from random import random
-
-import matplotlib.colors as mc
-
 from abc import ABC, abstractmethod
 from typing import Callable, Any, Optional, List, Iterable, Tuple
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
+import matplotlib.colors as mc
 import numpy as np
 from matplotlib import pyplot as plt
 
-from src.utils.utils import get_uniform_distributed_ranges, get_stds
-from src.utils.typing import ColorType
+from src.utils.typing import ColorType, SelectedHyperparameterType
+from src.utils.utils import get_uniform_distributed_ranges, get_stds, get_hyperparameters
 
 
 # Abstract plottable class
@@ -47,6 +44,7 @@ def get_color(color: ColorType) -> Tuple[float, float, float]:
     """
     return mc.to_rgb(color)
 
+
 def get_random_color() -> ColorType:
     rgb = np.random.uniform(size=3)
     return tuple(rgb)
@@ -65,7 +63,7 @@ def get_ax(ax: Optional[plt.Axes]) -> plt.Axes:
     return ax
 
 
-def check_and_set_axis(ax: plt.Axes, hyperparameters: List[CSH.Hyperparameter]):
+def check_and_set_axis(ax: plt.Axes, hyperparameters: List[CSH.Hyperparameter], set_bounds=True):
     """
     Set axis labels and types (e.g. log) for all selected hyperparameters.
     If this does not fit with current configuration raise Error instead
@@ -75,35 +73,43 @@ def check_and_set_axis(ax: plt.Axes, hyperparameters: List[CSH.Hyperparameter]):
     n_hyperparameters = len(hyperparameters)
     if n_hyperparameters == 1:
         hp = hyperparameters[0]
+
+        # Check Label
         current_label = ax.get_xlabel()
         new_label = hp.name
         if current_label != "" and current_label != new_label:
             raise ValueError(f"Current label is {current_label}, but tried to set label to {new_label}. "
                              f"Did you mess up the plots?")
+
+        # Set Label
         ax.set_xlabel(new_label)
-        if isinstance(hp, CSH.NumericalHyperparameter):
+        ax.set_ylabel('Prediction')
+
+        # Set Bounds 1D
+        if set_bounds and isinstance(hp, CSH.NumericalHyperparameter):
             if hp.log:
                 ax.set_xscale("log")
             ax.set_xlim(hp.lower, hp.upper)
-        ax.set_ylabel('Prediction')
     elif n_hyperparameters == 2:
-        hp1 = hyperparameters[0]
-        hp2 = hyperparameters[1]
+        hp1, hp2 = hyperparameters
+
+        # Check Label
         current_label = ax.get_xlabel(), ax.get_ylabel()
         new_label = hp1.name, hp2.name
         if current_label != ("", "") and current_label != new_label:
             raise ValueError(f"Current label is {current_label}, but tried to set label to {new_label}. "
                              f"Did you mess up the plots?")
-        # Label
+        # Set Label
         ax.set_xlabel(new_label[0])
         ax.set_ylabel(new_label[1])
 
         # Numerical axis
-        if isinstance(hp1, CSH.NumericalHyperparameter):
+        # Set Bounds 2D
+        if set_bounds and isinstance(hp1, CSH.NumericalHyperparameter):
             if hp1.log:
                 ax.set_xscale("log")
             ax.set_xlim(hp1.lower, hp1.upper)
-        if isinstance(hp2, CSH.NumericalHyperparameter):
+        if set_bounds and isinstance(hp2, CSH.NumericalHyperparameter):
             if hp2.log:
                 ax.set_yscale("log")
             ax.set_ylim(hp2.lower, hp2.upper)
@@ -156,7 +162,7 @@ def plot_function(f: Callable[[Any], float],
     check_and_set_axis(ax, parameters)
     if n_parameter == 1:
         # plot ground truth lines
-        y = [f(**{parameters[0].name:p}) for p in x]
+        y = [f(**{parameters[0].name: p}) for p in x]
         ax.plot(x, y, label=f.__name__, c='black')
     elif n_parameter == 2:
         # plot ground truth lines
@@ -225,3 +231,57 @@ def plot_1D_confidence_lines(x: np.ndarray,
             label = f"{name}-$\mu\pm${k_sigma:.2f}$\sigma$"
         ax.plot(x, means - stds, color=color, alpha=1 / k_sigma * 0.2, label=label)
         ax.plot(x, means + stds, color=color, alpha=1 / k_sigma * 0.2)
+
+
+def plot_config_space(config_space: CS.ConfigurationSpace,
+                      x_hyperparameters: Optional[SelectedHyperparameterType] = None,
+                      color: ColorType = "orange",
+                      ax: Optional[plt.Axes] = None):
+    """
+    Draws a box around (selected) hyperparameter bounds of a config_space
+    """
+    ax = get_ax(ax)
+    color = get_color(color)
+    x_hyperparameters = get_hyperparameters(x_hyperparameters, config_space)
+    check_and_set_axis(ax, x_hyperparameters, set_bounds=False)
+
+    n_hyperparameters = len(x_hyperparameters)
+    if n_hyperparameters == 1:
+        # Plot 1D
+        hp = x_hyperparameters[0]
+        assert isinstance(hp, CSH.NumericalHyperparameter)
+        ax.axvline(hp.lower, color=color)
+        ax.axvline(hp.upper, color=color)
+        ax.axvspan(hp.lower, hp.upper, alpha=0.5, color=color)
+    elif n_hyperparameters == 2:
+        # Plot 2D
+        x1, x2 = x_hyperparameters
+        alpha = 0.5
+        if isinstance(x1, CSH.NumericalHyperparameter):
+            x_lower = x1.lower
+            x_upper = x1.upper
+        elif isinstance(x1, CSH.Constant):
+            x_lower = x1.value
+            x_upper = x1.value
+            alpha = 1
+        else:
+            raise TypeError(f"{x1} currently not supported for plotting!")
+
+        if isinstance(x2, CSH.NumericalHyperparameter):
+            y_lower = x2.lower
+            y_upper = x2.upper
+        elif isinstance(x2, CSH.Constant):
+            y_lower = x2.value
+            y_upper = x2.value
+            alpha = 1
+        else:
+            raise TypeError(f"{x2} currently not supported for plotting!")
+
+        ax.fill_betweenx(
+            y=[y_lower, y_upper],
+            x1=x_lower, x2=x_upper,
+            alpha=alpha, color=color
+        )
+    else:
+        raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
+                                  "Please select a specific hp by setting `selected_hyperparameters`")

@@ -4,6 +4,8 @@ import ConfigSpace as CS
 import numpy as np
 from ConfigSpace import hyperparameters as CSH
 
+from src.utils.typing import SelectedHyperparameterType
+
 
 def config_to_array(config: CS.Configuration) -> np.ndarray:
     return config.get_array()
@@ -70,13 +72,16 @@ def get_stds(stds: Optional[np.ndarray] = None, variances: Optional[np.ndarray] 
     return stds
 
 
-def get_hyperparameters(hyperparameters: Union[None, CSH.Hyperparameter, Iterable[CSH.Hyperparameter]],
+def get_hyperparameters(hyperparameters: Optional[SelectedHyperparameterType],
                         cs: CS.ConfigurationSpace) -> List[CSH.Hyperparameter]:
     if hyperparameters is None:
+        # None -> All hyperparameters in cs
         return list(cs.get_hyperparameters())
     elif isinstance(hyperparameters, CSH.Hyperparameter):
+        # Single Hyperparameter
         return [hyperparameters]
     elif isinstance(hyperparameters, str):
+        # Single Hyperparameter name
         return [cs.get_hyperparameter(hyperparameters)]
     else:
         # Either list of names or list of Hyperparameters
@@ -123,6 +128,7 @@ def median_distance_between_points(X: np.ndarray) -> float:
     distances = np.sqrt(dif_2)
     median = np.median(distances[distances != 0]).item()
     return median
+
 
 def convert_hyperparameters(hyperparameters: Union[str, CSH.Hyperparameter, Iterable[Union[CSH.Hyperparameter, str]]],
                             config_space: CS.ConfigurationSpace) -> List[CSH.Hyperparameter]:
