@@ -42,7 +42,7 @@ class Region:
 
     @cached_property
     def mean_confidence(self) -> float:
-        return np.mean(self.y_variances).item()
+        return np.sqrt(np.mean(self.y_variances).item())
 
     @cached_property
     def loss(self) -> float:

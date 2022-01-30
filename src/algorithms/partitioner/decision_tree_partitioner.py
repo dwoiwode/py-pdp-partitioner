@@ -213,7 +213,16 @@ class DTPartitioner(Partitioner):
             seed=seed
         )
 
-        self.root: Optional[DTRegion] = None
+        self.root: DTRegion = DTRegion(
+            parent=None,
+            depth=0,
+            full_config_space=self.config_space,
+            x_points=self.ice.x_ice,
+            y_points=self.ice.y_ice,
+            y_variances=self.ice.y_variances,
+            split_conditions=[],
+            selected_hyperparameter=self.selected_hyperparameter
+        )
         self.leaves: List[DTRegion] = []
 
     @classmethod
@@ -231,16 +240,6 @@ class DTPartitioner(Partitioner):
         assert max_depth > 0, 'Can only split for depth > 0'
 
         # create root node and leaves
-        self.root = DTRegion(
-            parent=None,
-            depth=0,
-            full_config_space=self.config_space,
-            x_points=self.ice.x_ice,
-            y_points=self.ice.y_ice,
-            y_variances=self.ice.y_variances,
-            split_conditions=[],
-            selected_hyperparameter=self.selected_hyperparameter
-        )
         self.leaves = []
 
         queue = [self.root]
