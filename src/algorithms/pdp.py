@@ -66,8 +66,13 @@ class PDP(Algorithm):
              gradient_color="xkcd:light red",
              with_confidence=True,
              ax: Optional[plt.Axes] = None):
-        pdp = ICECurve(self.config_space, self.selected_hyperparameter,
-                       self.x_pdp, self.y_pdp, self.y_variances,
-                       name="PDP")
+        pdp = ICECurve(
+            full_config_space=self.config_space,
+            selected_hyperparameter=self.selected_hyperparameter,
+            x_ice=self.x_pdp,
+            y_ice=self.y_pdp,
+            y_variances=self.y_variances,
+            name="PDP"
+        )
         pdp.plot(line_color=line_color, gradient_color=gradient_color,
                  with_confidence=with_confidence, ax=ax)
