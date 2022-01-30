@@ -18,7 +18,7 @@ class TestPartitioner(PlottableTest):
         bo = BayesianOptimizationSampler(f, config_space=cs)
         bo.sample(10)
 
-        ice = ICE(bo.surrogate_model,  selected_hp)
+        ice = ICE.from_random_points(bo.surrogate_model,  selected_hp)
         partitioner = DTPartitioner.from_ICE(ice)
         regions = partitioner.partition()
 
@@ -43,7 +43,7 @@ class TestPartitioner(PlottableTest):
 
         bo = BayesianOptimizationSampler(f, config_space=cs)
         bo.sample(10)
-        ice = ICE(bo.surrogate_model,  selected_hp)
+        ice = ICE.from_random_points(bo.surrogate_model,  selected_hp)
 
         partitioner = DTPartitioner.from_ICE(ice)
         regions = partitioner.partition(max_depth=3)

@@ -16,7 +16,7 @@ class TestICE(unittest.TestCase):
 
         bo.sample(10)
         num_grid_points = 1000
-        ice = ICE(bo.surrogate_model, selected_hp, num_grid_points_per_axis=num_grid_points)
+        ice = ICE.from_random_points(bo.surrogate_model, selected_hp, num_grid_points_per_axis=num_grid_points)
         x_ice = ice.x_ice
         y_ice = ice.y_ice
         variances = ice.y_variances
@@ -48,8 +48,8 @@ class TestICE(unittest.TestCase):
         bo.sample(10)
         num_grid_points = 20
         n_samples = 1000
-        ice = ICE(bo.surrogate_model, selected_hyperparameter,
-                  num_samples=n_samples, num_grid_points_per_axis=num_grid_points)
+        ice = ICE.from_random_points(bo.surrogate_model, selected_hyperparameter,
+                                     num_samples=n_samples, num_grid_points_per_axis=num_grid_points)
 
         x_ice = ice.x_ice
         y_ice = ice.y_ice
@@ -72,7 +72,7 @@ class TestICE(unittest.TestCase):
         selected_hp = cs.get_hyperparameters()[0]
 
         bo.sample(10)
-        ice = ICE(bo.surrogate_model, selected_hp)
+        ice = ICE.from_random_points(bo.surrogate_model, selected_hp)
         ice.centered = True
         y_ice = ice.y_ice
 

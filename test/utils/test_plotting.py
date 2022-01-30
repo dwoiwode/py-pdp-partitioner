@@ -125,7 +125,7 @@ class TestPlottingFunctions(PlottableTest):
 
         surrogate_model = GaussianProcessSurrogate(cs)
         surrogate_model.fit(sampler.X, sampler.y)
-        ice = ICE(surrogate_model, selected_hp)
+        ice = ICE.from_random_points(surrogate_model, selected_hp)
         ice.plot()
 
     def test_plot_single_ice_with_confidence(self):
@@ -142,7 +142,7 @@ class TestPlottingFunctions(PlottableTest):
 
         surrogate_model = GaussianProcessSurrogate(cs)
         surrogate_model.fit(sampler.X, sampler.y)
-        ice = ICE(surrogate_model, selected_hp)
+        ice = ICE.from_random_points(surrogate_model, selected_hp)
         ice_curve = ice[0]
         ice_curve.plot(with_confidence=True)
 
@@ -160,7 +160,7 @@ class TestPlottingFunctions(PlottableTest):
 
         surrogate_model = GaussianProcessSurrogate(cs)
         surrogate_model.fit(sampler.X, sampler.y)
-        pdp = PDP(surrogate_model, selected_hp)
+        pdp = PDP.from_random_points(surrogate_model, selected_hp)
         pdp.plot(with_confidence=False)
 
     def test_plot_pdp_with_confidence(self):
@@ -177,5 +177,5 @@ class TestPlottingFunctions(PlottableTest):
 
         surrogate_model = GaussianProcessSurrogate(cs)
         surrogate_model.fit(sampler.X, sampler.y)
-        pdp = PDP(surrogate_model, selected_hp)
+        pdp = PDP.from_random_points(surrogate_model, selected_hp)
         pdp.plot(with_confidence=True)

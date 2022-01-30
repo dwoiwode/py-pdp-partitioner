@@ -23,7 +23,7 @@ surrogate_model = GaussianProcessSurrogate(cs)
 surrogate_model.fit(sampler.X, sampler.y)
 
 # ICE
-ice = ICE(surrogate_model, selected_hyperparameter)
+ice = ICE.from_random_points(surrogate_model, selected_hyperparameter)
 ice.plot(color="orange")
 
 # PDP
@@ -31,7 +31,7 @@ pdp = PDP.from_ICE(ice)
 pdp.plot("black", "grey", with_confidence=True)
 
 # Partitioner
-dt_partitioner = DTPartitioner(surrogate_model, selected_hyperparameter)
+dt_partitioner = DTPartitioner.from_ICE(ice)
 dt_partitioner.partition(max_depth=2)
 # dt_partitioner.plot()
 

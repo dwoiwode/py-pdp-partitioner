@@ -25,7 +25,7 @@ class TestDTNode(TestCase):
                                          acq_class=LowerConfidenceBound,
                                          initial_points=2)
         bo.sample(bo_sampling_points)
-        ice = ICE(bo.surrogate_model, self.selected_hyperparameter)
+        ice = ICE.from_random_points(bo.surrogate_model, self.selected_hyperparameter)
 
         self.partitioner = DTPartitioner.from_ICE(ice)
         self.regions = self.partitioner.partition(max_depth=2)

@@ -74,10 +74,14 @@ class ICE(Algorithm):
     def __init__(self,
                  surrogate_model: SurrogateModel,
                  selected_hyperparameter: SelectedHyperparameterType,
-                 num_samples: int = 1000,
+                 samples: np.ndarray,
                  num_grid_points_per_axis: int = 20,
                  seed=None):
-        super().__init__(surrogate_model, selected_hyperparameter, num_samples, num_grid_points_per_axis, seed=seed)
+        super().__init__(surrogate_model=surrogate_model,
+                         selected_hyperparameter=selected_hyperparameter,
+                         samples=samples,
+                         num_grid_points_per_axis=num_grid_points_per_axis,
+                         seed=seed)
         self.centered = False  # Can be set directly in class
 
         # Properties
@@ -107,19 +111,18 @@ class ICE(Algorithm):
     def _calculate(self):
         self.logger.info("Recalculating ICE...")
         # Retrieve hp index from cs
-        cs = self.surrogate_model.config_space
+        cs = self.config_space
         idx = get_selected_idx(self.selected_hyperparameter, cs)
         num_features = len(cs.get_hyperparameters())
 
         # retrieve x-values from config
-        x = np.asarray([config.get_array() for config in cs.sample_configuration(self.num_samples)])
         x_s = np.linspace(0, 1, self.num_grid_points)
 
         # TODO: For more than 1 dimension: remove
         x_s = np.expand_dims(x_s, axis=1)
 
         # create x values by repeating x_s along a new dimension
-        x_ice = x.repeat(self.num_grid_points)
+        x_ice = self.samples.repeat(self.num_grid_points)
         x_ice = x_ice.reshape((self.num_samples, num_features, self.num_grid_points))
         x_ice = x_ice.transpose((0, 2, 1))
         x_ice[:, :, idx] = x_s

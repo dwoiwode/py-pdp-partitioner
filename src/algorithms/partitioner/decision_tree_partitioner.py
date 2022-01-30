@@ -72,7 +72,6 @@ class DTRegion(Region, Plottable):
     def __init__(self,
                  parent: Optional['DTRegion'],
                  depth: int,
-                 config_space: CS.ConfigurationSpace,
                  x_points: np.ndarray,
                  y_points: np.ndarray,
                  y_variances: np.ndarray,
@@ -84,14 +83,13 @@ class DTRegion(Region, Plottable):
 
         self.parent = parent
         self.depth = depth
-        self.config_space = config_space
         self.selected_hyperparameter = selected_hyperparameter
 
         self.left_child: Optional[DTRegion] = None  # <= split_value
         self.right_child: Optional[DTRegion] = None  # > split_value
 
         self.split_conditions = split_conditions
-        self.full_config_space = full_config_space
+        self.config_space = full_config_space
         self.selected_hyperparameter = list(selected_hyperparameter)
 
     def __contains__(self, item: CS.Configuration) -> bool:
@@ -103,7 +101,7 @@ class DTRegion(Region, Plottable):
     def implied_config_space(self, seed: int) -> CS.ConfigurationSpace:
         # copy cs
         hp_dic = {}
-        for hp in self.full_config_space.get_hyperparameters():
+        for hp in self.config_space.get_hyperparameters():
             if isinstance(hp, CSH.NumericalHyperparameter):
                 new_hp = CSH.UniformFloatHyperparameter(hp.name, lower=hp.lower, upper=hp.upper, log=hp.log)
                 hp_dic[hp.name] = new_hp
@@ -131,7 +129,7 @@ class DTRegion(Region, Plottable):
         return cs
 
     def filter_by_condition(self, condition: SplitCondition) -> "DTRegion":
-        hyperparameter_idx = self.full_config_space.get_idx_by_hyperparameter_name(condition.hyperparameter.name)
+        hyperparameter_idx = self.config_space.get_idx_by_hyperparameter_name(condition.hyperparameter.name)
         instance_vals_at_idx = self.x_points[:, 0, hyperparameter_idx]  # second dimension does not matter
         if condition.less_equal:
             func_split_cond = (instance_vals_at_idx <= condition.normalized_value)
@@ -142,15 +140,16 @@ class DTRegion(Region, Plottable):
         new_y_points = np.copy(self.y_points[func_split_cond])
         new_y_variances = np.copy(self.y_variances[func_split_cond])
         new_conditions = self.split_conditions + [condition]
-        new_region = DTRegion(self,
-                              self.depth + 1,
-                              self.config_space,
-                              new_x_points,
-                              new_y_points,
-                              new_y_variances,
-                              new_conditions,
-                              self.full_config_space,
-                              self.selected_hyperparameter)
+        new_region = DTRegion(
+            parent=self,
+            depth=self.depth + 1,
+            x_points=new_x_points,
+            y_points=new_y_points,
+            y_variances=new_y_variances,
+            split_conditions=new_conditions,
+            full_config_space=self.config_space,
+            selected_hyperparameter=self.selected_hyperparameter
+        )
 
         return new_region
 
@@ -186,9 +185,9 @@ class DTRegion(Region, Plottable):
 
         # Plot
         if n_selected_hyperparameter == 1:  # 1D
-            x_unscaled = unscale(self.x_points, self.full_config_space)
+            x_unscaled = unscale(self.x_points, self.config_space)
             hp = self.selected_hyperparameter[0]
-            hp_idx = self.full_config_space.get_idx_by_hyperparameter_name(hp.name)
+            hp_idx = self.config_space.get_idx_by_hyperparameter_name(hp.name)
 
             ax.plot(x_unscaled[:, :, hp_idx].T, self.y_points.T, alpha=alpha, color=color)
         elif n_selected_hyperparameter == 2:  # 2D
@@ -202,23 +201,29 @@ class DTPartitioner(Partitioner):
     def __init__(self,
                  surrogate_model: SurrogateModel,
                  selected_hyperparameter: SelectedHyperparameterType,
+                 samples: np.ndarray,
                  num_grid_points_per_axis: int = 20,
-                 num_samples: int = 1000,
+                 seed=None
                  ):
-        super().__init__(surrogate_model=surrogate_model,
-                         selected_hyperparameter=selected_hyperparameter,
-                         num_grid_points=num_grid_points_per_axis,
-                         num_samples=num_samples)
+        super().__init__(
+            surrogate_model=surrogate_model,
+            selected_hyperparameter=selected_hyperparameter,
+            num_grid_points_per_axis=num_grid_points_per_axis,
+            samples=samples,
+            seed=seed
+        )
 
         self.root: Optional[DTRegion] = None
         self.leaves: List[DTRegion] = []
 
     @classmethod
     def from_ICE(cls, ice: ICE) -> "DTPartitioner":
-        partitioner = DTPartitioner(ice.surrogate_model,
-                                    ice.selected_hyperparameter,
-                                    ice.num_samples,
-                                    ice.num_grid_points_per_axis)
+        partitioner = DTPartitioner(
+            surrogate_model=ice.surrogate_model,
+            selected_hyperparameter=ice.selected_hyperparameter,
+            samples=ice.samples,
+            num_grid_points_per_axis=ice.num_grid_points_per_axis
+        )
         partitioner._ice = ice
         return partitioner
 
@@ -226,15 +231,16 @@ class DTPartitioner(Partitioner):
         assert max_depth > 0, 'Can only split for depth > 0'
 
         # create root node and leaves
-        self.root = DTRegion(None,
-                             depth=0,
-                             config_space=self.config_space,
-                             full_config_space=self.config_space,
-                             x_points=self.ice.x_ice,
-                             y_points=self.ice.y_ice,
-                             y_variances=self.ice.y_variances,
-                             split_conditions=[],
-                             selected_hyperparameter=self.selected_hyperparameter)
+        self.root = DTRegion(
+            parent=None,
+            depth=0,
+            full_config_space=self.config_space,
+            x_points=self.ice.x_ice,
+            y_points=self.ice.y_ice,
+            y_variances=self.ice.y_variances,
+            split_conditions=[],
+            selected_hyperparameter=self.selected_hyperparameter
+        )
         self.leaves = []
 
         queue = [self.root]

@@ -68,9 +68,9 @@ class TestSeeds(TestCase):
 
         # ICE
         selected_hp = f_seeded_1.config_space.get_hyperparameter("x1")
-        ice_seeded_1 = ICE(surrogate_seeded_1, selected_hp, seed=seed)
-        ice_seeded_2 = ICE(surrogate_seeded_2, selected_hp, seed=seed)
-        ice_not_seeded = ICE(surrogate_not_seeded, selected_hp)
+        ice_seeded_1 = ICE.from_random_points(surrogate_seeded_1, selected_hp, seed=seed)
+        ice_seeded_2 = ICE.from_random_points(surrogate_seeded_2, selected_hp, seed=seed)
+        ice_not_seeded = ICE.from_random_points(surrogate_not_seeded, selected_hp)
 
         # Check equality of Surrogate/ICE
         # X

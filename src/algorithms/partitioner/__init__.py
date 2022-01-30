@@ -86,11 +86,16 @@ class Region:
 class Partitioner(Algorithm, ABC):
     def __init__(self, surrogate_model: SurrogateModel,
                  selected_hyperparameter: SelectedHyperparameterType,
-                 num_grid_points: int = 20,
-                 num_samples: int = 1000):
-        super().__init__(surrogate_model, selected_hyperparameter)
-        self.num_grid_points = num_grid_points
-        self.num_samples = num_samples
+                 samples: np.ndarray,
+                 num_grid_points_per_axis: int = 20,
+                 seed=None):
+        super().__init__(
+            surrogate_model=surrogate_model,
+            selected_hyperparameter=selected_hyperparameter,
+            samples=samples,
+            num_grid_points_per_axis=num_grid_points_per_axis,
+            seed=seed
+        )
 
         # Properties
         self._ice: Optional[ICE] = None
@@ -109,14 +114,14 @@ class Partitioner(Algorithm, ABC):
     @property
     def ice(self) -> ICE:
         if self._ice is None:
-            self._ice = ICE(self.surrogate_model,
-                            self.selected_hyperparameter,
-                            self.num_samples,
-                            self.num_grid_points_per_axis)
+            self._ice = ICE(
+                surrogate_model=self.surrogate_model,
+                selected_hyperparameter=self.selected_hyperparameter,
+                samples=self.samples,
+                num_grid_points_per_axis=self.num_grid_points_per_axis
+            )
         return self._ice
 
     @abstractmethod
     def partition(self, max_depth: int = 1) -> List[Region]:
         pass
-
-
