@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Union, List, Callable, Any, Optional
+from typing import Union, Callable, Optional, Iterable
 
 import ConfigSpace as CS
 from ConfigSpace import hyperparameters as CSH
@@ -56,18 +56,30 @@ class CallableBlackboxFunction(BlackboxFunction):
 
 
 def config_space_nd(dimensions: int, *,
-                    lower: float = -5,
-                    upper: float = 5,
-                    log: bool = False,
+                    lower: Union[float, Iterable[float]] = -5,
+                    upper: Union[float, Iterable[float]] = 5,
+                    log: Union[bool, Iterable[bool]] = False,
+                    variable_prefix="x",
                     seed=None) -> CS.ConfigurationSpace:
     """
     Creates and returns a config space with `dimensions` dimensions.
     Parameters are named xi with i = [1,...,dimensions+1] (e.g. [x1, x2, x3] for `dimensions`=3)
     All Parameters are bounded between `lower` and `upper`.
     If `log` is True, parameters are specified as logarithmic
+
+    If `lower`, `upper` or `log` are iterable, their values will be used for each respective axes
     """
+    # Parse parameters
+    if isinstance(lower, (float, int)):
+        lower = [lower] * dimensions
+    if isinstance(upper, (float, int)):
+        upper = [upper] * dimensions
+    if isinstance(log, bool):
+        log = [log] * dimensions
+
+    # Create Configspace
     cs = CS.ConfigurationSpace(seed=seed)
-    for i in range(dimensions):
-        x = CSH.UniformFloatHyperparameter(f"x{i + 1}", lower=lower, upper=upper, log=log)
+    for i, (low, high, is_log) in enumerate(zip(lower, upper, log)):
+        x = CSH.UniformFloatHyperparameter(f"{variable_prefix}{i + 1}", lower=low, upper=high, log=is_log)
         cs.add_hyperparameter(x)
     return cs
