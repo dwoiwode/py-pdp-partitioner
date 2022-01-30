@@ -96,7 +96,7 @@ def get_hyperparameters(hyperparameters: Optional[SelectedHyperparameterType],
         return hps
 
 
-def get_uniform_distributed_ranges(cs: CS.ConfigurationSpace,
+def get_uniform_distributed_ranges(cs: Union[CS.ConfigurationSpace, Iterable[CSH.NumericalHyperparameter]],
                                    samples_per_axis: int = 100,
                                    scaled=False) -> np.ndarray:
     """
@@ -106,7 +106,9 @@ def get_uniform_distributed_ranges(cs: CS.ConfigurationSpace,
     :return: Shape: (num_hyperparameters, num_samples_per_axis)
     """
     ranges = []
-    for parameter in cs.get_hyperparameters():
+    if isinstance(cs, CS.ConfigurationSpace):
+        cs = cs.get_hyperparameters()
+    for parameter in cs:
         assert isinstance(parameter, CSH.NumericalHyperparameter)
         if scaled:
             ranges.append(np.linspace(0, 1, num=samples_per_axis))
@@ -117,7 +119,7 @@ def get_uniform_distributed_ranges(cs: CS.ConfigurationSpace,
                 ranges.append(np.linspace(parameter.lower, parameter.upper, num=samples_per_axis))
 
     res = np.asarray(ranges)
-    assert len(res) == len(cs.get_hyperparameters())
+    assert len(res) == len(cs)
     return res
 
 

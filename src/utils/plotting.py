@@ -149,20 +149,22 @@ def plot_function(f: Callable[[Any], float],
                   samples_per_axis=100,
                   ax: Optional[plt.Axes] = None) -> plt.Axes:
     ax = get_ax(ax)
-    parameters = cs.get_hyperparameters()
+    hps = cs.get_hyperparameters()
+    constants = {hp.name: hp.value for hp in hps if isinstance(hp, CSH.Constant)}
+    parameters = [hp for hp in hps if not isinstance(hp, CSH.Constant)]
     n_parameter = len(parameters)
     if n_parameter > 2:
         raise ValueError("Plotting currently only supports max 2 dimensions")
     if n_parameter == 0:
         raise ValueError("Requires at least 1 parameter for plotting")
 
-    ranges = get_uniform_distributed_ranges(cs, samples_per_axis=samples_per_axis)
+    ranges = get_uniform_distributed_ranges(parameters, samples_per_axis=samples_per_axis)
 
     x = ranges[0]
     check_and_set_axis(ax, parameters)
     if n_parameter == 1:
         # plot ground truth lines
-        y = [f(**{parameters[0].name: p}) for p in x]
+        y = [f(**{parameters[0].name: p}, **constants) for p in x]
         ax.plot(x, y, label=f.__name__, c='black')
     elif n_parameter == 2:
         # plot ground truth lines
@@ -171,7 +173,7 @@ def plot_function(f: Callable[[Any], float],
         z = []
         for x1, x2 in zip(xx.reshape(-1), yy.reshape(-1)):
             X = {parameters[0].name: x1, parameters[1].name: x2}
-            z.append(f(**X))
+            z.append(f(**X, **constants))
 
         z = np.reshape(z, xx.shape)
         ax.pcolormesh(x, y, z, shading='auto')
