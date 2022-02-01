@@ -45,7 +45,7 @@ def plot_full_pdp(pdp: PDP) -> plt.Figure:
     return fig
 
 
-def run_algorithm(f, cs, bo_samples, n_splits=1, tau=0.1):
+def run_algorithm(f, cs, bo_samples, n_splits=1, tau=5):
     current_run_name = f"{bo_samples}_{f.__name__}"
     selected_hyperparameter = cs.get_hyperparameter("x1")
 
@@ -77,14 +77,14 @@ def run_algorithm(f, cs, bo_samples, n_splits=1, tau=0.1):
     nll = best_region.negative_log_likelihood(f)
     mc = best_region.mean_confidence
     delta_mc = mc / mc_root
-    delta_nll = nll / nll_root
-
-    mmd = bo_sampler.maximum_mean_discrepancy(1000)
+    # delta_nll = nll / nll_root
+    delta_nll_score = best_region.delta_nll(dt_partitioner.root, f)
+    mmd = bo_sampler.maximum_mean_discrepancy(bo_samples)
 
     print(f'f: {f}, n_splits: {n_splits}, sampling_points: {sampling_points}')
     print(f'mmd: {mmd}')
     print(f'mc: {mc}, mc_root: {mc_root}, delta_mc: {delta_mc=}')
-    print(f'nll: {nll}, {nll_root=}, {delta_nll=}')
+    print(f'nll: {nll}, {nll_root=}, {delta_nll_score=}')
 
     # Plots
     # folder = Path("../plots")
@@ -102,7 +102,8 @@ if __name__ == '__main__':
         # StyblinskiTang.for_n_dimensions(5),
         # StyblinskiTang.for_n_dimensions(8),
     ]
-    bo_sampling_points = [80, 150, 250]
+    # bo_sampling_points = [80, 150, 250]
+    bo_sampling_points = [92]
 
     for f, sampling_points in zip(functions, bo_sampling_points):
         # for sampling_points in tqdm(bo_sampling_points, desc="Bayesian sampling points"):

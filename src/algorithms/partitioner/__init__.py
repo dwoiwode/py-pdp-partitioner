@@ -82,6 +82,11 @@ class Region:
         result = - np.mean(log_prob)
         return result
 
+    def delta_nll(self, full_region: "Region", true_function: BlackboxFunction):
+        nll = self.negative_log_likelihood(true_function)
+        nll_root = full_region.negative_log_likelihood(true_function)
+        return 100 * (nll_root - nll) / np.absolute(nll_root)
+
 
 class Partitioner(Algorithm, ABC):
     def __init__(self, surrogate_model: SurrogateModel,
