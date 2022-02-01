@@ -42,7 +42,7 @@ class Region:
 
     @cached_property
     def mean_confidence(self) -> float:
-        return np.sqrt(np.mean(self.y_variances).item())
+        return np.mean(np.sqrt(self.y_variances)).item()
 
     @cached_property
     def loss(self) -> float:
@@ -79,7 +79,7 @@ class Region:
         pdp_y_std = np.sqrt(pdp_y_variances)
 
         log_prob = norm.logpdf(true_y, loc=pdp_y_points, scale=pdp_y_std)
-        result = - np.mean(log_prob)
+        result = - np.mean(log_prob)  # Why mean? Not sum?
         return result
 
 
