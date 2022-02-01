@@ -134,6 +134,7 @@ class GaussianProcessSurrogate(SkLearnPipelineSurrogate):
             ("standardize", StandardScaler()),
             ("GP", GaussianProcessRegressor(kernel=kernel, normalize_y=True,
                                             n_restarts_optimizer=20,
+                                            alpha=1e-8,
                                             random_state=seed)),
         ])
         super().__init__(pipeline, cs, seed=seed)

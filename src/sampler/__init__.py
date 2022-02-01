@@ -67,11 +67,13 @@ class Sampler(Plottable, ABC):
         X = np.concatenate((X_samples, X_uniform))
 
         # Calculate
-        X_unscaled = unscale(X, self.config_space)
-        median_l2 = median_distance_between_points(X_unscaled)
+        # X_unscaled = unscale(X, self.config_space)
+        median_l2 = median_distance_between_points(X)
+        # median_l2 = median_distance_between_points(X_unscaled)
         rbf = RBF(median_l2)
 
         covariances = rbf(X)
+        # covariances = rbf(X_unscaled)
         n = len(X_samples)
         term1 = np.sum((1 - np.eye(n)) * covariances[:n, :n]) / (n * (n - 1))
         term2 = np.sum((1 - np.eye(m)) * covariances[n:, n:]) / (m * (m - 1))
