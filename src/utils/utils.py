@@ -4,6 +4,8 @@ import ConfigSpace as CS
 import numpy as np
 from ConfigSpace import hyperparameters as CSH
 
+from src.utils.typing import SelectedHyperparameterType
+
 
 def config_to_array(config: CS.Configuration) -> np.ndarray:
     return config.get_array()
@@ -70,13 +72,16 @@ def get_stds(stds: Optional[np.ndarray] = None, variances: Optional[np.ndarray] 
     return stds
 
 
-def get_hyperparameters(hyperparameters: Union[None, CSH.Hyperparameter, Iterable[CSH.Hyperparameter]],
+def get_hyperparameters(hyperparameters: Optional[SelectedHyperparameterType],
                         cs: CS.ConfigurationSpace) -> List[CSH.Hyperparameter]:
     if hyperparameters is None:
+        # None -> All hyperparameters in cs
         return list(cs.get_hyperparameters())
     elif isinstance(hyperparameters, CSH.Hyperparameter):
+        # Single Hyperparameter
         return [hyperparameters]
     elif isinstance(hyperparameters, str):
+        # Single Hyperparameter name
         return [cs.get_hyperparameter(hyperparameters)]
     else:
         # Either list of names or list of Hyperparameters
@@ -91,7 +96,7 @@ def get_hyperparameters(hyperparameters: Union[None, CSH.Hyperparameter, Iterabl
         return hps
 
 
-def get_uniform_distributed_ranges(cs: CS.ConfigurationSpace,
+def get_uniform_distributed_ranges(cs: Union[CS.ConfigurationSpace, Iterable[CSH.NumericalHyperparameter]],
                                    samples_per_axis: int = 100,
                                    scaled=False) -> np.ndarray:
     """
@@ -101,7 +106,9 @@ def get_uniform_distributed_ranges(cs: CS.ConfigurationSpace,
     :return: Shape: (num_hyperparameters, num_samples_per_axis)
     """
     ranges = []
-    for parameter in cs.get_hyperparameters():
+    if isinstance(cs, CS.ConfigurationSpace):
+        cs = cs.get_hyperparameters()
+    for parameter in cs:
         assert isinstance(parameter, CSH.NumericalHyperparameter)
         if scaled:
             ranges.append(np.linspace(0, 1, num=samples_per_axis))
@@ -112,7 +119,7 @@ def get_uniform_distributed_ranges(cs: CS.ConfigurationSpace,
                 ranges.append(np.linspace(parameter.lower, parameter.upper, num=samples_per_axis))
 
     res = np.asarray(ranges)
-    assert len(res) == len(cs.get_hyperparameters())
+    assert len(res) == len(cs)
     return res
 
 
@@ -123,6 +130,7 @@ def median_distance_between_points(X: np.ndarray) -> float:
     distances = np.sqrt(dif_2)
     median = np.median(distances[distances != 0]).item()
     return median
+
 
 def convert_hyperparameters(hyperparameters: Union[str, CSH.Hyperparameter, Iterable[Union[CSH.Hyperparameter, str]]],
                             config_space: CS.ConfigurationSpace) -> List[CSH.Hyperparameter]:

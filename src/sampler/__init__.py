@@ -55,6 +55,14 @@ class Sampler(Plottable, ABC):
         incumbent_value = self.y_list[incumbent_index]
         return incumbent_config, incumbent_value
 
+    @property
+    def incumbent_config(self) -> Optional[CS.Configuration]:
+        return self.incumbent[0]
+
+    @property
+    def incumbent_value(self) -> float:
+        return self.incumbent[1]
+
     @abstractmethod
     def sample(self, n_points: int = 1):
         """ Samples n_points new points """
@@ -103,13 +111,14 @@ class Sampler(Plottable, ABC):
         # Plot
         plotting_kwargs = {
             "marker": marker,
-            "linestyle": "",
             "color": color,
             "label": label
         }
 
         n_hyperparameters = len(x_hyperparameters)
         if n_hyperparameters == 1:  # 1D
+            plotting_kwargs["linestyle"] = ""
+
             hp = x_hyperparameters[0]
             x = np.asarray([config[hp.name] for config in self.config_list])
             order = np.argsort(x)
@@ -118,7 +127,7 @@ class Sampler(Plottable, ABC):
             hp1, hp2 = x_hyperparameters
             x1, x2 = zip(*[(config[hp1.name], config[hp2.name]) for config in self.config_list])
             # colors = self.y  # TODO: How to plot values? color=colors is possible, not visible on ground truth
-            ax.scatter(x1, x2)
+            ax.scatter(x1, x2, **plotting_kwargs)
         else:
             raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
                                       "Please select a specific hp by setting `x_hyperparemeters`")
