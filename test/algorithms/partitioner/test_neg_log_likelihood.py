@@ -7,10 +7,10 @@ from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 
 class TestNLL(unittest.TestCase):
     def test_nll(self):
-        f = StyblinskiTang.for_n_dimensions(3)
+        f = StyblinskiTang.for_n_dimensions(3, seed=32)
         cs = f.config_space
         n = 80
-        tau = 2
+        tau = 1
         selected_hyperparameter = cs.get_hyperparameter("x1")
 
         # Bayesian

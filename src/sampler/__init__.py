@@ -68,8 +68,10 @@ class Sampler(Plottable, ABC):
         """ Samples n_points new points """
         pass
 
-    def maximum_mean_discrepancy(self, m: int = 200) -> float:
+    def maximum_mean_discrepancy(self, m: Optional[int] = None) -> float:
         # Get and transform samples
+        if m is None:
+            m = len(self)
         X_samples = config_list_to_array(self.X)
         X_uniform = config_list_to_array(self.config_space.sample_configuration(m))
         X = np.concatenate((X_samples, X_uniform))

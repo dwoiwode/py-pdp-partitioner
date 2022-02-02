@@ -132,6 +132,9 @@ def median_distance_between_points(X: np.ndarray) -> float:
     return median
 
 
+def calculate_log_delta(nll: float, nll_root: float) -> float:
+    return (nll_root - nll) / np.absolute(nll_root)
+
 def convert_hyperparameters(hyperparameters: Union[str, CSH.Hyperparameter, Iterable[Union[CSH.Hyperparameter, str]]],
                             config_space: CS.ConfigurationSpace) -> List[CSH.Hyperparameter]:
     """

@@ -11,7 +11,7 @@ from src.algorithms.ice import ICE
 from src.blackbox_functions import BlackboxFunction
 from src.surrogate_models import SurrogateModel
 from src.utils.typing import SelectedHyperparameterType
-from src.utils.utils import unscale_float
+from src.utils.utils import unscale_float, calculate_log_delta
 
 from scipy.stats import norm
 
@@ -75,17 +75,21 @@ class Region:
 
         # regions pdp estimate:
         pdp_y_points = np.mean(self.y_points, axis=0)
-        pdp_y_variances = np.mean(self.y_variances, axis=0)
-        pdp_y_std = np.sqrt(pdp_y_variances)
+
+        # method == "pdp_sd"
+        # pdp_y_std = np.mean(np.sqrt(self.y_variances), axis=0)
+
+        # method != "pdp_sd" (Default in the paper)
+        pdp_y_std = np.sqrt(np.mean(self.y_variances, axis=0))
 
         log_prob = norm.logpdf(true_y, loc=pdp_y_points, scale=pdp_y_std)
-        result = - np.mean(log_prob)  # Why mean? Not sum?
+        result = - np.mean(log_prob)
         return result
 
-    def delta_nll(self, full_region: "Region", true_function: BlackboxFunction):
+    def delta_nll(self, true_function: BlackboxFunction, full_region: "Region") -> float:
         nll = self.negative_log_likelihood(true_function)
         nll_root = full_region.negative_log_likelihood(true_function)
-        return 100 * (nll_root - nll) / np.absolute(nll_root)
+        return calculate_log_delta(nll, nll_root)
 
 
 class Partitioner(Algorithm, ABC):

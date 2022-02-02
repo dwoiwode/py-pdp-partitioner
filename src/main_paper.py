@@ -2,6 +2,7 @@ import warnings
 from pathlib import Path
 from typing import Dict, Iterable, Type, Union
 
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.gridspec import GridSpec
@@ -19,6 +20,7 @@ from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.sampler.random_sampler import RandomSampler
 from src.surrogate_models import GaussianProcessSurrogate
 from src.utils.plotting import plot_function, plot_config_space
+from src.utils.utils import calculate_log_delta
 
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
@@ -159,9 +161,7 @@ def figure_6_table_1_data_generation(
 ):
     selected_hyperparameter = "x1"
     with open(log_filename, "a") as d:
-        d.write(
-            "{seed},{dimension},{tau},{splits},{mmd},{base_mc},{base_nll},{mc},{nll}\n".replace("{", "").replace("}",
-                                                                                                                 ""))
+        d.write("seed,dimension,tau,splits,mmd,base_mc,base_nll,mc,nll\n")
         for i in tqdm(range(replications), desc="Replication: "):
             seed = seed_offset + i
             for dimension, n_samples in zip(dimensions, n_sampling_points):
@@ -171,10 +171,11 @@ def figure_6_table_1_data_generation(
                     sampler = BayesianOptimizationSampler(
                         f,
                         f.config_space,
+                        initial_points=4 * dimension,
                         acq_class=LowerConfidenceBound,
                         acq_class_kwargs={"tau": tau}
                     )
-                    sampler.sample(n_samples)
+                    sampler.sample(n_samples + sampler.initial_points)
 
                     mmd = sampler.maximum_mean_discrepancy(300)
 
@@ -191,13 +192,13 @@ def figure_6_table_1_data_generation(
                         incumbent_region = dt_partitioner.get_incumbent_region(sampler.incumbent_config)
                         mc = incumbent_region.mean_confidence
                         nll = incumbent_region.negative_log_likelihood(f)
-                        print(f"{seed=},{dimension=},{tau=},{splits=}{mmd=},{base_mc=},{base_nll=},{mc=},{nll=}")
+                        print(f"{seed=},{dimension=},{tau=},{splits=},{mmd=},{base_mc=},{base_nll=},{mc=},{nll=}")
                         d.write(f"{seed},{dimension},{tau},{splits},{mmd},{base_mc},{base_nll},{mc},{nll}\n")
                         d.flush()
 
 
-def figure_6_table_1_drawing(
-        filename:Union[str, Path],
+def figure_6_drawing(
+        filename: Union[str, Path],
         columns=("base_mc", "base_nll"),
 ):
     df = pd.read_csv(filename, header=0)
@@ -236,7 +237,7 @@ def figure_6_table_1_drawing(
     )
     # gs = GridSpec(2, len(taus), figure=fig)
     for i, tau in enumerate(taus):
-        axs = axes[:,i]
+        axs = axes[:, i]
         # for k, col in enumerate(columns):
 
         plot_data = [[] for _ in range(n_columns)]
@@ -267,10 +268,76 @@ def figure_6_table_1_drawing(
     plt.show()
 
 
+def table_1_drawing(
+        filename: Union[str, Path],
+        columns=("base_mc", "base_nll"),
+):
+    df = pd.read_csv(filename, header=0)
+
+    # Group by dimension and tau
+    grouped = df.groupby(df["dimension"].astype(str) + ", " + df["tau"].astype(str) + ", " + df["splits"].astype(str))
+
+    # Retrieve keys
+    dimensions = set()
+    taus = set()
+    n_splits = set()
+    keys = {}
+    for group_key in grouped.groups:
+        if "dimension" in group_key:
+            # There is one key named "dimension, tau". No idea how to prune it, but here we get rid of it
+            continue
+
+        dimension, tau, n_split = group_key.split(",")
+        dimension = int(dimension)
+        tau = float(tau)
+        n_split = int(n_split)
+
+        dimensions.add(dimension)
+        taus.add(tau)
+        n_splits.add(n_split)
+        keys[(dimension, tau, n_split)] = group_key
+
+    list_columns = list(df.columns)
+    idx_MMD = list_columns.index("mmd")
+    idx_MC = list_columns.index("mc")
+    idx_BASE_MC = list_columns.index("base_mc")
+    idx_NLL = list_columns.index("nll")
+    idx_BASE_NLL = list_columns.index("base_nll")
+
+    # Plot
+    dimensions = sorted(dimensions)
+    taus = sorted(taus, reverse=True)
+    n_splits = sorted(n_splits)
+    # gs = GridSpec(2, len(taus), figure=fig)
+    print("|                            Delta MC %         Delta NLL %")
+    splits = "    |    ".join([f"{n_split}" for n_split in n_splits]) + "     |"
+    print("|  d  |   Tau (MMD)    |    " + splits + "     " + splits)
+    for i, dimension in enumerate(dimensions):
+        for j, tau in enumerate(taus):
+            table_data = [[], [], [], [], []]  # 0 = MMD, 1 = DELTA_MC, 2 = DELTA_NLL
+            for n_split in n_splits:
+                data = grouped.groups[keys[(dimension, tau, n_split)]]
+                if len(data) == 0:
+                    continue
+
+                # Get data
+                table_data[0].append(np.mean(df.values[data, idx_MMD]))
+                table_data[1].append(
+                    np.mean(calculate_log_delta(df.values[data, idx_MC], df.values[data, idx_BASE_MC])) * 100)
+                table_data[2].append(
+                    np.mean(calculate_log_delta(df.values[data, idx_NLL], df.values[data, idx_BASE_NLL])) * 100)
+
+            string_array = [f"{mc: 6.2f}" for mc in table_data[1]]
+            string_array += [f"{nll: 6.2f}" for nll in table_data[2]]
+            split_data_string = "  |  ".join(string_array)
+            print(f"|  {dimension}  |  {tau:.2f} ({table_data[0][0]:.2f})   | " + split_data_string)
+
+
 if __name__ == '__main__':
-    figure_1_3()
-    figure_2()
-    figure_4()
-    # figure_6_table_1_data_generation(filename="figure_6_table_1.csv")
-    figure_6_table_1_drawing("figure_6_table_1.csv")
+    # figure_1_3()
+    # figure_2()
+    # figure_4()
+    figure_6_table_1_data_generation(log_filename="figure_6_table_1_new_2.csv", replications=27, seed_offset=4)
+    figure_6_drawing("figure_6_table_1_new_2.csv")
+    table_1_drawing("figure_6_table_1_new_2.csv")
     # figure_6_table_1_drawing("figure_6_table_1.csv", columns=("base_mc", "base_nll", "mc", "nll", "mmd"))
