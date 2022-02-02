@@ -14,7 +14,7 @@ from src.sampler.acquisition_function import LowerConfidenceBound
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.sampler.grid_sampler import GridSampler
 from src.sampler.random_sampler import RandomSampler
-from src.surrogate_models import GaussianProcessSurrogate
+from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
 from src.utils.plotting import plot_function
 from tqdm import tqdm
 

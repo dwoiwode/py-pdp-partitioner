@@ -6,7 +6,7 @@ from src.algorithms.ice import ICE
 from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
 from src.blackbox_functions.synthetic_functions import StyblinskiTang
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
-from src.surrogate_models import GaussianProcessSurrogate
+from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
 
 
 class TestSeeds(TestCase):
@@ -74,7 +74,8 @@ class TestSeeds(TestCase):
 
         # Check equality of Surrogate/ICE
         # X
-        self.assertTrue(np.array_equal(ice_seeded_1.x_ice, ice_seeded_2.x_ice), f"{ice_seeded_1.x_ice} != {ice_seeded_2.x_ice}")
+        self.assertTrue(np.array_equal(ice_seeded_1.x_ice, ice_seeded_2.x_ice),
+                        f"{ice_seeded_1.x_ice} != {ice_seeded_2.x_ice}")
         self.assertFalse(np.array_equal(ice_seeded_1.x_ice, ice_not_seeded.x_ice))
 
         # Y

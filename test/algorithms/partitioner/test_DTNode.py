@@ -6,7 +6,7 @@ from src.blackbox_functions import synthetic_functions, config_space_nd
 from src.blackbox_functions.synthetic_functions import Square
 from src.sampler.acquisition_function import LowerConfidenceBound
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
-from src.surrogate_models import GaussianProcessSurrogate
+from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
 
 
 class TestDTNode(TestCase):

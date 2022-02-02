@@ -14,6 +14,7 @@ class PlottableTest(TestCase):
         plt.clf()
         self.fig: Optional[plt.Figure] = None
         self.fig_idx = 0
+        self._last_save_fig = None
 
     def tearDown(self) -> None:
         # Save figure from last test
@@ -31,6 +32,8 @@ class PlottableTest(TestCase):
     def save_fig(self, iterate=True,name=None):
         if self.fig is None:
             raise ValueError("Figure is None")
+        if self._last_save_fig == self.fig:
+            return  # Already saved this
 
         if name is None:
             name = self._testMethodName

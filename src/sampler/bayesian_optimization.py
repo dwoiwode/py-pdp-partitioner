@@ -7,7 +7,8 @@ import numpy as np
 
 from src.sampler import Sampler
 from src.sampler.acquisition_function import LowerConfidenceBound, AcquisitionFunction
-from src.surrogate_models import GaussianProcessSurrogate, SurrogateModel
+from src.surrogate_models import SurrogateModel
+from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
 
 
 class BayesianOptimizationSampler(Sampler):

@@ -5,7 +5,7 @@ from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
 from src.algorithms.pdp import PDP
 from src.blackbox_functions import synthetic_functions
 from src.sampler.random_sampler import RandomSampler
-from src.surrogate_models import GaussianProcessSurrogate
+from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
 
 seed = 0  # TODO: Use seed!!
 f = synthetic_functions.StyblinskiTang.for_n_dimensions(3)

@@ -3,7 +3,7 @@ import numpy as np
 
 from src.blackbox_functions import config_space_nd
 from src.sampler.acquisition_function import ExpectedImprovement, ProbabilityOfImprovement, LowerConfidenceBound
-from src.surrogate_models import GaussianProcessSurrogate
+from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
 from test import PlottableTest
 
 

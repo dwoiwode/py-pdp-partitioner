@@ -8,7 +8,7 @@ from src.blackbox_functions import config_space_nd
 from src.blackbox_functions.synthetic_functions import StyblinskiTang
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.sampler.random_sampler import RandomSampler
-from src.surrogate_models import GaussianProcessSurrogate
+from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
 from src.utils.plotting import plot_function, plot_config_space
 from test import PlottableTest
 

@@ -18,7 +18,7 @@ from src.sampler import Sampler
 from src.sampler.acquisition_function import LowerConfidenceBound
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.sampler.random_sampler import RandomSampler
-from src.surrogate_models import GaussianProcessSurrogate
+from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
 from src.utils.plotting import plot_function, plot_config_space
 from src.utils.utils import calculate_log_delta
 

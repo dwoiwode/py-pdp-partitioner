@@ -2,7 +2,7 @@ from src.algorithms.ice import ICE
 from src.algorithms.pdp import PDP
 from src.blackbox_functions.hpo_bench import get_SVMBenchmarkMF
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
-from src.surrogate_models import GaussianProcessSurrogate
+from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
 from test import PlottableTest
 
 
