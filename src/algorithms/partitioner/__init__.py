@@ -11,25 +11,31 @@ from src.algorithms.ice import ICE
 from src.blackbox_functions import BlackboxFunction
 from src.surrogate_models import SurrogateModel
 from src.utils.typing import SelectedHyperparameterType
-from src.utils.utils import unscale_float, calculate_log_delta
+from src.utils.utils import unscale_float, calculate_log_delta, ConfigSpaceHolder
 
 from scipy.stats import norm
 
 Sample = Tuple[np.ndarray, np.ndarray]  # configurations, variances
 
 
-class Region:
-    def __init__(self, x_points: np.ndarray, y_points: np.ndarray, y_variances: np.ndarray,
-                 config_space: CS.ConfigurationSpace, selected_hyperparameter: SelectedHyperparameterType):
+class Region(ConfigSpaceHolder):
+    def __init__(
+            self,
+            x_points: np.ndarray,
+            y_points: np.ndarray,
+            y_variances: np.ndarray,
+            config_space: CS.ConfigurationSpace,
+            selected_hyperparameter: SelectedHyperparameterType
+    ):
         """
         :param x_points: Shape: (num_points_in_region, num_grid_points, num_features)
         :param y_points: Shape: (num_points_in_region, num_grid_points)
         :param y_variances: Shape: (num_points_in_region, num_grid_points)
         """
+        super().__init__(config_space)
         self.x_points = x_points
         self.y_points = y_points
         self.y_variances = y_variances
-        self.config_space = config_space
         if isinstance(selected_hyperparameter, CSH.Hyperparameter):
             selected_hyperparameter = [selected_hyperparameter]
         self.selected_hyperparameter = tuple(selected_hyperparameter)

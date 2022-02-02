@@ -21,6 +21,7 @@ class BayesianOptimizationSampler(Sampler):
                  minimize_objective: bool = True,
                  seed=None):
         super().__init__(obj_func, config_space, minimize_objective, seed=seed)
+        # Initialize class
         self.initial_points = initial_points  # number of initial points to be sampled
 
         # Surrogate model
@@ -40,6 +41,10 @@ class BayesianOptimizationSampler(Sampler):
                                                        minimize_objective=minimize_objective,
                                                        seed=seed,
                                                        **acq_class_kwargs)
+
+        # Update cache according to additional arguments
+        self.hash = self._hash(seed, acq_class, acq_class_kwargs, initial_points, surrogate_model.__class__)
+        self._load_cache()
 
     def _sample_initial_points(self, max_sampled_points=None):
         if max_sampled_points is None:
@@ -65,7 +70,7 @@ class BayesianOptimizationSampler(Sampler):
 
         self._model_fitted_hash = parameter_hash
 
-    def sample(self, n_points: int = 1):
+    def _sample(self, n_points: int = 1):
         # Sample initial random points if not already done or given
         self.logger.info(f"Sample {n_points} new points")
         already_sampled = 0

@@ -1,4 +1,8 @@
+import hashlib
+import json
+import logging
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Callable, List, Tuple, Optional, Iterable
 
 import ConfigSpace as CS
@@ -7,28 +11,46 @@ import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.gaussian_process.kernels import RBF
 
-from src.utils.plotting import Plottable, get_ax, check_and_set_axis
+from src.utils.plotting import get_ax, check_and_set_axis
 from src.utils.typing import ColorType
-from src.utils.utils import config_list_to_array, get_hyperparameters, median_distance_between_points, unscale
+from src.utils.utils import config_list_to_array, get_hyperparameters, median_distance_between_points, \
+    ConfigSpaceHolder
 
 
-class Sampler(Plottable, ABC):
-    def __init__(self,
-                 obj_func: Callable,
-                 config_space: CS.ConfigurationSpace,
-                 minimize_objective=True,
-                 seed=None):
-        super().__init__()
+class Sampler(ConfigSpaceHolder, ABC):
+    CACHE_DIR = Path(__file__).parent.parent.parent / "cache" / "sampler"
+
+    def __init__(
+            self,
+            obj_func: Callable,
+            config_space: CS.ConfigurationSpace,
+            minimize_objective=True,
+            seed=None
+    ):
+        super().__init__(config_space, seed=seed)
         self.obj_func = obj_func
-        self.config_space = config_space
+
         self.minimize_objective = minimize_objective
-        self.seed = seed
+        self.hash = self._hash(seed)
 
         self.config_list: List[CS.Configuration] = []
         self.y_list: List[float] = []
+        self._cache: List[Tuple[CS.Configuration, float]] = []
+        self._load_cache()
 
     def __len__(self) -> int:
         return len(self.config_list)
+
+    def __del__(self):
+        self.save_cache()
+
+    def _hash(self, *args) -> str:
+        md = hashlib.md5()
+        md.update(bytes(str(self.config_space.get_hyperparameters()), encoding="latin"))
+        for arg in args:
+            md.update(bytes(str(arg), encoding="latin"))
+        md.update(bytes(str(self.obj_func), encoding="latin"))
+        return md.hexdigest()
 
     def reset(self):
         self.config_list = []
@@ -63,8 +85,59 @@ class Sampler(Plottable, ABC):
     def incumbent_value(self) -> float:
         return self.incumbent[1]
 
-    @abstractmethod
+    def _load_cache(self):
+        self._cache = []
+        file = self.CACHE_DIR / f"{self.hash}.json"
+        if not file.exists():
+            return
+
+        try:
+            data = json.loads(file.read_text())
+            for X, y in zip(data["X"], data["y"]):
+                config = CS.Configuration(self.config_space, vector=X, origin="Cache")
+                self._cache.append((config, y))
+        except KeyboardInterrupt:
+            raise
+        except Exception as e:
+            self.logger.warning(f"Loading cache failed: {e}")
+
+    def save_cache(self):
+        self.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        file = self.CACHE_DIR / f"{self.hash}.json"
+        print(f"Writing cache to {file} ({len(self)} samples)")
+        file.write_text(json.dumps(
+            {
+                "X": self.X.tolist(),
+                "y": self.y_list
+            },
+            separators=(",", ":")
+        ))
+
     def sample(self, n_points: int = 1):
+        """ Samples n_points new points """
+        # if more points than cached previously, resample
+        if len(self) + n_points > len(self._cache):
+            self._cache = []
+
+        # Use cache
+        sampled_points = 0
+        while len(self._cache) > 0 and sampled_points < n_points:
+            config, value = self._cache.pop(0)
+            # self.config_space.
+            # rng = np.random.RandomState()
+            # state = rng.get_state()
+            # rng.set_state(state)
+
+            self.config_list.append(config)
+            self.y_list.append(value)
+            sampled_points += 1
+
+        # Use sample function
+        if sampled_points < n_points:
+            self._sample(n_points - sampled_points)
+
+    @abstractmethod
+    def _sample(self, n_points: int = 1):
         """ Samples n_points new points """
         pass
 

@@ -2,12 +2,15 @@ from abc import ABC, abstractmethod
 from typing import Union, Callable, Optional, Iterable
 
 import ConfigSpace as CS
+import numpy as np
 from ConfigSpace import hyperparameters as CSH
 
+from src.utils.utils import ConfigSpaceHolder, convert_hyperparameters
 
-class BlackboxFunction(ABC):
+
+class BlackboxFunction(ConfigSpaceHolder, ABC):
     def __init__(self, config_space: CS.ConfigurationSpace):
-        self.config_space = config_space
+        super().__init__(config_space, seed=True)
         self.ndim = len(self.config_space.get_hyperparameters())
         self.__name__ = str(self)
 
@@ -45,10 +48,25 @@ class BlackboxFunctionND(BlackboxFunction, ABC):
         cs = config_space_nd(dimensions, lower=lower, upper=upper, log=cls.log, seed=seed)
         return cls(cs)
 
+    # def pd_integral(self, *hyperparameters: Union[str, CSH.Hyperparameter], seed=None) -> 'BlackboxFunction':
+    #     hps = convert_hyperparameters(hyperparameters)
+    #     n_steps = 5000
+    #     integral_numeric = 0
+    #     meshgrid = np.meshgrid([
+    #         np.linspace(hp.lower, hp.upper, 200)
+    #         for hp in hps
+    #         if isinstance(hp, CSH.NumericalHyperparameter)
+    #     ])
+    #     step_size = np.prod([val[1] for val in meshgrid])
+    #     for values in zip(meshgrid):
+    #         integral_numeric += self(x1=hp.lower + (i + 0.5) * step_size)
+    #
+    #     integral_numeric *= step_size
+
 
 class CallableBlackboxFunction(BlackboxFunction):
     def __init__(self, function: Callable[[CS.Configuration], float], config_space: CS.ConfigurationSpace):
-        super(CallableBlackboxFunction, self).__init__(config_space)
+        super().__init__(config_space)
         self.f = function
 
     def value_from_config(self, config: CS.Configuration) -> float:

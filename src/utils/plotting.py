@@ -1,6 +1,4 @@
 import colorsys
-import logging
-from abc import ABC, abstractmethod
 from typing import Callable, Any, Optional, List, Iterable, Tuple
 
 import ConfigSpace as CS
@@ -12,28 +10,21 @@ from matplotlib import pyplot as plt
 from src.utils.typing import ColorType, SelectedHyperparameterType
 from src.utils.utils import get_uniform_distributed_ranges, get_stds, get_hyperparameters
 
-
-# Abstract plottable class
-class Plottable(ABC):
-    def __init__(self):
-        self.logger = logging.getLogger(self.__class__.__name__)
-
-    @abstractmethod
-    def plot(self,
-             *args,
-             x_hyperparameters: Optional[Iterable[CSH.Hyperparameter]] = None,
-             ax: Optional[plt.Axes] = None):
-        # x_hyperparameters = get_hyperparameters(x_hyperparameters, self.config_space)
-        if x_hyperparameters is None:
-            raise ValueError("x_hyperparameters is None and no config_space in class")
-        n_hyperparameters = len(tuple(x_hyperparameters))
-        if n_hyperparameters == 1:  # 1D
-            raise NotImplementedError("1D currently not implemented (#TODO)")
-        elif n_hyperparameters == 2:  # 2D
-            raise NotImplementedError("2D currently not implemented (#TODO)")
-        else:
-            raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
-                                      "Please select a specific hp by setting `x_hyperparemeters`")
+# def plot(self,
+#          *args,
+#          x_hyperparameters: Optional[Iterable[CSH.Hyperparameter]] = None,
+#          ax: Optional[plt.Axes] = None):
+#     # x_hyperparameters = get_hyperparameters(x_hyperparameters, self.config_space)
+#     if x_hyperparameters is None:
+#         raise ValueError("x_hyperparameters is None and no config_space in class")
+#     n_hyperparameters = len(tuple(x_hyperparameters))
+#     if n_hyperparameters == 1:  # 1D
+#         raise NotImplementedError("1D currently not implemented (#TODO)")
+#     elif n_hyperparameters == 2:  # 2D
+#         raise NotImplementedError("2D currently not implemented (#TODO)")
+#     else:
+#         raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
+#                                   "Please select a specific hp by setting `x_hyperparemeters`")
 
 
 # Resolve/Getter functions (that resolve function inputs)

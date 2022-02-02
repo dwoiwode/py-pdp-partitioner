@@ -1,3 +1,6 @@
+import logging
+import time
+from abc import ABC
 from typing import List, Iterable, Union, Optional
 
 import ConfigSpace as CS
@@ -5,6 +8,28 @@ import numpy as np
 from ConfigSpace import hyperparameters as CSH
 
 from src.utils.typing import SelectedHyperparameterType
+
+
+class ConfigSpaceHolder(ABC):
+    global_rng = np.random.RandomState(seed=0)
+
+    def __init__(self, config_space:CS.ConfigurationSpace, *, seed:Union[None, int, bool]=None):
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+        if seed is True:
+            # Use existing config_space
+            self.config_space = config_space
+            return
+        elif seed is None:
+            # Use random seed
+            seed = int(time.time()*1000)
+        else:
+            # Use seed
+            seed = self.global_rng.randint(0, 1000000) + seed
+        self.config_space = copy_config_space(config_space, seed=seed % 2**31)
+
+    def sample_random_configuration(self, n: int) -> List[CS.Configuration]:
+        return self.config_space.sample_configuration(n)
 
 
 def config_to_array(config: CS.Configuration) -> np.ndarray:
@@ -156,3 +181,21 @@ def convert_hyperparameters(hyperparameters: Union[str, CSH.Hyperparameter, Iter
         else:
             raise TypeError(f'Could not interpret hp: {hp}')
     return hps
+
+
+def copy_config_space(cs: CS.ConfigurationSpace, *, seed=None) -> CS.ConfigurationSpace:
+    # copy cs
+    hp_dic = {}
+    for hp in cs.get_hyperparameters():
+        if isinstance(hp, CSH.NumericalHyperparameter):
+            new_hp = CSH.UniformFloatHyperparameter(hp.name, lower=hp.lower, upper=hp.upper, log=hp.log)
+            hp_dic[hp.name] = new_hp
+        else:
+            raise NotImplementedError()
+
+    # add new hp to new cs
+    cs_copy = CS.ConfigurationSpace(seed=seed)
+    for hp in hp_dic.values():
+        cs_copy.add_hyperparameter(hp)
+
+    return cs_copy

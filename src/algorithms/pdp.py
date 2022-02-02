@@ -38,6 +38,10 @@ class PDP(Algorithm):
             )
         return self._ice
 
+    @property
+    def grid_points(self) -> np.ndarray:
+        return self.ice.grid_points
+
     @classmethod
     def from_ICE(cls, ice: ICE) -> "PDP":
         pdp = PDP(

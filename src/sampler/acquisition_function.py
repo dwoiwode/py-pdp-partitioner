@@ -8,23 +8,21 @@ from matplotlib import pyplot as plt
 from scipy.stats import norm
 
 from src.surrogate_models import SurrogateModel
-from src.utils.plotting import Plottable, get_ax, check_and_set_axis
-from src.utils.utils import get_hyperparameters, get_selected_idx
+from src.utils.plotting import get_ax, check_and_set_axis
+from src.utils.utils import get_hyperparameters, get_selected_idx, ConfigSpaceHolder
 
 
-class AcquisitionFunction(Plottable, ABC):
+class AcquisitionFunction(ConfigSpaceHolder, ABC):
     def __init__(self,
                  config_space: CS.ConfigurationSpace,
                  surrogate_model: SurrogateModel,
                  samples_for_optimization: int = 100,
                  minimize_objective: bool = True,
                  seed=None):
-        super().__init__()
+        super().__init__(config_space, seed=seed)
         self.surrogate_model = surrogate_model
-        self.config_space = config_space
         self.n_samples_for_optimization = samples_for_optimization
         self.minimize_objective = minimize_objective
-        self.seed = seed
 
     @abstractmethod
     def __call__(self, configuration: CS.Configuration) -> Union[float, np.ndarray]:
@@ -99,17 +97,21 @@ class AcquisitionFunction(Plottable, ABC):
 
 
 class ExpectedImprovement(AcquisitionFunction):
-    def __init__(self,
-                 config_space,
-                 surrogate_model: SurrogateModel,
-                 eps: float = 0.0,  # Exploration parameter
-                 samples_for_optimization=100,
-                 minimize_objective=True,
-                 seed=None):
-        super().__init__(config_space,
-                         surrogate_model,
-                         samples_for_optimization,
-                         minimize_objective, seed=seed)
+    def __init__(
+            self,
+            config_space,
+            surrogate_model: SurrogateModel,
+            eps: float = 0.0,  # Exploration parameter
+            samples_for_optimization=100,
+            minimize_objective=True,
+            seed=None
+    ):
+        super().__init__(
+            config_space,
+            surrogate_model,
+            samples_for_optimization,
+            minimize_objective, seed=seed
+        )
         if not minimize_objective:
             raise NotImplementedError('EI for maximization')
         self.eta = 0
@@ -119,13 +121,13 @@ class ExpectedImprovement(AcquisitionFunction):
         x = self.convert_configs(configuration)
 
         mean, sigma = self.surrogate_model.predict(x)
-        if sigma == 0:
-            return 0
 
         Z = (self.eta - mean - self.exploration) / sigma
         Phi_Z = norm.cdf(Z)
         phi_Z = norm.pdf(Z)
-        return sigma * (Z * Phi_Z + phi_Z)
+        ret = sigma * (Z * Phi_Z + phi_Z)
+        ret[sigma == 0] = 0
+        return ret
 
     def update(self, eta: float):
         self.eta = eta
@@ -148,14 +150,13 @@ class ProbabilityOfImprovement(AcquisitionFunction):
         x = self.convert_configs(configuration)
 
         mean, sigma = self.surrogate_model.predict(x)
-        if sigma == 0:
-            return 0
 
         if self.minimize_objective:
             temp = (self.eta - mean - self.exploration) / sigma
         else:
             temp = (mean - self.eta - self.exploration) / sigma
         prob_of_improvement = norm.cdf(temp)
+        prob_of_improvement[sigma == 0] = 0
         return prob_of_improvement
 
     def update(self, eta: float):

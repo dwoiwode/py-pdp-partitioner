@@ -8,27 +8,26 @@ from matplotlib import pyplot as plt
 from src.algorithms.ice import ICE
 from src.algorithms.partitioner import Region, Partitioner
 from src.surrogate_models import SurrogateModel
-from src.utils.plotting import Plottable, get_ax, check_and_set_axis, get_random_color
+from src.utils.plotting import get_ax, check_and_set_axis, get_random_color
 from src.utils.typing import SelectedHyperparameterType, ColorType
-from src.utils.utils import scale_float, unscale_float, unscale
+from src.utils.utils import scale_float, unscale_float, unscale, ConfigSpaceHolder
 
 
-class SplitCondition:
+class SplitCondition(ConfigSpaceHolder):
     def __init__(self,
                  config_space: CS.ConfigurationSpace,
                  hp: CSH.Hyperparameter,
                  value: Optional[Any] = None,
                  normalized_value: Optional[Any] = None,
                  less_equal: Optional[bool] = None):
-
+        super().__init__(config_space)
         assert value is not None or normalized_value is not None, 'Either value or normalized value has to be specified'
         assert value is None or normalized_value is None, 'Only one of value or normalized value should be given'
         if normalized_value is None:
-            normalized_value = scale_float(value, config_space, hp)
+            normalized_value = scale_float(value, self.config_space, hp)
 
         assert not isinstance(normalized_value, float) or less_equal is not None, 'floating values need less_equal'
 
-        self.config_space = config_space
         self.hyperparameter = hp
         self._normalized_value = normalized_value
         self.less_equal = less_equal
@@ -68,7 +67,7 @@ class SplitCondition:
             return f'SplitCondition({self.value} in {self.hyperparameter.name})'
 
 
-class DTRegion(Region, Plottable):
+class DTRegion(Region):
     def __init__(self,
                  parent: Optional['DTRegion'],
                  depth: int,
@@ -79,7 +78,6 @@ class DTRegion(Region, Plottable):
                  full_config_space: CS.ConfigurationSpace,
                  selected_hyperparameter: SelectedHyperparameterType):
         Region.__init__(self, x_points, y_points, y_variances, full_config_space, selected_hyperparameter)
-        Plottable.__init__(self)
 
         self.parent = parent
         self.depth = depth
@@ -89,8 +87,6 @@ class DTRegion(Region, Plottable):
         self.right_child: Optional[DTRegion] = None  # > split_value
 
         self.split_conditions = split_conditions
-        self.config_space = full_config_space
-        self.selected_hyperparameter = list(selected_hyperparameter)
 
     def __contains__(self, item: CS.Configuration) -> bool:
         for condition in self.split_conditions:

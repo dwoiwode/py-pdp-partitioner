@@ -26,7 +26,7 @@ class GridSampler(Sampler):
         self.rng = random.Random()
         self.rng.seed(seed)
 
-    def sample(self, n_points: int = 1):
+    def _sample(self, n_points: int = 1):
         expected_length = len(self) + n_points
         if self._grid is None or len(self) + len(self._grid) < expected_length:
             n_dims = len(self.config_space.get_hyperparameters())

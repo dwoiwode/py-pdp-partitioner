@@ -9,16 +9,14 @@ from sklearn.gaussian_process.kernels import Matern
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-from src.utils.plotting import Plottable, plot_1D_confidence_lines, plot_1D_confidence_color_gradients, get_ax, \
+from src.utils.plotting import plot_1D_confidence_lines, plot_1D_confidence_color_gradients, get_ax, \
     plot_line, check_and_set_axis
-from src.utils.utils import get_uniform_distributed_ranges, config_list_to_array
+from src.utils.utils import get_uniform_distributed_ranges, config_list_to_array, ConfigSpaceHolder
 
 
-class SurrogateModel(Plottable, ABC):
+class SurrogateModel(ConfigSpaceHolder, ABC):
     def __init__(self, cs: CS.ConfigurationSpace, seed=None):
-        super().__init__()
-        self.config_space = cs
-        self.seed = seed
+        super().__init__(cs, seed=seed)
         self.num_fitted_points = 0
 
     def __call__(self,

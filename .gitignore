@@ -9,6 +9,7 @@ __pycache__/
 .plots
 src/*.csv
 src/*.png
+cache
 
 # C extensions
 *.so
