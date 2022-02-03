@@ -155,10 +155,7 @@ class DTRegion(Region):
     def is_root(self) -> bool:
         return self.parent is None
 
-    def split_at_idx(self, hyperparameter: CSH.Hyperparameter, instance_idx: int) -> Tuple["DTRegion", "DTRegion"]:
-        hyperparameter_idx = self.config_space.get_idx_by_hyperparameter_name(hyperparameter.name)
-        split_val = self.x_points[instance_idx, 0, hyperparameter_idx]  # index in second dim does not matter
-
+    def split_at_value(self, hyperparameter: CSH.Hyperparameter, split_val: int) -> Tuple["DTRegion", "DTRegion"]:
         # Left side
         left_split_condition = SplitCondition(self.config_space, hyperparameter, normalized_value=split_val,
                                               less_equal=True)
@@ -199,6 +196,8 @@ class DTPartitioner(Partitioner):
                  selected_hyperparameter: SelectedHyperparameterType,
                  samples: np.ndarray,
                  num_grid_points_per_axis: int = 20,
+                 num_splits_per_axis: int = 100,
+                 min_points_per_node: int = 10,  # minimum number of ice curves in a single node
                  seed=None
                  ):
         super().__init__(
@@ -208,6 +207,9 @@ class DTPartitioner(Partitioner):
             samples=samples,
             seed=seed
         )
+        self.num_splits_per_axis = num_splits_per_axis
+        self.min_points_per_node = min_points_per_node
+
 
         self.root: DTRegion = DTRegion(
             parent=None,
@@ -246,7 +248,11 @@ class DTPartitioner(Partitioner):
                 continue
 
             # calculate children
-            queue += self.calc_best_split(node)
+            split_result = self.calc_best_split(node)
+            if split_result is None:
+                self.leaves.append(node)
+                continue
+            queue += split_result
 
         return self.leaves
 
@@ -256,16 +262,20 @@ class DTPartitioner(Partitioner):
             if incumbent in leaf:
                 return leaf
 
-    def calc_best_split(self, node: DTRegion) -> Tuple[DTRegion, DTRegion]:
+    def calc_best_split(self, node: DTRegion) -> Optional[Tuple[DTRegion, DTRegion]]:
         assert node.is_splittable(), 'Cannot split a terminal node'
 
         best_loss = np.inf
         best_left_child = None
         best_right_child = None
         for hyperparameter in self.possible_split_parameters:
-            for instance_idx in range(len(node)):
+            # split values excluding upper and lower bound
+            possible_split_vals = np.linspace(0, 1, num=self.num_splits_per_axis+2)[1:-1]
+            for split_val in possible_split_vals:
                 # get children after split
-                left_child, right_child = node.split_at_idx(hyperparameter, instance_idx)
+                left_child, right_child = node.split_at_value(hyperparameter, split_val)
+                if len(left_child) < self.min_points_per_node or len(right_child) < self.min_points_per_node:
+                    continue
 
                 # calculate loss
                 left_loss = left_child.loss
@@ -278,7 +288,9 @@ class DTPartitioner(Partitioner):
                     best_left_child = left_child
                     best_right_child = right_child
 
-        assert best_left_child is not None and best_right_child is not None
+        if best_left_child is None or best_right_child is None:
+            return None
+        # assert best_left_child is not None and best_right_child is not None
 
         # update attributes of parent node
         node.left_child = best_left_child

@@ -7,7 +7,7 @@ from src.algorithms.partitioner import Partitioner, Region
 
 
 class RandomForestPartitioner(Partitioner):
-    def _partition(self) -> List[Region]:
+    def partition(self, max_depth: int = 1) -> List[Region]:
         pass
 
     def plot(self, *args, x_hyperparameters: Optional[Iterable[CSH.Hyperparameter]] = None,

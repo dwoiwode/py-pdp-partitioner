@@ -5,6 +5,7 @@ from src.algorithms.ice import ICE
 from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
 from src.blackbox_functions.synthetic_functions import Square
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
+from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
 from test import PlottableTest
 
 
@@ -18,7 +19,10 @@ class TestPartitioner(PlottableTest):
         bo = BayesianOptimizationSampler(f, config_space=cs)
         bo.sample(10)
 
-        ice = ICE.from_random_points(bo.surrogate_model,  selected_hp)
+        surrogate = GaussianProcessSurrogate(cs)
+        surrogate.fit(bo.X, bo.y)
+
+        ice = ICE.from_random_points(surrogate, selected_hp)
         partitioner = DTPartitioner.from_ICE(ice)
         regions = partitioner.partition()
 
@@ -43,7 +47,11 @@ class TestPartitioner(PlottableTest):
 
         bo = BayesianOptimizationSampler(f, config_space=cs)
         bo.sample(10)
-        ice = ICE.from_random_points(bo.surrogate_model,  selected_hp)
+
+        surrogate = GaussianProcessSurrogate(cs)
+        surrogate.fit(bo.X, bo.y)
+
+        ice = ICE.from_random_points(surrogate,  selected_hp)
 
         partitioner = DTPartitioner.from_ICE(ice)
         regions = partitioner.partition(max_depth=3)
