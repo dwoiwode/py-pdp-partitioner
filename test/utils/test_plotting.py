@@ -7,6 +7,7 @@ from src.algorithms.pdp import PDP
 from src.blackbox_functions import config_space_nd
 from src.blackbox_functions.synthetic_functions import StyblinskiTang
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
+from src.sampler.grid_sampler import GridSampler
 from src.sampler.random_sampler import RandomSampler
 from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
 from src.utils.plotting import plot_function, plot_config_space
@@ -204,4 +205,22 @@ class TestPlottingFunctions(PlottableTest):
 
         plot_function(f, f.config_space)
         plot_config_space(reduced_cs)
+
+    def test_plot_grid_sampler(self):
+        self.initialize_figure()
+        f = StyblinskiTang.for_n_dimensions(2)
+        sampler = GridSampler(f, f.config_space)
+        sampler.sample(64)
+
+        plot_function(f, f.config_space)
+        sampler.plot()
+
+    def test_plot_random_sampler(self):
+        self.initialize_figure()
+        f = StyblinskiTang.for_n_dimensions(2)
+        sampler = RandomSampler(f, f.config_space)
+        sampler.sample(64)
+
+        plot_function(f, f.config_space)
+        sampler.plot()
 

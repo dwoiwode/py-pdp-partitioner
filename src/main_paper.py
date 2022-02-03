@@ -270,7 +270,6 @@ def figure_6_drawing(
 
 def table_1_drawing(
         filename: Union[str, Path],
-        columns=("base_mc", "base_nll"),
 ):
     df = pd.read_csv(filename, header=0)
 
@@ -337,7 +336,7 @@ if __name__ == '__main__':
     # figure_1_3()
     # figure_2()
     # figure_4()
-    # figure_6_table_1_data_generation(log_filename="figure_6_table_1_new_2.csv", replications=27, seed_offset=27)
-    figure_6_drawing("figure_6_table_1_new_2.csv")
-    table_1_drawing("figure_6_table_1_new_2.csv")
+    figure_6_table_1_data_generation(log_filename="figure_6_table_1_new_3.csv", replications=30, seed_offset=0)
+    figure_6_drawing("figure_6_table_1_new_3.csv")
+    table_1_drawing("figure_6_table_1_new_3.csv")
     # figure_6_table_1_drawing("figure_6_table_1.csv", columns=("base_mc", "base_nll", "mc", "nll", "mmd"))

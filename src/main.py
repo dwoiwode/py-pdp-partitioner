@@ -4,6 +4,7 @@ from src.algorithms.ice import ICE
 from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
 from src.algorithms.pdp import PDP
 from src.blackbox_functions import synthetic_functions
+from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.sampler.random_sampler import RandomSampler
 from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
 

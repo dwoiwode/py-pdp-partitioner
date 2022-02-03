@@ -46,6 +46,7 @@ class Sampler(ConfigSpaceHolder, ABC):
 
     def _hash(self, *args) -> str:
         md = hashlib.md5()
+        md.update(bytes(str(self.__class__), encoding="latin"))
         md.update(bytes(str(self.config_space.get_hyperparameters()), encoding="latin"))
         for arg in args:
             md.update(bytes(str(arg), encoding="latin"))
@@ -102,6 +103,11 @@ class Sampler(ConfigSpaceHolder, ABC):
             self.logger.warning(f"Loading cache failed: {e}")
 
     def save_cache(self):
+        if len(self._cache) > 0:
+            # Current version of sampler is worse than cache
+            return
+
+        # Save in cache
         self.CACHE_DIR.mkdir(parents=True, exist_ok=True)
         file = self.CACHE_DIR / f"{self.hash}.json"
         print(f"Writing cache to {file} ({len(self)} samples)")

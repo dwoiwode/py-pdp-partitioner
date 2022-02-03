@@ -180,6 +180,6 @@ class LowerConfidenceBound(AcquisitionFunction):
 
         mean, sigma = self.surrogate_model.predict(x)
         if self.minimize_objective:
-            return - mean + self.tau * sigma
+            return - mean - self.tau * sigma
         else:
             return mean + self.tau * sigma

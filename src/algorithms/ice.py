@@ -40,6 +40,7 @@ class ICECurve:
              line_color="red",
              gradient_color="xkcd:light red",
              with_confidence=False,
+             confidence_max_sigma: float = 1.5,
              ax: Optional[plt.Axes] = None):
         ax = get_ax(ax)
         check_and_set_axis(ax, self.selected_hyperparameter)
@@ -53,9 +54,23 @@ class ICECurve:
         if n_hyperparameters == 1:  # 1D
             x = x_unscaled[:, idx[0]]
             if with_confidence:
-                plot_1D_confidence_color_gradients(x, self.y_ice, sigmas, color=gradient_color, ax=ax)
-                plot_1D_confidence_lines(x, self.y_ice, sigmas, k_sigmas=(1, 2),
-                                         color=line_color, ax=ax, name=self.name)
+                plot_1D_confidence_color_gradients(
+                    x=x,
+                    means=self.y_ice,
+                    stds=sigmas,
+                    max_sigma=confidence_max_sigma,
+                    color=gradient_color,
+                    ax=ax
+                )
+                plot_1D_confidence_lines(
+                    x=x,
+                    means=self.y_ice,
+                    stds=sigmas,
+                    k_sigmas=(1, 2),
+                    color=line_color,
+                    ax=ax,
+                    name=self.name
+                )
             plot_line(x, self.y_ice, color=line_color, label=self.name, ax=ax)
 
         elif n_hyperparameters == 2:  # 2D

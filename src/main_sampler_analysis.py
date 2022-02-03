@@ -24,34 +24,44 @@ warnings.filterwarnings("ignore", category=ConvergenceWarning)
 seed = 0
 
 
-def plot_sampling_bias(f_class: Type[BlackboxFunctionND] = StyblinskiTang,
-                       dimensions=2,
-                       sampler_factories: Dict[str, Sampler] = None,
-                       sampled_points=56,
-                       repetitions=10,
-                       seed_offset=0, ):
+def plot_sampling_bias(
+        f_class: Type[BlackboxFunctionND] = StyblinskiTang,
+        dimensions=2,
+        sampler_factories: Dict[str, Sampler] = None,
+        sampled_points=64 - 8,
+        repetitions=1,
+        seed_offset=0,
+):
     f = f_class.for_n_dimensions(dimensions)
     cs = f.config_space
     initial_points = 4 * f.ndim
     if sampler_factories is None:
         # Default sampler (from paper)
         sampler_factories = {
-            # "High sampling bias": lambda seed: BayesianOptimizationSampler(
-            #     f,
-            #     cs,
-            #     initial_points=initial_points,
-            #     acq_class=LowerConfidenceBound,
-            #     acq_class_kwargs={"tau": 0.1},
-            #     seed=seed
-            # ),
-            # "Medium Sampling bias": lambda seed: BayesianOptimizationSampler(
-            #     f,
-            #     cs,
-            #     initial_points=initial_points,
-            #     acq_class=LowerConfidenceBound,
-            #     acq_class_kwargs={"tau": 2},
-            #     seed=seed
-            # ),
+            "High sampling bias": lambda seed: BayesianOptimizationSampler(
+                f,
+                cs,
+                initial_points=initial_points,
+                acq_class=LowerConfidenceBound,
+                acq_class_kwargs={"tau": 0.1},
+                seed=seed
+            ),
+            "Medium Sampling bias": lambda seed: BayesianOptimizationSampler(
+                f,
+                cs,
+                initial_points=initial_points,
+                acq_class=LowerConfidenceBound,
+                acq_class_kwargs={"tau": 2},
+                seed=seed
+            ),
+            "Low Sampling bias": lambda seed: BayesianOptimizationSampler(
+                f,
+                cs,
+                initial_points=initial_points,
+                acq_class=LowerConfidenceBound,
+                acq_class_kwargs={"tau": 5},
+                seed=seed
+            ),
             "Random": lambda seed: RandomSampler(
                 f,
                 cs,
@@ -84,7 +94,10 @@ def plot_sampling_bias(f_class: Type[BlackboxFunctionND] = StyblinskiTang,
             sampler.sample(sampled_points + initial_points)
             surrogate = GaussianProcessSurrogate(cs, seed=seed)
             surrogate.fit(sampler.X, sampler.y)
-            pdp = PDP.from_random_points(surrogate_model=surrogate, selected_hyperparameter=selected_hyperparameter)
+            pdp = PDP.from_random_points(
+                surrogate_model=surrogate, selected_hyperparameter=selected_hyperparameter,
+                num_grid_points_per_axis=50, num_samples=4000,
+            )
             arr_x = pdp.x_pdp
             arr_means.append(pdp.y_pdp)
             arr_variances.append(pdp.y_variances)
@@ -106,21 +119,26 @@ def plot_sampling_bias(f_class: Type[BlackboxFunctionND] = StyblinskiTang,
             y_variances=arr_variances,
             name=f"Mean PDP {name}"
         )
-        mean_pdp.plot(line_color="blue", gradient_color="lightblue", with_confidence=True, ax=ax_pdp)
+        mean_pdp.plot(
+            line_color="blue",
+            gradient_color="lightblue",
+            with_confidence=True,
+            confidence_max_sigma = 3,
+            ax=ax_pdp
+        )
 
         f_pd = f.pd_integral(*[hp for hp in cs if hp not in selected_hyperparameter])
         plot_function(f_pd, f_pd.config_space, samples_per_axis=200, ax=ax_pdp)
 
         # Plot variances
-        x = get_uniform_distributed_ranges(convert_hyperparameters(selected_hyperparameter, cs), samples_per_axis=len(mean_pdp.y_variances))[0]
+        x = get_uniform_distributed_ranges(
+            convert_hyperparameters(selected_hyperparameter, cs),
+            samples_per_axis=len(mean_pdp.y_variances)
+        )[0]
         ax_variances.plot(x, np.sqrt(mean_pdp.y_variances))
         # Set titles
         ax_pdp.set_title(name)
         ax_variances.set_ylabel("Std")
-
-
-
-
 
     # fig1.savefig("Figure 1.png")
     fig.savefig("Sampler analysis.png")
