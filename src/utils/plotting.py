@@ -229,6 +229,7 @@ def plot_1D_confidence_lines(x: np.ndarray,
 def plot_config_space(config_space: CS.ConfigurationSpace,
                       x_hyperparameters: Optional[SelectedHyperparameterType] = None,
                       color: ColorType = "orange",
+                      alpha: float = 0.5,
                       ax: Optional[plt.Axes] = None):
     """
     Draws a box around (selected) hyperparameter bounds of a config_space
@@ -245,11 +246,10 @@ def plot_config_space(config_space: CS.ConfigurationSpace,
         assert isinstance(hp, CSH.NumericalHyperparameter)
         ax.axvline(hp.lower, color=color)
         ax.axvline(hp.upper, color=color)
-        ax.axvspan(hp.lower, hp.upper, alpha=0.5, color=color)
+        ax.axvspan(hp.lower, hp.upper, alpha=alpha, color=color)
     elif n_hyperparameters == 2:
         # Plot 2D
         x1, x2 = x_hyperparameters
-        alpha = 0.5
         if isinstance(x1, CSH.NumericalHyperparameter):
             x_lower = x1.lower
             x_upper = x1.upper

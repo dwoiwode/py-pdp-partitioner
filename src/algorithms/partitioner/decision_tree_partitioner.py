@@ -8,9 +8,9 @@ from matplotlib import pyplot as plt
 from src.algorithms.ice import ICE
 from src.algorithms.partitioner import Region, Partitioner
 from src.surrogate_models import SurrogateModel
-from src.utils.plotting import get_ax, check_and_set_axis, get_random_color
+from src.utils.plotting import get_ax, check_and_set_axis, get_random_color, plot_config_space
 from src.utils.typing import SelectedHyperparameterType, ColorType
-from src.utils.utils import scale_float, unscale_float, unscale, ConfigSpaceHolder
+from src.utils.utils import scale_float, unscale_float, unscale, ConfigSpaceHolder, get_hyperparameters
 
 
 class SplitCondition(ConfigSpaceHolder):
@@ -94,7 +94,7 @@ class DTRegion(Region):
                 return False
         return True
 
-    def implied_config_space(self, seed: int) -> CS.ConfigurationSpace:
+    def implied_config_space(self, seed: Optional[int] = None) -> CS.ConfigurationSpace:
         # copy cs
         hp_dic = {}
         for hp in self.config_space.get_hyperparameters():
@@ -196,8 +196,9 @@ class DTPartitioner(Partitioner):
                  selected_hyperparameter: SelectedHyperparameterType,
                  samples: np.ndarray,
                  num_grid_points_per_axis: int = 20,
-                 num_splits_per_axis: int = 100,
+                 num_splits_per_axis: int = 100,  # number of possible split points per axis
                  min_points_per_node: int = 10,  # minimum number of ice curves in a single node
+                 not_splittable_hp: Optional[SelectedHyperparameterType] = None,  # more hp to ignore for splitting
                  seed=None
                  ):
         super().__init__(
@@ -205,11 +206,11 @@ class DTPartitioner(Partitioner):
             selected_hyperparameter=selected_hyperparameter,
             num_grid_points_per_axis=num_grid_points_per_axis,
             samples=samples,
+            not_splittable_hp=not_splittable_hp,
             seed=seed
         )
         self.num_splits_per_axis = num_splits_per_axis
         self.min_points_per_node = min_points_per_node
-
 
         self.root: DTRegion = DTRegion(
             parent=None,
@@ -224,12 +225,19 @@ class DTPartitioner(Partitioner):
         self.leaves: List[DTRegion] = []
 
     @classmethod
-    def from_ICE(cls, ice: ICE) -> "DTPartitioner":
+    def from_ICE(cls, ice: ICE,
+                 num_splits_per_axis: int = 100,
+                 min_points_per_node: int = 10,
+                 not_splittable_hp: Optional[SelectedHyperparameterType] = None,  # more hp to ignore for splitting
+                 ) -> "DTPartitioner":
         partitioner = DTPartitioner(
             surrogate_model=ice.surrogate_model,
             selected_hyperparameter=ice.selected_hyperparameter,
             samples=ice.samples,
-            num_grid_points_per_axis=ice.num_grid_points_per_axis
+            num_grid_points_per_axis=ice.num_grid_points_per_axis,
+            num_splits_per_axis=num_splits_per_axis,
+            min_points_per_node=min_points_per_node,
+            not_splittable_hp=not_splittable_hp
         )
         partitioner._ice = ice
         return partitioner
@@ -270,7 +278,7 @@ class DTPartitioner(Partitioner):
         best_right_child = None
         for hyperparameter in self.possible_split_parameters:
             # split values excluding upper and lower bound
-            possible_split_vals = np.linspace(0, 1, num=self.num_splits_per_axis+2)[1:-1]
+            possible_split_vals = np.linspace(0, 1, num=self.num_splits_per_axis + 2)[1:-1]
             for split_val in possible_split_vals:
                 # get children after split
                 left_child, right_child = node.split_at_value(hyperparameter, split_val)
@@ -311,3 +319,15 @@ class DTPartitioner(Partitioner):
 
         for i, leaf in enumerate(self.leaves):
             leaf.plot(color=color_list[i], alpha=alpha, ax=ax)
+
+    def plot_incumbent_cs(self,
+                          incumbent: CS.Configuration,
+                          color: ColorType = "orange",
+                          alpha: float = 0.5,
+                          ax: Optional[plt.Axes] = None):
+        ax = get_ax(ax)
+        region = self.get_incumbent_region(incumbent)
+        new_cs = region.implied_config_space()
+        all_hp = new_cs.get_hyperparameters()
+        not_selected_hp = sorted(list(set(all_hp) - set(self.selected_hyperparameter)), key=lambda hp: hp.name)
+        plot_config_space(new_cs, x_hyperparameters=not_selected_hp, color=color, alpha=alpha, ax=ax)

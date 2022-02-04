@@ -11,7 +11,7 @@ from src.algorithms.ice import ICE
 from src.blackbox_functions import BlackboxFunction
 from src.surrogate_models import SurrogateModel
 from src.utils.typing import SelectedHyperparameterType
-from src.utils.utils import unscale_float, calculate_log_delta, ConfigSpaceHolder
+from src.utils.utils import unscale_float, calculate_log_delta, ConfigSpaceHolder, get_hyperparameters
 
 from scipy.stats import norm
 
@@ -103,6 +103,7 @@ class Partitioner(Algorithm, ABC):
                  selected_hyperparameter: SelectedHyperparameterType,
                  samples: np.ndarray,
                  num_grid_points_per_axis: int = 20,
+                 not_splittable_hp: Optional[SelectedHyperparameterType] = None,  # more hp to ignore for splitting
                  seed=None):
         super().__init__(
             surrogate_model=surrogate_model,
@@ -120,7 +121,14 @@ class Partitioner(Algorithm, ABC):
 
         # get indices of selected hyperparameters
         cs = self.surrogate_model.config_space
+
+        if not_splittable_hp is None:
+            self.not_splittable_hp = []
+        else:
+            self.not_splittable_hp = get_hyperparameters(not_splittable_hp, self.config_space)
+
         selected_hyperparameter_names = {hp.name for hp in self.selected_hyperparameter}
+        selected_hyperparameter_names = selected_hyperparameter_names.union({hp.name for hp in self.not_splittable_hp})
         self.possible_split_parameters: List[CSH.Hyperparameter] = [
             hp for hp in cs.get_hyperparameters()
             if hp.name not in selected_hyperparameter_names
@@ -138,5 +146,5 @@ class Partitioner(Algorithm, ABC):
         return self._ice
 
     @abstractmethod
-    def partition(self, max_depth: int = 1) -> List[Region]:
+    def partition(self, max_depth: int = 1): # -> List[Region]:
         pass

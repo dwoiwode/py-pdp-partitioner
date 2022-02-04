@@ -24,7 +24,9 @@ class TestPartitioner(PlottableTest):
 
         ice = ICE.from_random_points(surrogate, selected_hp)
         partitioner = DTPartitioner.from_ICE(ice)
-        regions = partitioner.partition()
+        # regions = partitioner.partition()
+        partitioner.partition()
+        regions = partitioner.leaves
 
         num_points = 0
         for region in regions:
