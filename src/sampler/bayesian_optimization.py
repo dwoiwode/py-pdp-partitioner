@@ -71,6 +71,11 @@ class BayesianOptimizationSampler(Sampler):
 
         self._model_fitted_hash = parameter_hash
 
+    def sample(self, n_points: int = 1):
+        super(BayesianOptimizationSampler, self).sample(n_points=n_points)
+        # Make sure at end of sampling surrogate is fitted
+        self.fit_surrogate()
+
     def _sample(self, n_points: int = 1):
         # Sample initial random points if not already done or given
         self.logger.info(f"Sample {n_points} new points")

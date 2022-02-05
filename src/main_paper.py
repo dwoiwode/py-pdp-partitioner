@@ -179,8 +179,11 @@ def figure_6_table_1_data_generation(
 
                     mmd = sampler.maximum_mean_discrepancy(300)
 
+                    surrogate = GaussianProcessSurrogate(f.config_space)
+                    surrogate.fit(sampler.X, sampler.y)
+
                     dt_partitioner = DTPartitioner.from_random_points(
-                        surrogate_model=sampler.surrogate_model,
+                        surrogate_model=surrogate,
                         selected_hyperparameter=selected_hyperparameter,
                         seed=seed
                     )
