@@ -42,12 +42,13 @@ class RandomForestPartitioner(Partitioner):
         self.trees: Optional[List[DTPartitioner]] = None
 
     @classmethod
-    def from_ICE(cls, ice: ICE) -> "RandomForestPartitioner":
+    def from_ICE(cls, ice: ICE, seed=None) -> "RandomForestPartitioner":
         partitioner = RandomForestPartitioner(
             surrogate_model=ice.surrogate_model,
             selected_hyperparameter=ice.selected_hyperparameter,
             samples=ice.samples,
-            num_grid_points_per_axis=ice.num_grid_points_per_axis
+            num_grid_points_per_axis=ice.num_grid_points_per_axis,
+            seed=seed
         )
         partitioner._ice = ice
         return partitioner
@@ -56,6 +57,10 @@ class RandomForestPartitioner(Partitioner):
                   num_trees: int = 10,
                   max_depth: int = 1,
                   sample_size: Optional[int] = None):
+        assert num_trees > 0, 'Need at least one tree for splitting'
+        assert sample_size > 0, 'Need at least one sample for splitting'
+        assert max_depth > 0, 'Need to perform at least one split'
+
         if sample_size is None:
             sample_size = len(self.samples)
 

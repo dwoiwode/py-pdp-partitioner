@@ -5,9 +5,10 @@ from typing import Tuple, Optional, List, Callable
 import ConfigSpace as CS
 import numpy as np
 import ConfigSpace.hyperparameters as CSH
+from matplotlib import pyplot as plt
 
 from src.algorithms import Algorithm
-from src.algorithms.ice import ICE
+from src.algorithms.ice import ICE, ICECurve
 from src.blackbox_functions import BlackboxFunction
 from src.surrogate_models import SurrogateModel
 from src.utils.typing import SelectedHyperparameterType
@@ -97,6 +98,26 @@ class Region(ConfigSpaceHolder):
         nll_root = full_region.negative_log_likelihood(true_function)
         return calculate_log_delta(nll, nll_root)
 
+    def plot_pdp(
+            self,
+            line_color="red",
+            gradient_color="xkcd:light red",
+            with_confidence=True,
+            ax: Optional[plt.Axes] = None):
+
+        x_pdp = np.mean(self.x_points, axis=0)
+        y_pdp = np.mean(self.y_points, axis=0)
+        y_variances_pdp = np.mean(self.y_variances, axis=0)
+        pdp = ICECurve(
+            full_config_space=self.config_space,
+            selected_hyperparameter=self.selected_hyperparameter,
+            x_ice=x_pdp,
+            y_ice=y_pdp,
+            y_variances=y_variances_pdp,
+            name="PDP in Region"
+        )
+        pdp.plot(line_color=line_color, gradient_color=gradient_color,
+                 with_confidence=with_confidence, ax=ax)
 
 class Partitioner(Algorithm, ABC):
     def __init__(self, surrogate_model: SurrogateModel,
