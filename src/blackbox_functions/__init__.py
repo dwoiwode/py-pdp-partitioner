@@ -2,10 +2,9 @@ from abc import ABC, abstractmethod
 from typing import Union, Callable, Optional, Iterable
 
 import ConfigSpace as CS
-import numpy as np
 from ConfigSpace import hyperparameters as CSH
 
-from src.utils.utils import ConfigSpaceHolder, convert_hyperparameters
+from src.utils.utils import ConfigSpaceHolder
 
 
 class BlackboxFunction(ConfigSpaceHolder, ABC):
@@ -73,12 +72,14 @@ class CallableBlackboxFunction(BlackboxFunction):
         return self.f(config)
 
 
-def config_space_nd(dimensions: int, *,
-                    lower: Union[float, Iterable[float]] = -5,
-                    upper: Union[float, Iterable[float]] = 5,
-                    log: Union[bool, Iterable[bool]] = False,
-                    variable_prefix="x",
-                    seed=None) -> CS.ConfigurationSpace:
+def config_space_nd(
+        dimensions: int, *,
+        lower: Union[float, Iterable[float]] = -5,
+        upper: Union[float, Iterable[float]] = 5,
+        log: Union[bool, Iterable[bool]] = False,
+        variable_prefix="x",
+        seed=None
+) -> CS.ConfigurationSpace:
     """
     Creates and returns a config space with `dimensions` dimensions.
     Parameters are named xi with i = [1,...,dimensions+1] (e.g. [x1, x2, x3] for `dimensions`=3)

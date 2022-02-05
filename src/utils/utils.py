@@ -11,8 +11,6 @@ from src.utils.typing import SelectedHyperparameterType
 
 
 class ConfigSpaceHolder(ABC):
-    global_rng = np.random.RandomState(seed=0)
-
     def __init__(self, config_space:CS.ConfigurationSpace, *, seed:Union[None, int, bool]=None):
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -25,7 +23,8 @@ class ConfigSpaceHolder(ABC):
             seed = int(time.time()*1000)
         else:
             # Use seed
-            seed = self.global_rng.randint(0, 1000000) + seed
+            # Hash of class prevents using the exact same seed for every step (e.g. Sampler, ICE, ...)
+            seed = hash(self.__class__.__name__) + seed
         self.config_space = copy_config_space(config_space, seed=seed % 2**31)
 
     def sample_random_configuration(self, n: int) -> List[CS.Configuration]:

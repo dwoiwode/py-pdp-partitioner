@@ -13,7 +13,7 @@ from test import PlottableTest
 
 class TestSampler(PlottableTest):
     def test_mmd_random(self):
-        f = StyblinskiTang.for_n_dimensions(2)
+        f = StyblinskiTang.for_n_dimensions(2, seed=42)
         cs = f.config_space
         n = 250  # Sampler
         m = 250  # Uniform

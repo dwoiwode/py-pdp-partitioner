@@ -10,6 +10,7 @@ class TestGridSampler(unittest.TestCase):
         cs = f.config_space
 
         sampler = GridSampler(f, cs)
+        sampler.clear_cache()
 
         sampler.sample(1)
 
@@ -25,6 +26,7 @@ class TestGridSampler(unittest.TestCase):
         cs = f.config_space
 
         sampler = GridSampler(f, cs)
+        sampler.clear_cache()
 
         sampler.sample(9)
 
@@ -52,6 +54,7 @@ class TestGridSampler(unittest.TestCase):
         cs = f.config_space
 
         sampler = GridSampler(f, cs)
+        sampler.clear_cache()
 
         sampler.sample(240)  # 7^3 = 343
 
