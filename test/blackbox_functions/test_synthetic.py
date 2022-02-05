@@ -12,6 +12,70 @@ from src.utils.plotting import plot_function
 from test import PlottableTest
 
 
+class TestConfigspaceND(TestCase):
+    def test_same_bounds(self):
+        cs = config_space_nd(4, lower=-4, upper=5, log=False)
+        hps = cs.get_hyperparameters()
+
+        for hp in hps:
+            self.assertIsInstance(hp, CSH.NumericalHyperparameter)
+            self.assertEqual(-4, hp.lower)
+            self.assertEqual(5, hp.upper)
+            self.assertFalse(hp.log)
+
+    def test_prefix(self):
+        # Default prefix
+        cs = config_space_nd(4)
+        hps = cs.get_hyperparameters()
+
+        expected_names = {"x1", "x2", "x3", "x4"}
+        names = {hp.name for hp in hps}
+        self.assertSetEqual(expected_names, names)
+
+        # Other prefix
+        cs = config_space_nd(4, variable_prefix="other_prefix_")
+        hps = cs.get_hyperparameters()
+
+        expected_names = {"other_prefix_1", "other_prefix_2", "other_prefix_3", "other_prefix_4"}
+        names = {hp.name for hp in hps}
+        self.assertSetEqual(expected_names, names)
+
+    def test_different_bounds(self):
+        cs = config_space_nd(3, lower=(0, -1.5, -2), upper=(5, 20, 32.3))
+        hps = cs.get_hyperparameters()
+
+        # Check Hyperparameter 0
+        self.assertIsInstance(hps[0], CSH.NumericalHyperparameter)
+        self.assertEqual(0, hps[0].lower)
+        self.assertEqual(5, hps[0].upper)
+
+        # Check Hyperparameter 1
+        self.assertIsInstance(hps[1], CSH.NumericalHyperparameter)
+        self.assertEqual(-1.5, hps[1].lower)
+        self.assertEqual(20, hps[1].upper)
+
+        # Check Hyperparameter 2
+        self.assertIsInstance(hps[2], CSH.NumericalHyperparameter)
+        self.assertEqual(-2, hps[2].lower)
+        self.assertEqual(32.3, hps[2].upper)
+
+    def test_constants(self):
+        cs = config_space_nd(3, lower=(0, 5, -2.32), upper=(0, 5, -2.32))
+        hps = cs.get_hyperparameters()
+
+        # Check Hyperparameter 0
+        self.assertIsInstance(hps[0], CSH.Constant)
+        self.assertEqual(0, hps[0].value)
+
+        # Check Hyperparameter 1
+        self.assertIsInstance(hps[1], CSH.Constant)
+        self.assertEqual(5, hps[1].value)
+
+        # Check Hyperparameter 2
+        self.assertIsInstance(hps[2], CSH.Constant)
+        self.assertEqual(-2.32, hps[2].value)
+
+
 class TestLevy(TestCase):
     def test_config_space(self):
         f = Levy()

@@ -6,7 +6,7 @@ from src.blackbox_functions import synthetic_functions, config_space_nd
 from src.blackbox_functions.synthetic_functions import Square
 from src.sampler.acquisition_function import LowerConfidenceBound
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
-from src.surrogate_models import GaussianProcessSurrogate
+from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
 
 
 class TestDTNode(TestCase):
@@ -25,7 +25,7 @@ class TestDTNode(TestCase):
                                          acq_class=LowerConfidenceBound,
                                          initial_points=2)
         bo.sample(bo_sampling_points)
-        ice = ICE(bo.surrogate_model, self.selected_hyperparameter)
+        ice = ICE.from_random_points(bo.surrogate_model, self.selected_hyperparameter)
 
         self.partitioner = DTPartitioner.from_ICE(ice)
         self.regions = self.partitioner.partition(max_depth=2)

@@ -1,8 +1,35 @@
+import logging
+import time
+from abc import ABC
 from typing import List, Iterable, Union, Optional
 
 import ConfigSpace as CS
 import numpy as np
 from ConfigSpace import hyperparameters as CSH
+
+from src.utils.typing import SelectedHyperparameterType
+
+
+class ConfigSpaceHolder(ABC):
+    global_rng = np.random.RandomState(seed=0)
+
+    def __init__(self, config_space:CS.ConfigurationSpace, *, seed:Union[None, int, bool]=None):
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+        if seed is True:
+            # Use existing config_space
+            self.config_space = config_space
+            return
+        elif seed is None:
+            # Use random seed
+            seed = int(time.time()*1000)
+        else:
+            # Use seed
+            seed = self.global_rng.randint(0, 1000000) + seed
+        self.config_space = copy_config_space(config_space, seed=seed % 2**31)
+
+    def sample_random_configuration(self, n: int) -> List[CS.Configuration]:
+        return self.config_space.sample_configuration(n)
 
 
 def config_to_array(config: CS.Configuration) -> np.ndarray:
@@ -70,13 +97,16 @@ def get_stds(stds: Optional[np.ndarray] = None, variances: Optional[np.ndarray] 
     return stds
 
 
-def get_hyperparameters(hyperparameters: Union[None, CSH.Hyperparameter, Iterable[CSH.Hyperparameter]],
+def get_hyperparameters(hyperparameters: Optional[SelectedHyperparameterType],
                         cs: CS.ConfigurationSpace) -> List[CSH.Hyperparameter]:
     if hyperparameters is None:
+        # None -> All hyperparameters in cs
         return list(cs.get_hyperparameters())
     elif isinstance(hyperparameters, CSH.Hyperparameter):
+        # Single Hyperparameter
         return [hyperparameters]
     elif isinstance(hyperparameters, str):
+        # Single Hyperparameter name
         return [cs.get_hyperparameter(hyperparameters)]
     else:
         # Either list of names or list of Hyperparameters
@@ -91,7 +121,7 @@ def get_hyperparameters(hyperparameters: Union[None, CSH.Hyperparameter, Iterabl
         return hps
 
 
-def get_uniform_distributed_ranges(cs: CS.ConfigurationSpace,
+def get_uniform_distributed_ranges(cs: Union[CS.ConfigurationSpace, Iterable[CSH.NumericalHyperparameter]],
                                    samples_per_axis: int = 100,
                                    scaled=False) -> np.ndarray:
     """
@@ -101,7 +131,9 @@ def get_uniform_distributed_ranges(cs: CS.ConfigurationSpace,
     :return: Shape: (num_hyperparameters, num_samples_per_axis)
     """
     ranges = []
-    for parameter in cs.get_hyperparameters():
+    if isinstance(cs, CS.ConfigurationSpace):
+        cs = cs.get_hyperparameters()
+    for parameter in cs:
         assert isinstance(parameter, CSH.NumericalHyperparameter)
         if scaled:
             ranges.append(np.linspace(0, 1, num=samples_per_axis))
@@ -112,7 +144,7 @@ def get_uniform_distributed_ranges(cs: CS.ConfigurationSpace,
                 ranges.append(np.linspace(parameter.lower, parameter.upper, num=samples_per_axis))
 
     res = np.asarray(ranges)
-    assert len(res) == len(cs.get_hyperparameters())
+    assert len(res) == len(cs)
     return res
 
 
@@ -123,6 +155,10 @@ def median_distance_between_points(X: np.ndarray) -> float:
     distances = np.sqrt(dif_2)
     median = np.median(distances[distances != 0]).item()
     return median
+
+
+def calculate_log_delta(nll: float, nll_root: float) -> float:
+    return (nll_root - nll) / np.absolute(nll_root)
 
 def convert_hyperparameters(hyperparameters: Union[str, CSH.Hyperparameter, Iterable[Union[CSH.Hyperparameter, str]]],
                             config_space: CS.ConfigurationSpace) -> List[CSH.Hyperparameter]:
@@ -145,3 +181,21 @@ def convert_hyperparameters(hyperparameters: Union[str, CSH.Hyperparameter, Iter
         else:
             raise TypeError(f'Could not interpret hp: {hp}')
     return hps
+
+
+def copy_config_space(cs: CS.ConfigurationSpace, *, seed=None) -> CS.ConfigurationSpace:
+    # copy cs
+    hp_dic = {}
+    for hp in cs.get_hyperparameters():
+        if isinstance(hp, CSH.NumericalHyperparameter):
+            new_hp = CSH.UniformFloatHyperparameter(hp.name, lower=hp.lower, upper=hp.upper, log=hp.log)
+            hp_dic[hp.name] = new_hp
+        else:
+            raise NotImplementedError()
+
+    # add new hp to new cs
+    cs_copy = CS.ConfigurationSpace(seed=seed)
+    for hp in hp_dic.values():
+        cs_copy.add_hyperparameter(hp)
+
+    return cs_copy

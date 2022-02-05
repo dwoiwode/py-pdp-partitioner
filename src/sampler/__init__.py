@@ -1,4 +1,8 @@
+import hashlib
+import json
+import logging
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Callable, List, Tuple, Optional, Iterable
 
 import ConfigSpace as CS
@@ -7,28 +11,47 @@ import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.gaussian_process.kernels import RBF
 
-from src.utils.plotting import Plottable, get_ax, check_and_set_axis
+from src.utils.plotting import get_ax, check_and_set_axis
 from src.utils.typing import ColorType
-from src.utils.utils import config_list_to_array, get_hyperparameters, median_distance_between_points, unscale
+from src.utils.utils import config_list_to_array, get_hyperparameters, median_distance_between_points, \
+    ConfigSpaceHolder
 
 
-class Sampler(Plottable, ABC):
-    def __init__(self,
-                 obj_func: Callable,
-                 config_space: CS.ConfigurationSpace,
-                 minimize_objective=True,
-                 seed=None):
-        super().__init__()
+class Sampler(ConfigSpaceHolder, ABC):
+    CACHE_DIR = Path(__file__).parent.parent.parent / "cache" / "sampler"
+
+    def __init__(
+            self,
+            obj_func: Callable,
+            config_space: CS.ConfigurationSpace,
+            minimize_objective=True,
+            seed=None
+    ):
+        super().__init__(config_space, seed=seed)
         self.obj_func = obj_func
-        self.config_space = config_space
+
         self.minimize_objective = minimize_objective
-        self.seed = seed
+        self.hash = self._hash(seed)
 
         self.config_list: List[CS.Configuration] = []
         self.y_list: List[float] = []
+        self._cache: List[Tuple[CS.Configuration, float]] = []
+        self._load_cache()
 
     def __len__(self) -> int:
         return len(self.config_list)
+
+    def __del__(self):
+        self.save_cache()
+
+    def _hash(self, *args) -> str:
+        md = hashlib.md5()
+        md.update(bytes(str(self.__class__), encoding="latin"))
+        md.update(bytes(str(self.config_space.get_hyperparameters()), encoding="latin"))
+        for arg in args:
+            md.update(bytes(str(arg), encoding="latin"))
+        md.update(bytes(str(self.obj_func), encoding="latin"))
+        return md.hexdigest()
 
     def reset(self):
         self.config_list = []
@@ -55,23 +78,91 @@ class Sampler(Plottable, ABC):
         incumbent_value = self.y_list[incumbent_index]
         return incumbent_config, incumbent_value
 
-    @abstractmethod
+    @property
+    def incumbent_config(self) -> Optional[CS.Configuration]:
+        return self.incumbent[0]
+
+    @property
+    def incumbent_value(self) -> float:
+        return self.incumbent[1]
+
+    def _load_cache(self):
+        self._cache = []
+        file = self.CACHE_DIR / f"{self.hash}.json"
+        if not file.exists():
+            return
+
+        try:
+            data = json.loads(file.read_text())
+            for X, y in zip(data["X"], data["y"]):
+                config = CS.Configuration(self.config_space, vector=X, origin="Cache")
+                self._cache.append((config, y))
+        except KeyboardInterrupt:
+            raise
+        except Exception as e:
+            self.logger.warning(f"Loading cache failed: {e}")
+
+    def save_cache(self):
+        if len(self._cache) > 0:
+            # Current version of sampler is worse than cache
+            return
+
+        # Save in cache
+        self.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        file = self.CACHE_DIR / f"{self.hash}.json"
+        print(f"Writing cache to {file} ({len(self)} samples)")
+        file.write_text(json.dumps(
+            {
+                "X": self.X.tolist(),
+                "y": self.y_list
+            },
+            separators=(",", ":")
+        ))
+
     def sample(self, n_points: int = 1):
+        """ Samples n_points new points """
+        # if more points than cached previously, resample
+        if len(self) + n_points > len(self._cache):
+            self._cache = []
+
+        # Use cache
+        sampled_points = 0
+        while len(self._cache) > 0 and sampled_points < n_points:
+            config, value = self._cache.pop(0)
+            # self.config_space.
+            # rng = np.random.RandomState()
+            # state = rng.get_state()
+            # rng.set_state(state)
+
+            self.config_list.append(config)
+            self.y_list.append(value)
+            sampled_points += 1
+
+        # Use sample function
+        if sampled_points < n_points:
+            self._sample(n_points - sampled_points)
+
+    @abstractmethod
+    def _sample(self, n_points: int = 1):
         """ Samples n_points new points """
         pass
 
-    def maximum_mean_discrepancy(self, m: int = 200) -> float:
+    def maximum_mean_discrepancy(self, m: Optional[int] = None) -> float:
         # Get and transform samples
+        if m is None:
+            m = len(self)
         X_samples = config_list_to_array(self.X)
         X_uniform = config_list_to_array(self.config_space.sample_configuration(m))
         X = np.concatenate((X_samples, X_uniform))
 
         # Calculate
-        X_unscaled = unscale(X, self.config_space)
-        median_l2 = median_distance_between_points(X_unscaled)
+        # X_unscaled = unscale(X, self.config_space)
+        median_l2 = median_distance_between_points(X)
+        # median_l2 = median_distance_between_points(X_unscaled)
         rbf = RBF(median_l2)
 
         covariances = rbf(X)
+        # covariances = rbf(X_unscaled)
         n = len(X_samples)
         term1 = np.sum((1 - np.eye(n)) * covariances[:n, :n]) / (n * (n - 1))
         term2 = np.sum((1 - np.eye(m)) * covariances[n:, n:]) / (m * (m - 1))
@@ -101,13 +192,14 @@ class Sampler(Plottable, ABC):
         # Plot
         plotting_kwargs = {
             "marker": marker,
-            "linestyle": "",
             "color": color,
             "label": label
         }
 
         n_hyperparameters = len(x_hyperparameters)
         if n_hyperparameters == 1:  # 1D
+            plotting_kwargs["linestyle"] = ""
+
             hp = x_hyperparameters[0]
             x = np.asarray([config[hp.name] for config in self.config_list])
             order = np.argsort(x)
@@ -116,7 +208,7 @@ class Sampler(Plottable, ABC):
             hp1, hp2 = x_hyperparameters
             x1, x2 = zip(*[(config[hp1.name], config[hp2.name]) for config in self.config_list])
             # colors = self.y  # TODO: How to plot values? color=colors is possible, not visible on ground truth
-            ax.scatter(x1, x2)
+            ax.scatter(x1, x2, **plotting_kwargs)
         else:
             raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
                                       "Please select a specific hp by setting `x_hyperparemeters`")

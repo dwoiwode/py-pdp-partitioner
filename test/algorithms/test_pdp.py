@@ -16,7 +16,7 @@ class TestPDP(PlottableTest):
         bo = BayesianOptimizationSampler(f, config_space=cs)
         bo.sample(10)
 
-        pdp = PDP(bo.surrogate_model,  selected_hp)
+        pdp = PDP.from_random_points(bo.surrogate_model,  selected_hp)
 
         self.assertTrue(pdp.x_pdp.shape[0] == pdp.y_pdp.shape[0])
         self.assertTrue(np.all(np.diff(pdp.x_pdp) > 0))
@@ -29,7 +29,7 @@ class TestPDP(PlottableTest):
         bo = BayesianOptimizationSampler(f, config_space=cs)
         bo.sample(10)
 
-        pdp = PDP(bo.surrogate_model,  selected_hp)
+        pdp = PDP.from_random_points(bo.surrogate_model,  selected_hp)
 
 
         self.assertTrue(pdp.x_pdp.shape[0] == pdp.y_pdp.shape[0])
@@ -44,7 +44,7 @@ class TestPDP(PlottableTest):
         selected_hp = cs.get_hyperparameter("x1")
         bo.sample(10)
 
-        pdp = PDP(bo.surrogate_model, selected_hp)
+        pdp = PDP.from_random_points(bo.surrogate_model, selected_hp)
         pdp.ice.centered = True
 
         self.assertTrue(pdp.y_pdp[0] == 0)

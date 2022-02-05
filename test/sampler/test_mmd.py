@@ -1,4 +1,8 @@
 from matplotlib import pyplot as plt
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import Matern
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 from src.blackbox_functions.synthetic_functions import StyblinskiTang
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
@@ -12,7 +16,7 @@ class TestSampler(PlottableTest):
         f = StyblinskiTang.for_n_dimensions(2)
         cs = f.config_space
         n = 250  # Sampler
-        m = 500  # Uniform
+        m = 250  # Uniform
 
         # Random
         random_sampler = RandomSampler(f, cs)
@@ -33,7 +37,7 @@ class TestSampler(PlottableTest):
         f = StyblinskiTang.for_n_dimensions(2)
         cs = f.config_space
         n = 150  # Sampler
-        m = 1000  # Uniform
+        m = 150  # Uniform
 
         # Random
         random_sampler = RandomSampler(f, cs)
@@ -61,7 +65,7 @@ class TestSampler(PlottableTest):
         f = StyblinskiTang.for_n_dimensions(5)
         cs = f.config_space
         n = 150  # Sampler
-        m = 500  # Uniform
+        m = 150  # Uniform
 
         for tau in (0.1, 2, 5):
             # Bayesian

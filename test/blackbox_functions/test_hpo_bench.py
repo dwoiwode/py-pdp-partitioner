@@ -2,7 +2,7 @@ from src.algorithms.ice import ICE
 from src.algorithms.pdp import PDP
 from src.blackbox_functions.hpo_bench import get_SVMBenchmarkMF
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
-from src.surrogate_models import GaussianProcessSurrogate
+from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
 from test import PlottableTest
 
 
@@ -35,7 +35,7 @@ class TestHPOBench(PlottableTest):
                 sampler.plot(x_hyperparameters=selected_hyperparameter)
 
                 # ICE
-                ice = ICE(surrogate_model, selected_hyperparameter, seed=seed)
+                ice = ICE.from_random_points(surrogate_model, selected_hyperparameter, seed=seed)
                 ice.plot(color="orange")
 
                 # PDP
@@ -43,4 +43,4 @@ class TestHPOBench(PlottableTest):
                 pdp.plot("black", "grey", with_confidence=True)
 
                 # Partitioner
-                # dt_partitioner = DTPartitioner(surrogate_model, selected_hyperparamter)
+                # dt_partitioner = DTPartitioner.from_ICE(ice)

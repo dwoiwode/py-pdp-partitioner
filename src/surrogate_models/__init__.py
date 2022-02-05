@@ -4,21 +4,15 @@ from typing import Union, List, Tuple, Optional
 import ConfigSpace as CS
 import numpy as np
 from matplotlib import pyplot as plt
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import Matern
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
 
-from src.utils.plotting import Plottable, plot_1D_confidence_lines, plot_1D_confidence_color_gradients, get_ax, \
-    plot_line, check_and_set_axis
-from src.utils.utils import get_uniform_distributed_ranges, config_list_to_array
+from src.utils.plotting import get_ax, check_and_set_axis, plot_1D_confidence_color_gradients, plot_1D_confidence_lines, \
+    plot_line
+from src.utils.utils import ConfigSpaceHolder, config_list_to_array, get_uniform_distributed_ranges
 
 
-class SurrogateModel(Plottable, ABC):
+class SurrogateModel(ConfigSpaceHolder, ABC):
     def __init__(self, cs: CS.ConfigurationSpace, seed=None):
-        super().__init__()
-        self.config_space = cs
-        self.seed = seed
+        super().__init__(cs, seed=seed)
         self.num_fitted_points = 0
 
     def __call__(self,
@@ -108,32 +102,3 @@ class SurrogateModel(Plottable, ABC):
         else:
             raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
                                       "Please select a specific hp by setting `x_hyperparemeters`")
-
-
-class SkLearnPipelineSurrogate(SurrogateModel):
-    def __init__(self, pipeline: Pipeline, cs: CS.ConfigurationSpace, seed=None):
-        super().__init__(cs, seed=seed)
-        self.pipeline = pipeline
-
-    def _fit(self, X: np.ndarray, y: np.ndarray):
-        self.pipeline.fit(X, y)
-
-    def predict(self, X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Calculate mean and sigma of predictions
-
-        :param X: input data shaped [NxK] for N samples and K parameters
-        :return: means, sigmas
-        """
-
-        return self.pipeline.predict(X, return_std=True)
-
-class GaussianProcessSurrogate(SkLearnPipelineSurrogate):
-    def __init__(self, cs: CS.ConfigurationSpace, kernel=Matern(nu=2.5), seed=None):
-        pipeline = Pipeline([
-            ("standardize", StandardScaler()),
-            ("GP", GaussianProcessRegressor(kernel=kernel, normalize_y=True,
-                                            n_restarts_optimizer=20,
-                                            random_state=seed)),
-        ])
-        super().__init__(pipeline, cs, seed=seed)

@@ -11,25 +11,31 @@ from src.algorithms.ice import ICE
 from src.blackbox_functions import BlackboxFunction
 from src.surrogate_models import SurrogateModel
 from src.utils.typing import SelectedHyperparameterType
-from src.utils.utils import unscale_float
+from src.utils.utils import unscale_float, calculate_log_delta, ConfigSpaceHolder
 
 from scipy.stats import norm
 
 Sample = Tuple[np.ndarray, np.ndarray]  # configurations, variances
 
 
-class Region:
-    def __init__(self, x_points: np.ndarray, y_points: np.ndarray, y_variances: np.ndarray,
-                 config_space: CS.ConfigurationSpace, selected_hyperparameter: SelectedHyperparameterType):
+class Region(ConfigSpaceHolder):
+    def __init__(
+            self,
+            x_points: np.ndarray,
+            y_points: np.ndarray,
+            y_variances: np.ndarray,
+            config_space: CS.ConfigurationSpace,
+            selected_hyperparameter: SelectedHyperparameterType
+    ):
         """
         :param x_points: Shape: (num_points_in_region, num_grid_points, num_features)
         :param y_points: Shape: (num_points_in_region, num_grid_points)
         :param y_variances: Shape: (num_points_in_region, num_grid_points)
         """
+        super().__init__(config_space)
         self.x_points = x_points
         self.y_points = y_points
         self.y_variances = y_variances
-        self.config_space = config_space
         if isinstance(selected_hyperparameter, CSH.Hyperparameter):
             selected_hyperparameter = [selected_hyperparameter]
         self.selected_hyperparameter = tuple(selected_hyperparameter)
@@ -42,7 +48,7 @@ class Region:
 
     @cached_property
     def mean_confidence(self) -> float:
-        return np.mean(self.y_variances).item()
+        return np.mean(np.sqrt(self.y_variances)).item()
 
     @cached_property
     def loss(self) -> float:
@@ -75,22 +81,36 @@ class Region:
 
         # regions pdp estimate:
         pdp_y_points = np.mean(self.y_points, axis=0)
-        pdp_y_variances = np.mean(self.y_variances, axis=0)
-        pdp_y_std = np.sqrt(pdp_y_variances)
+
+        # method == "pdp_sd"
+        # pdp_y_std = np.mean(np.sqrt(self.y_variances), axis=0)
+
+        # method != "pdp_sd" (Default in the paper)
+        pdp_y_std = np.sqrt(np.mean(self.y_variances, axis=0))
 
         log_prob = norm.logpdf(true_y, loc=pdp_y_points, scale=pdp_y_std)
         result = - np.mean(log_prob)
         return result
 
+    def delta_nll(self, true_function: BlackboxFunction, full_region: "Region") -> float:
+        nll = self.negative_log_likelihood(true_function)
+        nll_root = full_region.negative_log_likelihood(true_function)
+        return calculate_log_delta(nll, nll_root)
+
 
 class Partitioner(Algorithm, ABC):
     def __init__(self, surrogate_model: SurrogateModel,
                  selected_hyperparameter: SelectedHyperparameterType,
-                 num_grid_points: int = 20,
-                 num_samples: int = 1000):
-        super().__init__(surrogate_model, selected_hyperparameter)
-        self.num_grid_points = num_grid_points
-        self.num_samples = num_samples
+                 samples: np.ndarray,
+                 num_grid_points_per_axis: int = 20,
+                 seed=None):
+        super().__init__(
+            surrogate_model=surrogate_model,
+            selected_hyperparameter=selected_hyperparameter,
+            samples=samples,
+            num_grid_points_per_axis=num_grid_points_per_axis,
+            seed=seed
+        )
 
         # Properties
         self._ice: Optional[ICE] = None
@@ -109,14 +129,14 @@ class Partitioner(Algorithm, ABC):
     @property
     def ice(self) -> ICE:
         if self._ice is None:
-            self._ice = ICE(self.surrogate_model,
-                            self.selected_hyperparameter,
-                            self.num_samples,
-                            self.num_grid_points_per_axis)
+            self._ice = ICE(
+                surrogate_model=self.surrogate_model,
+                selected_hyperparameter=self.selected_hyperparameter,
+                samples=self.samples,
+                num_grid_points_per_axis=self.num_grid_points_per_axis
+            )
         return self._ice
 
     @abstractmethod
     def partition(self, max_depth: int = 1) -> List[Region]:
         pass
-
-

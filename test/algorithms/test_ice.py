@@ -1,9 +1,10 @@
 import unittest
 
+import ConfigSpace.hyperparameters as CSH
 import numpy as np
 
 from src.algorithms.ice import ICE
-from src.blackbox_functions.synthetic_functions import Square
+from src.blackbox_functions.synthetic_functions import Square, StyblinskiTang
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 
 
@@ -16,7 +17,7 @@ class TestICE(unittest.TestCase):
 
         bo.sample(10)
         num_grid_points = 1000
-        ice = ICE(bo.surrogate_model, selected_hp, num_grid_points_per_axis=num_grid_points)
+        ice = ICE.from_random_points(bo.surrogate_model, selected_hp, num_grid_points_per_axis=num_grid_points)
         x_ice = ice.x_ice
         y_ice = ice.y_ice
         variances = ice.y_variances
@@ -48,8 +49,8 @@ class TestICE(unittest.TestCase):
         bo.sample(10)
         num_grid_points = 20
         n_samples = 1000
-        ice = ICE(bo.surrogate_model, selected_hyperparameter,
-                  num_samples=n_samples, num_grid_points_per_axis=num_grid_points)
+        ice = ICE.from_random_points(bo.surrogate_model, selected_hyperparameter,
+                                     num_samples=n_samples, num_grid_points_per_axis=num_grid_points)
 
         x_ice = ice.x_ice
         y_ice = ice.y_ice
@@ -69,11 +70,29 @@ class TestICE(unittest.TestCase):
         f = Square.for_n_dimensions(2)
         cs = f.config_space
         bo = BayesianOptimizationSampler(f, config_space=cs)
-        selected_hp = cs.get_hyperparameters()[0]
+        selected_hp = cs.get_hyperparameter("x1")
 
         bo.sample(10)
-        ice = ICE(bo.surrogate_model, selected_hp)
+        ice = ICE.from_random_points(bo.surrogate_model, selected_hp)
         ice.centered = True
         y_ice = ice.y_ice
 
         self.assertTrue(np.all(y_ice[:, 0] == 0))
+
+    def test_ice_curve_configspace(self):
+        f = StyblinskiTang.for_n_dimensions(2)
+        cs = f.config_space
+        bo = BayesianOptimizationSampler(f, config_space=cs)
+        selected_hp = cs.get_hyperparameter("x1")
+
+        bo.sample(10)
+        ice = ICE.from_random_points(bo.surrogate_model, selected_hp)
+        ice_curve = ice[0]
+        reduced_cs = ice_curve.implied_config_space
+        x1 = reduced_cs.get_hyperparameter("x1")
+        x2 = reduced_cs.get_hyperparameter("x2")
+
+        self.assertEqual(selected_hp.lower, x1.lower)
+        self.assertEqual(selected_hp.upper, x1.upper)
+        self.assertEqual(selected_hp.log, x1.log)
+        self.assertIsInstance(x2, CSH.Constant)
