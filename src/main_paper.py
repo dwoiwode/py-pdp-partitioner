@@ -179,8 +179,11 @@ def figure_6_table_1_data_generation(
 
                     mmd = sampler.maximum_mean_discrepancy(300)
 
+                    surrogate = GaussianProcessSurrogate(f.config_space)
+                    surrogate.fit(sampler.X, sampler.y)
+
                     dt_partitioner = DTPartitioner.from_random_points(
-                        surrogate_model=sampler.surrogate_model,
+                        surrogate_model=surrogate,
                         selected_hyperparameter=selected_hyperparameter,
                         seed=seed
                     )
@@ -388,11 +391,11 @@ def visualize_bad_nll():
 
 
 if __name__ == '__main__':
-    # figure_1_3()
-    # figure_2()
-    # figure_4()
-    # figure_6_table_1_data_generation(log_filename="figure_6_table_1_new_3.csv", replications=30, seed_offset=0)
-    # figure_6_drawing("figure_6_table_1_new_3.csv")
-    # table_1_drawing("figure_6_table_1_new_2.csv")
+    figure_1_3()
+    figure_2()
+    figure_4()
+    figure_6_table_1_data_generation(log_filename="figure_6.csv", replications=30, seed_offset=0)
+    figure_6_drawing("figure_6.csv")
+    table_1_drawing("figure_6.csv")
     # figure_6_table_1_drawing("figure_6_table_1.csv", columns=("base_mc", "base_nll", "mc", "nll", "mmd"))
     visualize_bad_nll()

@@ -53,6 +53,9 @@ class Sampler(ConfigSpaceHolder, ABC):
         md.update(bytes(str(self.obj_func), encoding="latin"))
         return md.hexdigest()
 
+    def clear_cache(self):
+        self._cache = []
+
     def reset(self):
         self.config_list = []
         self.y_list = []
