@@ -15,11 +15,11 @@ class TestSampler(PlottableTest):
     def test_mmd_random(self):
         f = StyblinskiTang.for_n_dimensions(2, seed=42)
         cs = f.config_space
-        n = 250  # Sampler
-        m = 250  # Uniform
+        n = 550  # Sampler
+        m = 550  # Uniform
 
         # Random
-        random_sampler = RandomSampler(f, cs)
+        random_sampler = RandomSampler(f, cs, seed=42)
         random_sampler.sample(n)
         mmd_random = random_sampler.maximum_mean_discrepancy(m=m)
         print("MMD Random:", mmd_random)
@@ -31,7 +31,7 @@ class TestSampler(PlottableTest):
         plt.legend()
 
         # Assertion
-        self.assertAlmostEqual(0, mmd_random, places=2)
+        self.assertGreater(0.01, mmd_random)
 
     def test_mmd_compare(self):
         f = StyblinskiTang.for_n_dimensions(2)

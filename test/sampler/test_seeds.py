@@ -3,7 +3,7 @@ from unittest import TestCase
 import numpy as np
 
 from src.algorithms.ice import ICE
-from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
+from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
 from src.blackbox_functions.synthetic_functions import StyblinskiTang
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
@@ -84,8 +84,8 @@ class TestSeeds(TestCase):
 
         # Partitioner
         # DTPartitioner is deterministic. Cannot check for != seed
-        dt_seeded_1 = DTPartitioner.from_ICE(ice_seeded_1)
-        dt_seeded_2 = DTPartitioner.from_ICE(ice_seeded_2)
+        dt_seeded_1 = DecisionTreePartitioner.from_ICE(ice_seeded_1)
+        dt_seeded_2 = DecisionTreePartitioner.from_ICE(ice_seeded_2)
         dt_seeded_1.partition(3)
         dt_seeded_2.partition(3)
         best_region_seeded_1 = dt_seeded_1.get_incumbent_region(bo_sampler_seeded_1.incumbent_config)

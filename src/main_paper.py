@@ -10,7 +10,7 @@ from sklearn.exceptions import ConvergenceWarning
 from tqdm import tqdm
 
 from src.algorithms.ice import ICE
-from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
+from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
 from src.algorithms.pdp import PDP
 from src.blackbox_functions import BlackboxFunction, BlackboxFunctionND
 from src.blackbox_functions.synthetic_functions import StyblinskiTang
@@ -142,7 +142,7 @@ def figure_4(f: BlackboxFunction = StyblinskiTang.for_n_dimensions(2, seed=seed)
     surrogate = GaussianProcessSurrogate(cs, seed=seed)
     surrogate.fit(sampler.X, sampler.y)
 
-    partitioner = DTPartitioner.from_random_points(surrogate, "x1", seed=seed)
+    partitioner = DecisionTreePartitioner.from_random_points(surrogate, "x1", seed=seed)
     partitioner.partition(1)
     assert len(partitioner.leaves) == 2
     left_region, right_region = partitioner.leaves
@@ -186,7 +186,7 @@ def figure_6_table_1_data_generation(
                     surrogate = GaussianProcessSurrogate(f.config_space)
                     surrogate.fit(sampler.X, sampler.y)
 
-                    dt_partitioner = DTPartitioner.from_random_points(
+                    dt_partitioner = DecisionTreePartitioner.from_random_points(
                         surrogate_model=surrogate,
                         selected_hyperparameter=selected_hyperparameter,
                         seed=seed

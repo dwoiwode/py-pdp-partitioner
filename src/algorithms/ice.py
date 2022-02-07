@@ -36,14 +36,6 @@ class ICECurve:
         self.y_variances: np.ndarray = y_variances
         self.name = name
 
-    def plot_combi(self,
-                   line_color="red",
-                   gradient_color="xkcd:light red",
-                   confidence_max_sigma: float = 1.5,
-                   ax: Optional[plt.Axes] = None):
-        self.plot_confidences(line_color, gradient_color, confidence_max_sigma, ax)
-        self.plot_values(line_color, ax)
-
     def plot_values(self,
                     color="red",
                     ax: Optional[plt.Axes] = None):

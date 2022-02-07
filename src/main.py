@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 from src.algorithms.ice import ICE
-from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
+from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
 from src.algorithms.pdp import PDP
 from src.blackbox_functions import synthetic_functions
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
@@ -33,7 +33,7 @@ pdp.plot_values("black")
 pdp.plot_confidences("grey")
 
 # Partitioner
-dt_partitioner = DTPartitioner.from_ICE(ice)
+dt_partitioner = DecisionTreePartitioner.from_ICE(ice)
 dt_partitioner.partition(max_depth=2)
 # dt_partitioner.plot()
 

@@ -44,4 +44,4 @@ class TestHPOBench(PlottableTest):
                 pdp.plot_confidences("grey")
 
                 # Partitioner
-                # dt_partitioner = DTPartitioner.from_ICE(ice)
+                # dt_partitioner = DecisionTreePartitioner.from_ICE(ice)

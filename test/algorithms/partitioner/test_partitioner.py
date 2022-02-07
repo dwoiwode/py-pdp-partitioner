@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from src.algorithms.ice import ICE
-from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
+from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
 from src.blackbox_functions.synthetic_functions import Square
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
@@ -23,7 +23,7 @@ class TestPartitioner(PlottableTest):
         surrogate.fit(bo.X, bo.y)
 
         ice = ICE.from_random_points(surrogate, selected_hp)
-        partitioner = DTPartitioner.from_ICE(ice)
+        partitioner = DecisionTreePartitioner.from_ICE(ice)
         # regions = partitioner.partition()
         partitioner.partition()
         regions = partitioner.leaves
@@ -55,7 +55,7 @@ class TestPartitioner(PlottableTest):
 
         ice = ICE.from_random_points(surrogate,  selected_hp)
 
-        partitioner = DTPartitioner.from_ICE(ice)
+        partitioner = DecisionTreePartitioner.from_ICE(ice)
         regions = partitioner.partition(max_depth=3)
 
         num_points = 0

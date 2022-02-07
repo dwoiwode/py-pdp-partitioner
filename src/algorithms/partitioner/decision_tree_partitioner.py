@@ -190,7 +190,7 @@ class DTRegion(Region):
                                       "Please select a specific hp by setting `selected_hyperparameters`")
 
 
-class DTPartitioner(Partitioner):
+class DecisionTreePartitioner(Partitioner):
     def __init__(self,
                  surrogate_model: SurrogateModel,
                  selected_hyperparameter: SelectedHyperparameterType,
@@ -229,8 +229,8 @@ class DTPartitioner(Partitioner):
                  num_splits_per_axis: int = 100,
                  min_points_per_node: int = 10,
                  not_splittable_hp: Optional[SelectedHyperparameterType] = None,  # more hp to ignore for splitting
-                 ) -> "DTPartitioner":
-        partitioner = DTPartitioner(
+                 ) -> "DecisionTreePartitioner":
+        partitioner = DecisionTreePartitioner(
             surrogate_model=ice.surrogate_model,
             selected_hyperparameter=ice.selected_hyperparameter,
             samples=ice.samples,

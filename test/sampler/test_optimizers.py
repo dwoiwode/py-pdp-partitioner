@@ -168,9 +168,8 @@ class TestBayesianSampler(PlottableTest):
         print(f"Sampling first time with seed {seed} took {t_dif_1}")
         print(f"Sampling second time with seed {seed} took {t_dif_2}")
 
-        self.assertGreater(t_dif_1, 1)
-        self.assertGreater(t_dif_2, 1)
-
+        self.assertGreater(t_dif_2, t_dif_1)
+        self.assertNotEqual(bo2.y_list[-1], bo2.y_list[0])  # Last sample should not be same as first sample
 
     def test_cache_different_acq_class(self):
         f = Square.for_n_dimensions(1, seed=0)
