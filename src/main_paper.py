@@ -73,7 +73,9 @@ def figure_1_3(f: BlackboxFunction = StyblinskiTang.for_n_dimensions(2, seed=see
 
         # Figure 3
         plot_function(f_pd, f_pd.config_space, samples_per_axis=200, ax=ax3)
-        pdp.plot(line_color="blue", gradient_color="lightblue", with_confidence=True, ax=ax3)
+        pdp.plot_values("blue", ax=ax3)
+        pdp.plot_confidences("lightblue", ax=ax3)
+
         ax3.set_title(name)
 
     fig1.savefig("Figure 1.png")
@@ -114,12 +116,14 @@ def figure_2(f: BlackboxFunction = StyblinskiTang.for_n_dimensions(2, seed=seed)
 
     # ICE Curve 1
     plot_function(f, ice_curve_1.implied_config_space, ax=ax_selected_1)
-    ice_curve_1.plot(line_color="red", gradient_color="lightsalmon", with_confidence=True, ax=ax_selected_1)
+    ice_curve_1.plot_values(color="red", ax=ax_selected_1)
+    ice_curve_1.plot_confidences(line_color="red", gradient_color="lightsalmon", ax=ax_selected_1)
     plot_config_space(ice_curve_1.implied_config_space, color="red", ax=ax_2D_plot)
 
     # ICE Curve 2
     plot_function(f, ice_curve_2.implied_config_space, ax=ax_selected_2)
-    ice_curve_2.plot(line_color="green", gradient_color="lightgreen", with_confidence=True, ax=ax_selected_2)
+    ice_curve_2.plot_values(color="green", ax=ax_selected_2)
+    ice_curve_2.plot_confidences(line_color="green", gradient_color="lightgreen", ax=ax_selected_2)
     plot_config_space(ice_curve_2.implied_config_space, color="green", ax=ax_2D_plot)
 
     # Finalize

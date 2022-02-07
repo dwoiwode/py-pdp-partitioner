@@ -40,7 +40,8 @@ class TestHPOBench(PlottableTest):
 
                 # PDP
                 pdp = PDP.from_ICE(ice)
-                pdp.plot("black", "grey", with_confidence=True)
+                pdp.plot_values("black")
+                pdp.plot_confidences("grey")
 
                 # Partitioner
                 # dt_partitioner = DTPartitioner.from_ICE(ice)

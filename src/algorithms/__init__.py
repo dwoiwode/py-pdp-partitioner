@@ -23,7 +23,7 @@ class Algorithm(ConfigSpaceHolder, ABC):
 
         self.selected_hyperparameter = convert_hyperparameters(selected_hyperparameter, self.config_space)
 
-        self.num_grid_points = num_grid_points_per_axis * self.n_selected_hyperparameter
+        self.num_grid_points = num_grid_points_per_axis ** self.n_selected_hyperparameter
 
     @classmethod
     def from_random_points(cls,

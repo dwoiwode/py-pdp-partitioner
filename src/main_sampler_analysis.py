@@ -119,11 +119,11 @@ def plot_sampling_bias(
             y_variances=arr_variances,
             name=f"Mean PDP {name}"
         )
-        mean_pdp.plot(
+        mean_pdp.plot_values(color="blue", ax=ax_pdp)
+        mean_pdp.plot_confidences(
             line_color="blue",
             gradient_color="lightblue",
-            with_confidence=True,
-            confidence_max_sigma = 3,
+            confidence_max_sigma=3,
             ax=ax_pdp
         )
 

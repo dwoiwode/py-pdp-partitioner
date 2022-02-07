@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 
 from src.utils.plotting import get_ax, check_and_set_axis, plot_1D_confidence_color_gradients, plot_1D_confidence_lines, \
     plot_line
+from src.utils.typing import ColorType
 from src.utils.utils import ConfigSpaceHolder, config_list_to_array, get_uniform_distributed_ranges
 
 
@@ -72,12 +73,12 @@ class SurrogateModel(ConfigSpaceHolder, ABC):
         assert isinstance(std, float)
         return mean, std
 
-    def plot(self,
-             line_color="blue",
-             gradient_color="lightblue",
-             with_confidence=True,
-             samples_per_axis=100,
-             ax: Optional[plt.Axes] = None):
+    def plot_means(
+            self,
+            color: ColorType = "blue",
+            samples_per_axis: int = 100,
+            ax: Optional[plt.Axes] = None
+    ):
         ax = get_ax(ax)
 
         hyperparameters = self.config_space.get_hyperparameters()
@@ -93,10 +94,37 @@ class SurrogateModel(ConfigSpaceHolder, ABC):
 
             name = self.__class__.__name__
             x = ranges[0]
-            if with_confidence:
-                plot_1D_confidence_color_gradients(x, mu, std, color=gradient_color, ax=ax)
-                plot_1D_confidence_lines(x, mu, std, k_sigmas=(1, 2), color=line_color, ax=ax, name=name)
-            plot_line(x, mu, color=line_color, label=f"{name}-$\mu$", ax=ax)
+            plot_line(x, mu, color=color, label=f"{name}-$\mu$", ax=ax)
+        elif n_hyperparameters == 2:  # 2D
+            raise NotImplementedError("2D currently not implemented (#TODO)")
+        else:
+            raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
+                                      "Please select a specific hp by setting `x_hyperparemeters`")
+
+    def plot_confidences(
+            self,
+            line_color: ColorType = "blue",
+            gradient_color: ColorType = "lightblue",
+            samples_per_axis: int = 100,
+            ax: Optional[plt.Axes] = None
+    ):
+        ax = get_ax(ax)
+
+        hyperparameters = self.config_space.get_hyperparameters()
+        n_hyperparameters = len(hyperparameters)
+        assert n_hyperparameters < 3, 'Surrogate model only supports plotting less than 3 feature dimensions'
+
+        check_and_set_axis(ax, hyperparameters)
+
+        # Switch cases for number of dimensions
+        if n_hyperparameters == 1:  # 1D
+            ranges = get_uniform_distributed_ranges(self.config_space, samples_per_axis, scaled=False)
+            mu, std = self.predict(np.reshape(np.linspace(0, 1, samples_per_axis), (-1, 1)))
+
+            name = self.__class__.__name__
+            x = ranges[0]
+            plot_1D_confidence_color_gradients(x, mu, std, color=gradient_color, ax=ax)
+            plot_1D_confidence_lines(x, mu, std, k_sigmas=(1, 2), color=line_color, ax=ax, name=name)
         elif n_hyperparameters == 2:  # 2D
             raise NotImplementedError("2D currently not implemented (#TODO)")
         else:

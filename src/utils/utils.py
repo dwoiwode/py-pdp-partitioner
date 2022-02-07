@@ -11,7 +11,7 @@ from src.utils.typing import SelectedHyperparameterType
 
 
 class ConfigSpaceHolder(ABC):
-    def __init__(self, config_space:CS.ConfigurationSpace, *, seed:Union[None, int, bool]=None):
+    def __init__(self, config_space: CS.ConfigurationSpace, *, seed: Union[None, int, bool] = None):
         self.logger = logging.getLogger(self.__class__.__name__)
 
         if seed is True:
@@ -20,19 +20,15 @@ class ConfigSpaceHolder(ABC):
             return
         elif seed is None:
             # Use random seed
-            seed = int(time.time()*1000)
+            seed = int(time.time() * 1000)
         else:
             # Use seed
             # Hash of class prevents using the exact same seed for every step (e.g. Sampler, ICE, ...)
             seed = hash(self.__class__.__name__) + seed
-        self.config_space = copy_config_space(config_space, seed=seed % 2**31)
+        self.config_space = copy_config_space(config_space, seed=seed % 2 ** 31)
 
     def sample_random_configuration(self, n: int) -> List[CS.Configuration]:
         return self.config_space.sample_configuration(n)
-
-
-def config_to_array(config: CS.Configuration) -> np.ndarray:
-    return config.get_array()
 
 
 def config_list_to_array(X: Union[List[CS.Configuration], List[Iterable[float]], np.ndarray]) -> np.ndarray:
@@ -50,7 +46,11 @@ def get_selected_idx(selected_hyperparameter: Iterable[CSH.Hyperparameter],
     ]
 
 
-def scale_float(value: float, cs: CS.ConfigurationSpace, hp: CSH.Hyperparameter):
+def scale_float(
+        value: float,
+        cs: CS.ConfigurationSpace,
+        hp: CSH.NumericalHyperparameter
+) -> float:
     cs_hp = cs.get_hyperparameter(hp.name)
     normalized_value = (value - cs_hp.lower) / (cs_hp.upper - cs_hp.lower)
     if hp.log:
@@ -58,13 +58,17 @@ def scale_float(value: float, cs: CS.ConfigurationSpace, hp: CSH.Hyperparameter)
     return normalized_value
 
 
-def unscale_float(normalized_value: float, cs: CS.ConfigurationSpace, hp: CSH.Hyperparameter):
+def unscale_float(
+        normalized_value: float,
+        cs: CS.ConfigurationSpace,
+        hp: CSH.NumericalHyperparameter
+) -> float:
     cs_hp = cs.get_hyperparameter(hp.name)
     value = normalized_value * (cs_hp.upper - cs_hp.lower) + cs_hp.lower
     return value
 
 
-def unscale(x: np.ndarray, cs: CS.ConfigurationSpace):
+def unscale(x: np.ndarray, cs: CS.ConfigurationSpace) -> np.ndarray:
     """
     assumes that x only contains numeric values and the cs-features are located in the last dimension
     """
@@ -120,9 +124,11 @@ def get_hyperparameters(hyperparameters: Optional[SelectedHyperparameterType],
         return hps
 
 
-def get_uniform_distributed_ranges(cs: Union[CS.ConfigurationSpace, Iterable[CSH.NumericalHyperparameter]],
-                                   samples_per_axis: int = 100,
-                                   scaled=False) -> np.ndarray:
+def get_uniform_distributed_ranges(
+        cs: Union[CS.ConfigurationSpace, Iterable[CSH.NumericalHyperparameter]],
+        samples_per_axis: int = 100,
+        scaled=False
+) -> np.ndarray:
     """
     :param cs: Configuration_space to sample from
     :param samples_per_axis: Number of samples per axis
@@ -159,8 +165,11 @@ def median_distance_between_points(X: np.ndarray) -> float:
 def calculate_log_delta(nll: float, nll_root: float) -> float:
     return (nll_root - nll) / np.absolute(nll_root)
 
-def convert_hyperparameters(hyperparameters: Union[str, CSH.Hyperparameter, Iterable[Union[CSH.Hyperparameter, str]]],
-                            config_space: CS.ConfigurationSpace) -> List[CSH.Hyperparameter]:
+
+def convert_hyperparameters(
+        hyperparameters: Union[str, CSH.Hyperparameter, Iterable[Union[CSH.Hyperparameter, str]]],
+        config_space: CS.ConfigurationSpace
+) -> List[CSH.Hyperparameter]:
     """
     Converts either
         * a single hyperparameter (CSH.Hyperparameter)
@@ -190,7 +199,7 @@ def copy_config_space(cs: CS.ConfigurationSpace, *, seed=None) -> CS.Configurati
             new_hp = CSH.UniformFloatHyperparameter(hp.name, lower=hp.lower, upper=hp.upper, log=hp.log)
             hp_dic[hp.name] = new_hp
         else:
-            raise NotImplementedError()
+            raise NotImplementedError("Currently only Numerical Hyperparameter supported")
 
     # add new hp to new cs
     cs_copy = CS.ConfigurationSpace(seed=seed)

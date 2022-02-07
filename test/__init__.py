@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 from unittest import TestCase
 
 from matplotlib import pyplot as plt
@@ -29,7 +29,7 @@ class PlottableTest(TestCase):
             plt.show()
         plt.close()
 
-    def save_fig(self, iterate=True,name=None):
+    def save_fig(self, iterate=True, name=None):
         if self.fig is None:
             raise ValueError("Figure is None")
         if self._last_save_fig == self.fig:
@@ -51,7 +51,7 @@ class PlottableTest(TestCase):
             self.fig_idx += 1
             self.fig.savefig(folder / f"{name}_{self.fig_idx}.png")
 
-    def initialize_figure(self):
+    def initialize_figure(self, figsize: Tuple[int, int] = (16, 9)):
         plt.clf()
-        self.fig = plt.figure(figsize=(16, 9))
+        self.fig = plt.figure(figsize=figsize)
         self.fig.suptitle(self._testMethodName, fontsize=16)

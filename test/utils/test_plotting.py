@@ -98,7 +98,8 @@ class TestPlottingFunctions(PlottableTest):
 
         bo._sample_initial_points()
         bo.plot()
-        bo.surrogate_model.plot(with_confidence=True)
+        bo.surrogate_model.plot_means()
+        bo.surrogate_model.plot_confidences()
         self.save_fig()
         plt.show()
 
@@ -107,7 +108,8 @@ class TestPlottingFunctions(PlottableTest):
             self._apply_blackbox_plot(neg_square, cs, "Test Plot Confidence 1D, individual points")
 
             bo.sample(1)
-            bo.surrogate_model.plot(with_confidence=True)
+            bo.surrogate_model.plot_means()
+            bo.surrogate_model.plot_confidences()
             bo.plot()
             self.save_fig()
             if _ < 3:
@@ -146,7 +148,8 @@ class TestPlottingFunctions(PlottableTest):
         surrogate_model.fit(sampler.X, sampler.y)
         ice = ICE.from_random_points(surrogate_model, selected_hp)
         ice_curve = ice[0]
-        ice_curve.plot(with_confidence=True)
+        ice_curve.plot_values()
+        ice_curve.plot_confidences()
 
     def test_plot_pdp(self):
         def square_2D(x1: float, x2: float) -> float:
@@ -163,7 +166,7 @@ class TestPlottingFunctions(PlottableTest):
         surrogate_model = GaussianProcessSurrogate(cs)
         surrogate_model.fit(sampler.X, sampler.y)
         pdp = PDP.from_random_points(surrogate_model, selected_hp)
-        pdp.plot(with_confidence=False)
+        pdp.plot_values()
 
     def test_plot_pdp_with_confidence(self):
         def square_2D(x1: float, x2: float) -> float:
@@ -180,7 +183,8 @@ class TestPlottingFunctions(PlottableTest):
         surrogate_model = GaussianProcessSurrogate(cs)
         surrogate_model.fit(sampler.X, sampler.y)
         pdp = PDP.from_random_points(surrogate_model, selected_hp)
-        pdp.plot(with_confidence=True)
+        pdp.plot_values()
+        pdp.plot_confidences()
 
     def test_plot_config_space_1D(self):
         self.initialize_figure()

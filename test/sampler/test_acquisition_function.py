@@ -32,7 +32,8 @@ class TestAcquisitionFunctions(PlottableTest):
         assert isinstance(ax_function, plt.Axes)
         assert isinstance(ax_acquisition, plt.Axes)
 
-        self.surrogate.plot(ax=ax_function)
+        self.surrogate.plot_means(ax=ax_function)
+        self.surrogate.plot_confidences(ax=ax_function)
         ax_function.plot(self.X, self.y, ".", color="red")  # Plot samples
         ei.plot(ax=ax_acquisition)
 
@@ -53,7 +54,8 @@ class TestAcquisitionFunctions(PlottableTest):
         assert isinstance(ax_function, plt.Axes)
         assert isinstance(ax_acquisition, plt.Axes)
 
-        self.surrogate.plot(ax=ax_function)
+        self.surrogate.plot_means(ax=ax_function)
+        self.surrogate.plot_confidences(ax=ax_function)
         ax_function.plot(self.X, self.y, ".", color="red")  # Plot samples
         pi.plot(ax=ax_acquisition)
 
@@ -75,7 +77,8 @@ class TestAcquisitionFunctions(PlottableTest):
         assert isinstance(ax_function, plt.Axes)
         assert isinstance(ax_acquisition, plt.Axes)
 
-        self.surrogate.plot(ax=ax_function)
+        self.surrogate.plot_means(ax=ax_function)
+        self.surrogate.plot_confidences(ax=ax_function)
         ax_function.plot(self.X, self.y, ".", color="red")  # Plot samples
         lcb.plot(ax=ax_acquisition)
 

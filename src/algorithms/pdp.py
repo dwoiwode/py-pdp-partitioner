@@ -65,12 +65,9 @@ class PDP(Algorithm):
     def y_variances(self) -> np.ndarray:
         return np.mean(self.ice.y_variances, axis=0)
 
-    def plot(self,
-             line_color="red",
-             gradient_color="xkcd:light red",
-             with_confidence=True,
-             ax: Optional[plt.Axes] = None):
-        pdp = ICECurve(
+    @cached_property
+    def as_ice_curve(self) -> ICECurve:
+        return ICECurve(
             full_config_space=self.config_space,
             selected_hyperparameter=self.selected_hyperparameter,
             x_ice=self.x_pdp,
@@ -78,5 +75,20 @@ class PDP(Algorithm):
             y_variances=self.y_variances,
             name="PDP"
         )
-        pdp.plot(line_color=line_color, gradient_color=gradient_color,
-                 with_confidence=with_confidence, ax=ax)
+
+    def plot_values(self,
+                    color="red",
+                    ax: Optional[plt.Axes] = None):
+        return self.as_ice_curve.plot_values(color=color, ax=ax)
+
+    def plot_confidences(self,
+                         line_color="blue",
+                         gradient_color="lightblue",
+                         confidence_max_sigma=1.5,
+                         ax: Optional[plt.Axes] = None):
+        return self.as_ice_curve.plot_confidences(
+            line_color=line_color,
+            gradient_color=gradient_color,
+            confidence_max_sigma=confidence_max_sigma,
+            ax=ax
+        )

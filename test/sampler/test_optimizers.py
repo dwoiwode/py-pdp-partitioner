@@ -33,7 +33,8 @@ class TestBayesianSampler(PlottableTest):
         # Plot
         plot_function(f, cs)
         bo.plot()
-        bo.surrogate_model.plot()
+        bo.surrogate_model.plot_means()
+        bo.surrogate_model.plot_confidences()
 
         # Check values
         self.assertAlmostEqual(best_val, 1, delta=1e-3)
@@ -53,7 +54,8 @@ class TestBayesianSampler(PlottableTest):
         # Plot
         plot_function(f, cs)
         bo.plot()
-        bo.surrogate_model.plot()
+        bo.surrogate_model.plot_means()
+        bo.surrogate_model.plot_confidences()
 
         # Check values
         self.assertAlmostEqual(best_val, 0, delta=1e-3)
@@ -76,7 +78,8 @@ class TestBayesianSampler(PlottableTest):
         # Plot
         plot_function(f, cs)
         bo.plot()
-        bo.surrogate_model.plot()
+        bo.surrogate_model.plot_means()
+        bo.surrogate_model.plot_confidences()
 
         # Check values
         print(best_val)
