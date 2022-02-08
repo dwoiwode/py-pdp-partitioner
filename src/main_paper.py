@@ -9,8 +9,9 @@ from matplotlib.gridspec import GridSpec
 from sklearn.exceptions import ConvergenceWarning
 from tqdm import tqdm
 
-from src.algorithms.ice import ICE
 from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
+from src.algorithms.ice import ICE, ICECurve
+from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
 from src.algorithms.pdp import PDP
 from src.blackbox_functions import BlackboxFunction, BlackboxFunctionND
 from src.blackbox_functions.synthetic_functions import StyblinskiTang
@@ -338,6 +339,61 @@ def table_1_drawing(
             split_data_string = "  |  ".join(string_array)
             print(f"|  {dimension}  |  {tau:.2f} ({table_data[0][0]:.2f})   | " + split_data_string)
 
+def visualize_bad_nll():
+    # worst table entry
+    seed = 1
+    n_splits = 3
+    tau = 0.1
+    n_dim = 3
+    n_samples = 80
+    n_initial_samples = n_dim * 4
+    selected_hp = 'x1'
+
+    f = StyblinskiTang.for_n_dimensions(n_dim, seed=seed)
+    cs = f.config_space
+    sampler = BayesianOptimizationSampler(f, cs, acq_class_kwargs={"tau": tau}, initial_points=n_initial_samples,
+                                          seed=seed)
+    sampler.sample(n_samples + n_initial_samples)
+
+    surrogate = GaussianProcessSurrogate(cs, seed=seed)
+    surrogate.fit(sampler.X, sampler.y)
+
+    ice = ICE.from_random_points(surrogate, selected_hp)
+    partitioner = DTPartitioner.from_ICE(ice)
+    partitioner.partition(max_depth=n_splits)
+    region = partitioner.get_incumbent_region(sampler.incumbent[0])
+
+    ground_truth = f.pd_integral(*['x2', 'x3'], seed=seed)
+
+    fig, axes = plt.subplots(
+        nrows=1,
+        ncols=2,
+        sharey='all',
+        sharex='all',
+        figsize=(16, 8)
+    )
+
+    # nll
+    base_nll = partitioner.root.negative_log_likelihood(f)
+    region_nll = region.negative_log_likelihood(f)
+    delta_nll = calculate_log_delta(region_nll, base_nll)
+
+    # original pdp
+    pdp = PDP.from_ICE(ice)
+    pdp.plot(ax=axes[0])
+    plot_function(ground_truth, ground_truth.config_space, samples_per_axis=200, ax=axes[0])
+    axes[0].legend()
+    axes[0].set_title(f'Full PDP (NLL: {base_nll:.2f})')
+
+    # split pdp
+    region.plot_pdp(ax=axes[1])
+    plot_function(ground_truth, ground_truth.config_space, samples_per_axis=200, ax=axes[1])
+    axes[1].legend()
+    axes[1].set_title(f'PDP in best Region (NLL: {region_nll:.2f})')
+
+    plt.suptitle(f'Styblinski-Tang, 3 Splits, Tau=0.1, 3 Dimensions, (%NLL {delta_nll:.4f}), {seed=}')
+    plt.show()
+
 
 if __name__ == '__main__':
     figure_1_3()
@@ -347,3 +403,4 @@ if __name__ == '__main__':
     figure_6_drawing("figure_6.csv")
     table_1_drawing("figure_6.csv")
     # figure_6_table_1_drawing("figure_6_table_1.csv", columns=("base_mc", "base_nll", "mc", "nll", "mmd"))
+    visualize_bad_nll()
