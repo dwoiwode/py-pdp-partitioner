@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from src.algorithms import Algorithm
 from src.surrogate_models import SurrogateModel
 from src.utils.plotting import get_ax, plot_1D_confidence_color_gradients, plot_1D_confidence_lines, \
-    plot_line, check_and_set_axis
+    plot_line, check_and_set_axis, plot_2D
 from src.utils.typing import SelectedHyperparameterType, ColorType
 from src.utils.utils import unscale, get_selected_idx, convert_hyperparameters
 
@@ -36,12 +36,69 @@ class ICECurve:
         self.y_variances: np.ndarray = y_variances
         self.name = name
 
-    def plot(self,
-             line_color="red",
-             gradient_color="xkcd:light red",
-             with_confidence=False,
-             confidence_max_sigma: float = 1.5,
-             ax: Optional[plt.Axes] = None):
+    def plot_values(self,
+                    color="red",
+                    ax: Optional[plt.Axes] = None):
+        ax = get_ax(ax)
+        check_and_set_axis(ax, self.selected_hyperparameter)
+
+        idx = get_selected_idx(self.selected_hyperparameter, self.full_config_space)
+        x_unscaled = unscale(self.x_ice, self.full_config_space)
+
+        # Switch cases for number of dimensions
+        n_hyperparameters = len(self.selected_hyperparameter)
+        if n_hyperparameters == 1:  # 1D
+            x = x_unscaled[:, idx[0]]
+            plot_line(x, self.y_ice, color=color, label=self.name, ax=ax)
+
+        elif n_hyperparameters == 2:  # 2D
+            x = x_unscaled[:, idx[0]]
+            y = x_unscaled[:, idx[1]]
+            plot_2D(x, y, self.y_ice, ax=ax)
+        else:
+            raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
+                                      "Please select a specific hp by setting `x_hyperparemeters`")
+
+    def plot_incumbent(self,
+                       color="white",
+                       rounding=2,
+                       ax: Optional[plt.Axes] = None):
+        ax = get_ax(ax)
+        check_and_set_axis(ax, self.selected_hyperparameter)
+
+        idx = get_selected_idx(self.selected_hyperparameter, self.full_config_space)
+        x_unscaled = unscale(self.x_ice, self.full_config_space)
+
+        # Switch cases for number of dimensions
+        n_hyperparameters = len(self.selected_hyperparameter)
+        min_idx = np.argmin(self.y_ice)
+        min_val = self.y_ice[min_idx]
+        if n_hyperparameters == 1:  # 1D
+            x = x_unscaled[min_idx, idx[0]]
+            ax.axvline(x, color=color)
+            # TODO: Add annotation
+
+        elif n_hyperparameters == 2:  # 2D
+            x = x_unscaled[min_idx, idx[0]]
+            y = x_unscaled[min_idx, idx[1]]
+            ax.scatter(x, y, color=color, marker="*")
+            ax.annotate(
+                text=f"({x:.{rounding}f}, {y:.{rounding}f})",
+                xy=(x, y),
+                color=color,
+                textcoords="offset points",
+                xytext=(0, 10),  # distance from text to points (x,y)
+                ha='center'
+            )
+        else:
+            raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
+                                      "Please select a specific hp by setting `x_hyperparemeters`")
+
+    def plot_confidences(self,
+                         line_color="red",
+                         gradient_color="xkcd:light red",
+                         confidence_max_sigma: float = 1.5,
+                         ax: Optional[plt.Axes] = None):
         ax = get_ax(ax)
         check_and_set_axis(ax, self.selected_hyperparameter)
 
@@ -53,28 +110,28 @@ class ICECurve:
         n_hyperparameters = len(self.selected_hyperparameter)
         if n_hyperparameters == 1:  # 1D
             x = x_unscaled[:, idx[0]]
-            if with_confidence:
-                plot_1D_confidence_color_gradients(
-                    x=x,
-                    means=self.y_ice,
-                    stds=sigmas,
-                    max_sigma=confidence_max_sigma,
-                    color=gradient_color,
-                    ax=ax
-                )
-                plot_1D_confidence_lines(
-                    x=x,
-                    means=self.y_ice,
-                    stds=sigmas,
-                    k_sigmas=(1, 2),
-                    color=line_color,
-                    ax=ax,
-                    name=self.name
-                )
-            plot_line(x, self.y_ice, color=line_color, label=self.name, ax=ax)
+            plot_1D_confidence_color_gradients(
+                x=x,
+                means=self.y_ice,
+                stds=sigmas,
+                max_sigma=confidence_max_sigma,
+                color=gradient_color,
+                ax=ax
+            )
+            plot_1D_confidence_lines(
+                x=x,
+                means=self.y_ice,
+                stds=sigmas,
+                k_sigmas=(1, 2),
+                color=line_color,
+                ax=ax,
+                name=self.name
+            )
 
         elif n_hyperparameters == 2:  # 2D
-            raise NotImplementedError("2D currently not implemented (#TODO)")
+            x = x_unscaled[:, idx[0]]
+            y = x_unscaled[:, idx[1]]
+            plot_2D(x, y, sigmas, ax=ax)
         else:
             raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
                                       "Please select a specific hp by setting `x_hyperparemeters`")
@@ -97,17 +154,21 @@ class ICECurve:
 
 
 class ICE(Algorithm):
+    """Individual Conditional Expectation"""
+
     def __init__(self,
                  surrogate_model: SurrogateModel,
                  selected_hyperparameter: SelectedHyperparameterType,
                  samples: np.ndarray,
                  num_grid_points_per_axis: int = 20,
                  seed=None):
-        super().__init__(surrogate_model=surrogate_model,
-                         selected_hyperparameter=selected_hyperparameter,
-                         samples=samples,
-                         num_grid_points_per_axis=num_grid_points_per_axis,
-                         seed=seed)
+        super().__init__(
+            surrogate_model=surrogate_model,
+            selected_hyperparameter=selected_hyperparameter,
+            samples=samples,
+            num_grid_points_per_axis=num_grid_points_per_axis,
+            seed=seed
+        )
         self.centered = False  # Can be set directly in class
 
         # Properties
@@ -172,11 +233,10 @@ class ICE(Algorithm):
 
     @cached_property
     def grid_points(self) -> np.ndarray:
-        x_s = np.linspace(0, 1, self.num_grid_points)
-
-        # TODO: For more than 1 dimension: remove
-        x_s = np.expand_dims(x_s, axis=1)
-        return x_s
+        single_axis_grid = np.linspace(0, 1, self.num_grid_points_per_axis)
+        grid_axes = np.meshgrid(*[single_axis_grid for _ in range(self.n_selected_hyperparameter)])
+        grid = np.stack(grid_axes).reshape((self.n_selected_hyperparameter, -1)).T
+        return grid
 
     @property
     def x_ice(self) -> np.ndarray:
@@ -212,7 +272,7 @@ class ICE(Algorithm):
             ax.plot(x_ice[:, :, idx].T, y_ice.T, alpha=alpha, color=color)
             ax.plot([], [], color=color, label="ICE")  # Hacky label for plot...
         elif self.n_selected_hyperparameter == 2:  # 2D
-            raise NotImplementedError("2D currently not implemented (#TODO)")
+            raise NotImplementedError("2D ICE Plot not available (Please use pdp instead)")
         else:
             raise NotImplementedError(f"Plotting for {self.n_selected_hyperparameter} dimensions not implemented. "
                                       "Please select a specific hp by setting `x_hyperparemeters`")

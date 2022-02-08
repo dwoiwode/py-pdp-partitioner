@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 from sklearn.gaussian_process.kernels import RBF
 
 from src.utils.plotting import get_ax, check_and_set_axis
-from src.utils.typing import ColorType
+from src.utils.typing import ColorType, SelectedHyperparameterType
 from src.utils.utils import config_list_to_array, get_hyperparameters, median_distance_between_points, \
     ConfigSpaceHolder
 
@@ -181,13 +181,13 @@ class Sampler(ConfigSpaceHolder, ABC):
              marker: str = ".",
              label: Optional[str] = None,
              *,  # Prevent next args to be added via positional arguments
-             x_hyperparameters: Optional[Iterable[CSH.Hyperparameter]] = None,
+             x_hyperparameters: SelectedHyperparameterType = None,
              ax: Optional[plt.Axes] = None):
         # Resolve arguments
         ax = get_ax(ax)
         x_hyperparameters = get_hyperparameters(x_hyperparameters, self.config_space)
         if label is None:
-            label = f"Sampled points ({self.__class__.__name__})"
+            label = f"Sampled points ({len(self)}, {self.__class__.__name__})"
 
         # Check whether plot is possible
         check_and_set_axis(ax, x_hyperparameters)

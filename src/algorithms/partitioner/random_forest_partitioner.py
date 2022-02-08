@@ -9,7 +9,7 @@ import ConfigSpace.hyperparameters as CSH
 
 from src.algorithms.ice import ICE
 from src.algorithms.partitioner import Partitioner, Region
-from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
+from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
 from src.surrogate_models import SurrogateModel
 from src.utils.plotting import get_random_color, get_ax
 from src.utils.typing import SelectedHyperparameterType, ColorType
@@ -39,7 +39,7 @@ class RandomForestPartitioner(Partitioner):
         self.seed = seed
 
         self.rng = np.random.default_rng(seed=seed)
-        self.trees: Optional[List[DTPartitioner]] = None
+        self.trees: Optional[List[DecisionTreePartitioner]] = None
 
     @classmethod
     def from_ICE(cls, ice: ICE, seed=None) -> "RandomForestPartitioner":
@@ -88,7 +88,7 @@ class RandomForestPartitioner(Partitioner):
             not_splittable_hp = list(set(self.possible_split_parameters) - set(splittable_hp))
 
             # create dt
-            dt = DTPartitioner.from_ICE(subset_ice, min_points_per_node=1, not_splittable_hp=not_splittable_hp)
+            dt = DecisionTreePartitioner.from_ICE(subset_ice, min_points_per_node=1, not_splittable_hp=not_splittable_hp)
             dt.partition(max_depth=max_depth)
             self.trees.append(dt)
 

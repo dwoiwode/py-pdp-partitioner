@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from src.algorithms.ice import ICE
-from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
+from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
 from src.blackbox_functions import synthetic_functions, config_space_nd
 from src.blackbox_functions.synthetic_functions import Square
 from src.sampler.acquisition_function import LowerConfidenceBound
@@ -27,7 +27,7 @@ class TestDTNode(TestCase):
         bo.sample(bo_sampling_points)
         ice = ICE.from_random_points(bo.surrogate_model, self.selected_hyperparameter)
 
-        self.partitioner = DTPartitioner.from_ICE(ice)
+        self.partitioner = DecisionTreePartitioner.from_ICE(ice)
         self.regions = self.partitioner.partition(max_depth=2)
 
     def test_contains_root_node(self):

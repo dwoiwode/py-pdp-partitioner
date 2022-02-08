@@ -10,6 +10,7 @@ from matplotlib import pyplot as plt
 from src.utils.typing import ColorType, SelectedHyperparameterType
 from src.utils.utils import get_uniform_distributed_ranges, get_stds, get_hyperparameters
 
+
 # def plot(self,
 #          *args,
 #          x_hyperparameters: Optional[Iterable[CSH.Hyperparameter]] = None,
@@ -172,41 +173,52 @@ def plot_function(f: Callable[[Any], float],
     return ax
 
 
-def plot_line(x: np.ndarray,
-              y: np.ndarray,
-              color: ColorType = "black",
-              label: Optional[str] = None,
-              ax: Optional[plt.Axes] = None):
+def plot_line(
+        x: np.ndarray,
+        y: np.ndarray,
+        color: ColorType = "black",
+        label: Optional[str] = None,
+        ax: Optional[plt.Axes] = None
+):
     ax = get_ax(ax)
     ax.plot(x, y, color=color, label=label)
 
 
-def plot_1D_confidence_color_gradients(x: np.ndarray,
-                                       means: np.ndarray,
-                                       stds: Optional[np.ndarray] = None, variances: Optional[np.ndarray] = None,
-                                       color: ColorType = "lightblue",
-                                       sigma_steps: int = 100,
-                                       max_sigma: float = 1.5,
-                                       ax: Optional[plt.Axes] = None):
+def plot_1D_confidence_color_gradients(
+        x: np.ndarray,
+        means: np.ndarray,
+        stds: Optional[np.ndarray] = None,  # Choose stds or variances
+        variances: Optional[np.ndarray] = None,  # Choose stds or variances
+        color: ColorType = "lightblue",
+        sigma_steps: int = 100,
+        max_sigma: float = 1.5,
+        ax: Optional[plt.Axes] = None
+):
     ax = get_ax(ax)
     color = get_color(color)
     stds = get_stds(stds, variances)
 
     for i in range(sigma_steps):
         sigma_factor = i / sigma_steps * max_sigma
-        ax.fill_between(x,
-                        y1=means - sigma_factor * stds,
-                        y2=means + sigma_factor * stds,
-                        alpha=0.3 / sigma_steps, color=color)
+        ax.fill_between(
+            x,
+            y1=means - sigma_factor * stds,
+            y2=means + sigma_factor * stds,
+            alpha=0.3 / sigma_steps,
+            color=color
+        )
 
 
-def plot_1D_confidence_lines(x: np.ndarray,
-                             means: np.ndarray,
-                             stds: Optional[np.ndarray] = None, variances: Optional[np.ndarray] = None,
-                             color: ColorType = "lightblue",
-                             k_sigmas: Iterable[float] = (0, 1, 2),
-                             name: str = "model",
-                             ax: Optional[plt.Axes] = None):
+def plot_1D_confidence_lines(
+        x: np.ndarray,
+        means: np.ndarray,
+        stds: Optional[np.ndarray] = None,  # Choose stds or variances
+        variances: Optional[np.ndarray] = None,  # Choose stds or variances
+        color: ColorType = "lightblue",
+        k_sigmas: Iterable[float] = (0, 1, 2),
+        name: str = "model",
+        ax: Optional[plt.Axes] = None
+):
     stds = get_stds(stds, variances)
     ax = get_ax(ax)
 
@@ -225,6 +237,21 @@ def plot_1D_confidence_lines(x: np.ndarray,
         ax.plot(x, means - stds, color=color, alpha=1 / k_sigma * 0.2, label=label)
         ax.plot(x, means + stds, color=color, alpha=1 / k_sigma * 0.2)
 
+
+def plot_2D(
+        x: np.ndarray,
+        y: np.ndarray,
+        values: np.ndarray,
+        ax: Optional[plt.Axes] = None
+):
+    ax = get_ax(ax)
+
+    # Colors
+    ax.tripcolor(x, y, values)
+
+    # Contours/Labels
+    contour = ax.tricontour(x, y, values, colors="black")
+    contour.clabel(contour.levels, fontsize=12, colors="black", inline=True)
 
 def plot_config_space(config_space: CS.ConfigurationSpace,
                       x_hyperparameters: Optional[SelectedHyperparameterType] = None,
