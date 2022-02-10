@@ -130,12 +130,14 @@ class StyblinskiTang(BlackboxFunctionND):
 
         hyperparameters = convert_hyperparameters(hyperparameters, self.config_space)
 
-        hp = hyperparameters[0]
-        assert isinstance(hp, CSH.NumericalHyperparameter)
-        lower = hp.lower
-        upper = hp.upper
-        integral_value = self._styblinski_tang_integral(upper) - self._styblinski_tang_integral(lower)
-        integral_mean = integral_value / (upper - lower)
+        integral_offset = 0
+        for hp in hyperparameters:
+            # hp = hyperparameters[0]
+            assert isinstance(hp, CSH.NumericalHyperparameter)
+            lower = hp.lower
+            upper = hp.upper
+            integral_value = self._styblinski_tang_integral(upper) - self._styblinski_tang_integral(lower)
+            integral_offset += integral_value / (upper - lower)
 
         hps = self.config_space.get_hyperparameters()
         reduced_cs = CS.ConfigurationSpace(seed=seed)
@@ -144,11 +146,11 @@ class StyblinskiTang(BlackboxFunctionND):
             if hp.name not in hyperparameter_names:
                 reduced_cs.add_hyperparameter(hp)
 
-        k = len(hyperparameters)
+        # k = len(hyperparameters)
         reduced_f = StyblinskiTang(reduced_cs)
 
         def integral(config: CS.Configuration):
-            return reduced_f.value_from_config(config) + k * integral_mean
+            return reduced_f.value_from_config(config) + integral_offset
 
         return CallableBlackboxFunction(integral, reduced_cs)
 

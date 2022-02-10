@@ -11,7 +11,6 @@ from tqdm import tqdm
 
 from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
 from src.algorithms.ice import ICE, ICECurve
-from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
 from src.algorithms.pdp import PDP
 from src.blackbox_functions import BlackboxFunction, BlackboxFunctionND
 from src.blackbox_functions.synthetic_functions import StyblinskiTang
@@ -117,13 +116,13 @@ def figure_2(f: BlackboxFunction = StyblinskiTang.for_n_dimensions(2, seed=seed)
 
     # ICE Curve 1
     plot_function(f, ice_curve_1.implied_config_space, ax=ax_selected_1)
-    ice_curve_1.plot_values(color="red", ax=ax_selected_1)
+    ice_curve_1.plot_values(ax=ax_selected_1)
     ice_curve_1.plot_confidences(line_color="red", gradient_color="lightsalmon", ax=ax_selected_1)
     plot_config_space(ice_curve_1.implied_config_space, color="red", ax=ax_2D_plot)
 
     # ICE Curve 2
     plot_function(f, ice_curve_2.implied_config_space, ax=ax_selected_2)
-    ice_curve_2.plot_values(color="green", ax=ax_selected_2)
+    ice_curve_2.plot_values(ax=ax_selected_2)
     ice_curve_2.plot_confidences(line_color="green", gradient_color="lightgreen", ax=ax_selected_2)
     plot_config_space(ice_curve_2.implied_config_space, color="green", ax=ax_2D_plot)
 
@@ -359,7 +358,7 @@ def visualize_bad_nll():
     surrogate.fit(sampler.X, sampler.y)
 
     ice = ICE.from_random_points(surrogate, selected_hp)
-    partitioner = DTPartitioner.from_ICE(ice)
+    partitioner = DecisionTreePartitioner.from_ICE(ice)
     partitioner.partition(max_depth=n_splits)
     region = partitioner.get_incumbent_region(sampler.incumbent[0])
 
@@ -380,14 +379,17 @@ def visualize_bad_nll():
 
     # original pdp
     pdp = PDP.from_ICE(ice)
-    pdp.plot(ax=axes[0])
-    plot_function(ground_truth, ground_truth.config_space, samples_per_axis=200, ax=axes[0])
+    pdp.plot_values(ax=axes[0])
+    pdp.plot_confidences(ax=axes[0])
+    plot_function(ground_truth, ground_truth.config_space, samples_per_axis=200, ax=axes[0], name='Analytic Integral')
     axes[0].legend()
     axes[0].set_title(f'Full PDP (NLL: {base_nll:.2f})')
 
     # split pdp
-    region.plot_pdp(ax=axes[1])
-    plot_function(ground_truth, ground_truth.config_space, samples_per_axis=200, ax=axes[1])
+    region.plot_values(ax=axes[1])
+    region.plot_confidences(ax=axes[1])
+    plot_function(ground_truth, ground_truth.config_space, samples_per_axis=200, ax=axes[1],
+                  name='Analytic Integral (Region)')
     axes[1].legend()
     axes[1].set_title(f'PDP in best Region (NLL: {region_nll:.2f})')
 
@@ -396,11 +398,11 @@ def visualize_bad_nll():
 
 
 if __name__ == '__main__':
-    figure_1_3()
-    figure_2()
-    figure_4()
-    figure_6_table_1_data_generation(log_filename="figure_6.csv", replications=30, seed_offset=0)
-    figure_6_drawing("figure_6.csv")
-    table_1_drawing("figure_6.csv")
+    # figure_1_3()
+    # figure_2()
+    # figure_4()
+    # figure_6_table_1_data_generation(log_filename="figure_6.csv", replications=30, seed_offset=0)
+    # figure_6_drawing("figure_6.csv")
+    # table_1_drawing("figure_6.csv")
     # figure_6_table_1_drawing("figure_6_table_1.csv", columns=("base_mc", "base_nll", "mc", "nll", "mmd"))
     visualize_bad_nll()

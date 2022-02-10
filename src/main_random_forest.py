@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from sklearn.exceptions import ConvergenceWarning
 
 from src.algorithms.ice import ICE
-from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
+from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
 from src.algorithms.partitioner.random_forest_partitioner import RandomForestPartitioner
 from src.blackbox_functions.synthetic_functions import StyblinskiTang
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
@@ -59,7 +59,7 @@ def analyze_num_trees(  # Hyperparameter Analysis: Number of Trees
             delta_mc_arr[idx] = delta_mc_arr[idx] + delta_mc
 
         # compare to decision tree
-        dt_partitioner = DTPartitioner.from_ICE(ice)
+        dt_partitioner = DecisionTreePartitioner.from_ICE(ice)
         dt_partitioner.partition(n_splits)
         dt_region = dt_partitioner.get_incumbent_region(sampler.incumbent[0])
         base_mc = np.mean(np.sqrt(ice.y_variances)).item()

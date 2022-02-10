@@ -98,13 +98,8 @@ class Region(ConfigSpaceHolder):
         nll_root = full_region.negative_log_likelihood(true_function)
         return calculate_log_delta(nll, nll_root)
 
-    def plot_pdp(
-            self,
-            line_color="red",
-            gradient_color="xkcd:light red",
-            with_confidence=True,
-            ax: Optional[plt.Axes] = None):
-
+    @cached_property
+    def pdp_as_ice_curve(self) -> ICECurve:
         x_pdp = np.mean(self.x_points, axis=0)
         y_pdp = np.mean(self.y_points, axis=0)
         y_variances_pdp = np.mean(self.y_variances, axis=0)
@@ -116,8 +111,21 @@ class Region(ConfigSpaceHolder):
             y_variances=y_variances_pdp,
             name="PDP in Region"
         )
-        pdp.plot(line_color=line_color, gradient_color=gradient_color,
-                 with_confidence=with_confidence, ax=ax)
+        return pdp
+
+    def plot_values(self, color="red", ax: Optional[plt.Axes] = None):
+        self.pdp_as_ice_curve.plot_values(color=color, ax=ax)
+
+    def plot_confidences(self,
+                         line_color="blue",
+                         gradient_color="lightblue",
+                         confidence_max_sigma: float = 1.5,
+                         ax: Optional[plt.Axes] = None):
+        self.pdp_as_ice_curve.plot_confidences(
+            line_color=line_color,
+            gradient_color=gradient_color,
+            confidence_max_sigma=confidence_max_sigma,
+            ax=ax)
 
 class Partitioner(Algorithm, ABC):
     def __init__(self, surrogate_model: SurrogateModel,
