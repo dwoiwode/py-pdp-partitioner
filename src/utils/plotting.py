@@ -139,8 +139,11 @@ def adjust_lightness(color: ColorType,
 def plot_function(f: Callable[[Any], float],
                   cs: CS.ConfigurationSpace,
                   samples_per_axis=100,
+                  color: ColorType = "black",
                   ax: Optional[plt.Axes] = None) -> plt.Axes:
     ax = get_ax(ax)
+    color = get_color(color)
+
     hps = cs.get_hyperparameters()
     constants = {hp.name: hp.value for hp in hps if isinstance(hp, CSH.Constant)}
     parameters = [hp for hp in hps if not isinstance(hp, CSH.Constant)]
@@ -157,7 +160,7 @@ def plot_function(f: Callable[[Any], float],
     if n_parameter == 1:
         # plot ground truth lines
         y = [f(**{parameters[0].name: p}, **constants) for p in x]
-        ax.plot(x, y, label=f.__name__, c='black')
+        ax.plot(x, y, label=f.__name__, color=color)
     elif n_parameter == 2:
         # plot ground truth lines
         y = ranges[1]
@@ -252,6 +255,7 @@ def plot_2D(
     # Contours/Labels
     contour = ax.tricontour(x, y, values, colors="black")
     contour.clabel(contour.levels, fontsize=12, colors="black", inline=True)
+
 
 def plot_config_space(config_space: CS.ConfigurationSpace,
                       x_hyperparameters: Optional[SelectedHyperparameterType] = None,

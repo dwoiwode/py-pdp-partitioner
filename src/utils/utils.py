@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import time
 from abc import ABC
@@ -13,9 +14,11 @@ from src.utils.typing import SelectedHyperparameterType
 class ConfigSpaceHolder(ABC):
     def __init__(self, config_space: CS.ConfigurationSpace, *, seed: Union[None, int, bool] = None):
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.debug(f"{self.__class__.__name__}: Initial Seed = {seed}")
 
         if seed is True:
             # Use existing config_space
+            self.logger.debug(f"{self.__class__.__name__}: Seed = Use existing")
             self.config_space = config_space
             return
         elif seed is None:
@@ -24,7 +27,9 @@ class ConfigSpaceHolder(ABC):
         else:
             # Use seed
             # Hash of class prevents using the exact same seed for every step (e.g. Sampler, ICE, ...)
-            seed = hash(self.__class__.__name__) + seed
+            h = hashlib.md5(self.__class__.__name__.encode("latin"), usedforsecurity=False)
+            seed = int.from_bytes(h.digest(), "big") + seed
+        self.logger.debug(f"{self.__class__.__name__}: Final Seed = {seed % 2 ** 31}")
         self.config_space = copy_config_space(config_space, seed=seed % 2 ** 31)
 
     def sample_random_configuration(self, n: int) -> List[CS.Configuration]:

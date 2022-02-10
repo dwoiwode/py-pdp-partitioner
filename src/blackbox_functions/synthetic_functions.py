@@ -152,7 +152,7 @@ class StyblinskiTang(BlackboxFunctionND):
         def integral(config: CS.Configuration):
             return reduced_f.value_from_config(config) + integral_offset
 
-        return CallableBlackboxFunction(integral, reduced_cs)
+        return CallableBlackboxFunction(integral, reduced_cs, name=f"{self.__name__} d({hyperparameter_names})")
 
 
 

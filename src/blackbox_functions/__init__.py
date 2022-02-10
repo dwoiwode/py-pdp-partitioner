@@ -64,9 +64,11 @@ class BlackboxFunctionND(BlackboxFunction, ABC):
 
 
 class CallableBlackboxFunction(BlackboxFunction):
-    def __init__(self, function: Callable[[CS.Configuration], float], config_space: CS.ConfigurationSpace):
+    def __init__(self, function: Callable[[CS.Configuration], float], config_space: CS.ConfigurationSpace, name=None):
         super().__init__(config_space)
         self.f = function
+        if name is not None:
+            self.__name__ = name
 
     def value_from_config(self, config: CS.Configuration) -> float:
         return self.f(config)
