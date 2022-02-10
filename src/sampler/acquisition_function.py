@@ -65,7 +65,7 @@ class AcquisitionFunction(ConfigSpaceHolder, ABC):
              ax: Optional[plt.Axes] = None):
         ax = get_ax(ax)
         x_hyperparameters = get_hyperparameters(x_hyperparameters, self.config_space)
-        check_and_set_axis(ax, x_hyperparameters)
+        check_and_set_axis(ax, x_hyperparameters, ylabel="Acquisition")
 
         # Sample configs and get values of acquisition function
         configs = self.config_space.sample_configuration(self.n_samples_for_optimization * len(x_hyperparameters))
@@ -86,8 +86,9 @@ class AcquisitionFunction(ConfigSpaceHolder, ABC):
             ax.fill_between(x, acquisition_y, color=color_acquisition, alpha=0.3)
             ax.plot(x, acquisition_y, color=color_acquisition, label=self.__class__.__name__)
 
-            ax.plot(list(optimum.values())[0], self(optimum), "*", color=color_optimum, label=f"Optimum ({optimum})",
-                    markersize=15)
+            if show_optimum:
+                ax.plot(list(optimum.values())[0], self(optimum), "*", color=color_optimum, label=f"Optimum ({optimum})",
+                        markersize=15)
         elif n_hyperparameters == 2:  # 2D
             idx = get_selected_idx(x_hyperparameters, self.config_space)
             raise NotImplementedError("2D currently not implemented (#TODO)")

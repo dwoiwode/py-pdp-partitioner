@@ -43,12 +43,13 @@ class PDP(Algorithm):
         return self.ice.grid_points
 
     @classmethod
-    def from_ICE(cls, ice: ICE) -> "PDP":
+    def from_ICE(cls, ice: ICE, seed=None) -> "PDP":
         pdp = PDP(
             surrogate_model=ice.surrogate_model,
             selected_hyperparameter=ice.selected_hyperparameter,
             samples=ice.samples,
-            num_grid_points_per_axis=ice.num_grid_points_per_axis
+            num_grid_points_per_axis=ice.num_grid_points_per_axis,
+            seed=seed
         )
         pdp._ice = ice  # Use existing ice to save calculation time
         return pdp
@@ -82,8 +83,8 @@ class PDP(Algorithm):
         return self.as_ice_curve.plot_values(color=color, ax=ax)
 
     def plot_confidences(self,
-                         line_color="blue",
-                         gradient_color="lightblue",
+                         line_color="red",
+                         gradient_color="lightsalmon",
                          confidence_max_sigma=1.5,
                          ax: Optional[plt.Axes] = None):
         return self.as_ice_curve.plot_confidences(
