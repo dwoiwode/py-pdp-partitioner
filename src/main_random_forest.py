@@ -16,10 +16,10 @@ from src.utils.utils import calculate_log_delta
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 def analyze_num_trees(  # Hyperparameter Analysis: Number of Trees
-        num_replication: int = 5,
+        num_replication: int = 10,
         num_tree_list: List[int] = None):
     if num_tree_list is None:
-        num_tree_list = [1, 2, 3, 5, 10, 15, 20, 30, 40, 50, 60, 80, 100]
+        num_tree_list = [1, 5, 10, 15, 20, 30, 40, 50, 60, 80, 100]
         # num_tree_list = [1, 2, 3]
     n_splits = 3
     tau = 1
@@ -79,9 +79,6 @@ def analyze_num_trees(  # Hyperparameter Analysis: Number of Trees
     plt.plot(1, dt_delta_mc, "*", color='red', label='Decision Tree', markersize=15)
     plt.legend()
     plt.savefig('../results/random_forest/RF_Hyperparameter_analysis_num_trees')
-
-
-
 
 
 if __name__ == '__main__':

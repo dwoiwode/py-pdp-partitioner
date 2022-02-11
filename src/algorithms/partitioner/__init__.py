@@ -68,7 +68,7 @@ class Region(ConfigSpaceHolder):
         selected_hyperparameter_names = {hp.name for hp in self.selected_hyperparameter}
         not_selected_hp = [
             hp
-            for hp in self.config_space.get_hyperparameters()
+            for hp in true_function.config_space.get_hyperparameters()
             if hp.name not in selected_hyperparameter_names
         ]
 

@@ -1,8 +1,4 @@
 from matplotlib import pyplot as plt
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import Matern
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
 
 from src.blackbox_functions.synthetic_functions import StyblinskiTang
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
@@ -13,15 +9,16 @@ from test import PlottableTest
 
 class TestSampler(PlottableTest):
     def test_mmd_random(self):
-        f = StyblinskiTang.for_n_dimensions(2, seed=42)
+        seed = 0
+        f = StyblinskiTang.for_n_dimensions(2, seed=seed)
         cs = f.config_space
-        n = 550  # Sampler
-        m = 550  # Uniform
+        n = 2000  # Sampler
+        m = 2000  # Uniform
 
         # Random
-        random_sampler = RandomSampler(f, cs, seed=42)
+        random_sampler = RandomSampler(f, cs, seed=seed)
         random_sampler.sample(n)
-        mmd_random = random_sampler.maximum_mean_discrepancy(m=m)
+        mmd_random = random_sampler.maximum_mean_discrepancy(m=m, seed=None)
         print("MMD Random:", mmd_random)
 
         # Plot
@@ -66,12 +63,14 @@ class TestSampler(PlottableTest):
         cs = f.config_space
         n = 150  # Sampler
         m = 150  # Uniform
+        seed = 0
 
-        for tau in (0.1, 2, 5):
+        for tau in (0.1, 1, 5):
             # Bayesian
             random_sampler = BayesianOptimizationSampler(f, cs,
                                                          initial_points=f.ndim * 4,
-                                                         acq_class_kwargs={"tau": tau})
+                                                         acq_class_kwargs={"tau": tau},
+                                                         seed=seed)
             random_sampler.sample(n)
-            mmd_bayesian = random_sampler.maximum_mean_discrepancy(m=m)
+            mmd_bayesian = random_sampler.maximum_mean_discrepancy(m=m, seed=seed)
             print(f"Tau: {tau}, MMD: {mmd_bayesian}")

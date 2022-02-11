@@ -14,7 +14,7 @@ from sklearn.gaussian_process.kernels import RBF
 from src.utils.plotting import get_ax, check_and_set_axis
 from src.utils.typing import ColorType, SelectedHyperparameterType
 from src.utils.utils import config_list_to_array, get_hyperparameters, median_distance_between_points, \
-    ConfigSpaceHolder
+    ConfigSpaceHolder, copy_config_space
 
 
 class Sampler(ConfigSpaceHolder, ABC):
@@ -150,12 +150,14 @@ class Sampler(ConfigSpaceHolder, ABC):
         """ Samples n_points new points """
         pass
 
-    def maximum_mean_discrepancy(self, m: Optional[int] = None) -> float:
+    def maximum_mean_discrepancy(self, m: Optional[int] = None, seed=None) -> float:
         # Get and transform samples
         if m is None:
             m = len(self)
         X_samples = config_list_to_array(self.X)
-        X_uniform = config_list_to_array(self.config_space.sample_configuration(m))
+
+        new_cs = copy_config_space(self.config_space, seed=seed)
+        X_uniform = config_list_to_array(new_cs.sample_configuration(m))
         X = np.concatenate((X_samples, X_uniform))
 
         # Calculate
