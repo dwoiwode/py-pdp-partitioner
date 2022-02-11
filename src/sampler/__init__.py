@@ -93,13 +93,16 @@ class Sampler(ConfigSpaceHolder, ABC):
         self._cache = []
         file = self.CACHE_DIR / f"{self.hash}.json"
         if not file.exists():
+            self.logger.debug("Cache does not exist")
             return
 
         try:
+            self.logger.debug("Loading cache...")
             data = json.loads(file.read_text())
             for X, y in zip(data["X"], data["y"]):
                 config = CS.Configuration(self.config_space, vector=X, origin="Cache")
                 self._cache.append((config, y))
+            self.logger.debug(f"Loaded {len(self._cache)} samples from cache")
         except KeyboardInterrupt:
             raise
         except Exception as e:
@@ -113,7 +116,7 @@ class Sampler(ConfigSpaceHolder, ABC):
         # Save in cache
         self.CACHE_DIR.mkdir(parents=True, exist_ok=True)
         file = self.CACHE_DIR / f"{self.hash}.json"
-        print(f"Writing cache to {file} ({len(self)} samples)")
+        self.logger.info(f"Writing cache to {file} ({len(self)} samples)")
         file.write_text(json.dumps(
             {
                 "X": self.X.tolist(),

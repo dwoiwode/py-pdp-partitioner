@@ -55,7 +55,7 @@ def get_ax(ax: Optional[plt.Axes]) -> plt.Axes:
     return ax
 
 
-def check_and_set_axis(ax: plt.Axes, hyperparameters: List[CSH.Hyperparameter], set_bounds=True):
+def check_and_set_axis(ax: plt.Axes, hyperparameters: List[CSH.Hyperparameter], set_bounds=True, ylabel="Prediction"):
     """
     Set axis labels and types (e.g. log) for all selected hyperparameters.
     If this does not fit with current configuration raise Error instead
@@ -66,16 +66,22 @@ def check_and_set_axis(ax: plt.Axes, hyperparameters: List[CSH.Hyperparameter], 
     if n_hyperparameters == 1:
         hp = hyperparameters[0]
 
-        # Check Label
+        # Check x label
         current_label = ax.get_xlabel()
         new_label = hp.name
         if current_label != "" and current_label != new_label:
-            raise ValueError(f"Current label is {current_label}, but tried to set label to {new_label}. "
+            raise ValueError(f"Current x label is {current_label}, but tried to set label to {new_label}. "
+                             f"Did you mess up the plots?")
+
+        # Check y label
+        current_label = ax.get_ylabel()
+        if current_label != "" and current_label != ylabel:
+            raise ValueError(f"Current y label is {current_label}, but tried to set label to {ylabel}. "
                              f"Did you mess up the plots?")
 
         # Set Label
         ax.set_xlabel(new_label)
-        ax.set_ylabel('Prediction')
+        ax.set_ylabel(ylabel)
 
         # Set Bounds 1D
         if set_bounds and isinstance(hp, CSH.NumericalHyperparameter):

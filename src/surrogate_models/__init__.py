@@ -88,15 +88,21 @@ class SurrogateModel(ConfigSpaceHolder, ABC):
         check_and_set_axis(ax, hyperparameters)
 
         # Switch cases for number of dimensions
+        ranges = get_uniform_distributed_ranges(self.config_space, samples_per_axis, scaled=False)
+        linspace = np.linspace(0, 1, samples_per_axis)
         if n_hyperparameters == 1:  # 1D
-            ranges = get_uniform_distributed_ranges(self.config_space, samples_per_axis, scaled=False)
-            mu, std = self.predict(np.reshape(np.linspace(0, 1, samples_per_axis), (-1, 1)))
+            mu, std = self.predict(np.reshape(linspace, (-1, 1)))
 
             name = self.__class__.__name__
             x = ranges[0]
             plot_line(x, mu, color=color, label=f"{name}-$\mu$", ax=ax)
         elif n_hyperparameters == 2:  # 2D
-            raise NotImplementedError("2D currently not implemented (#TODO)")
+            x = ranges[0]
+            y = ranges[1]
+            xx, yy = np.meshgrid(linspace, linspace)
+            mu, std = self.predict(np.asarray([xx, yy]).T.reshape(-1, 2))
+
+            ax.pcolormesh(x, y, mu.reshape(xx.shape), shading='auto')
         else:
             raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
                                       "Please select a specific hp by setting `x_hyperparemeters`")
@@ -117,16 +123,22 @@ class SurrogateModel(ConfigSpaceHolder, ABC):
         check_and_set_axis(ax, hyperparameters)
 
         # Switch cases for number of dimensions
+        ranges = get_uniform_distributed_ranges(self.config_space, samples_per_axis, scaled=False)
+        linspace = np.linspace(0, 1, samples_per_axis)
         if n_hyperparameters == 1:  # 1D
-            ranges = get_uniform_distributed_ranges(self.config_space, samples_per_axis, scaled=False)
-            mu, std = self.predict(np.reshape(np.linspace(0, 1, samples_per_axis), (-1, 1)))
+            mu, std = self.predict(np.reshape(linspace, (-1, 1)))
 
             name = self.__class__.__name__
             x = ranges[0]
             plot_1D_confidence_color_gradients(x, mu, std, color=gradient_color, ax=ax)
             plot_1D_confidence_lines(x, mu, std, k_sigmas=(1, 2), color=line_color, ax=ax, name=name)
         elif n_hyperparameters == 2:  # 2D
-            raise NotImplementedError("2D currently not implemented (#TODO)")
+            x = ranges[0]
+            y = ranges[1]
+            xx, yy = np.meshgrid(linspace, linspace)
+            mu, std = self.predict(np.asarray([xx, yy]).T.reshape(-1, 2))
+
+            ax.pcolormesh(x, y, std.reshape(xx.shape), shading='auto')
         else:
             raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
                                       "Please select a specific hp by setting `x_hyperparemeters`")

@@ -1,25 +1,34 @@
+import warnings
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
+import matplotlib.colors
 from matplotlib import pyplot as plt
+from sklearn.exceptions import ConvergenceWarning
 
+from src.algorithms.ice import ICE
+from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
+from src.algorithms.pdp import PDP
 from src.blackbox_functions import BlackboxFunctionND, BlackboxFunction
 from src.blackbox_functions.synthetic_functions import StyblinskiTang
 from src.sampler.acquisition_function import LowerConfidenceBound
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
-from src.utils.plotting import plot_function
+from src.utils.plotting import plot_function, plot_config_space
+
+warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 RESULT_FOLDER = Path("../plots")
-SEED = 29
+RANDOM_COLORS = tuple(matplotlib.colors.BASE_COLORS.values())
+SEED = 31  # Good seeds: 29
 DRAFT = True
 
 if DRAFT:
     PLOT_SAMPLES_PER_AXIS = 50
     NUM_GRID_POINTS = 20
 else:
-    PLOT_SAMPLES_PER_AXIS = 200
-    NUM_GRID_POINTS = 50  # 100 might be even better. But pretty memory hungry
+    PLOT_SAMPLES_PER_AXIS = 300
+    NUM_GRID_POINTS = 70  # 100 might be even better. But pretty memory hungry
 
 
 def save_yielded_plots(folder: Optional[str] = None):
@@ -50,9 +59,17 @@ def bo_introduction(
         acq_kwargs=None,
 
 ):
+    def new_figure() -> Tuple[plt.Figure, Tuple[plt.Axes, plt.Axes]]:
+        fig = plt.figure(figsize=(16, 9))
+        assert isinstance(fig, plt.Figure)
+
+        ax_function = fig.add_subplot(3, 1, (1, 2))
+        ax_acquisition = fig.add_subplot(3, 1, 3)
+        assert isinstance(ax_function, plt.Axes)
+        assert isinstance(ax_acquisition, plt.Axes)
+        return fig, (ax_function, ax_acquisition)
+
     legend_location = "upper left"
-    fig = plt.figure(figsize=(16, 9))
-    ax = fig.gca()
     sampler = BayesianOptimizationSampler(
         obj_func=f,
         config_space=f.config_space,
@@ -61,19 +78,21 @@ def bo_introduction(
         acq_class_kwargs=acq_kwargs,
         seed=SEED
     )
+    sampler.sample(sampler.initial_points)
 
     # Blackbox function
-    sampler.sample(sampler.initial_points)
+    fig, (ax, _) = new_figure()
     plot_function(f, f.config_space, samples_per_axis=PLOT_SAMPLES_PER_AXIS, ax=ax)
     ax.legend(loc=legend_location)
     yield fig, "blackbox_function"
     init_ymin, init_ymax = ax.get_ylim()
+    init_ymin *= 0.9
+    init_ymax *= 1.1
 
     # Initial Samples
-    fig = plt.figure(figsize=(16, 9))
-    ax = fig.gca()
-    plot_function(f, f.config_space, samples_per_axis=PLOT_SAMPLES_PER_AXIS,color=(0.7, 0.7, 0.7), ax=ax)
-    sampler.plot(ax=ax)
+    fig, (ax, _) = new_figure()
+    plot_function(f, f.config_space, samples_per_axis=PLOT_SAMPLES_PER_AXIS, color=(0.7, 0.7, 0.7), ax=ax)
+    sampler.plot(marker="*", ax=ax)
     ax.legend(loc=legend_location)
     yield fig, "samples"
 
@@ -81,49 +100,72 @@ def bo_introduction(
     surrogate = GaussianProcessSurrogate(f.config_space, seed=SEED)
     surrogate.fit(sampler.X, sampler.y)
 
-    fig = plt.figure(figsize=(16, 9))
-    ax = fig.gca()
+    fig, (ax_f, ax_acq) = new_figure()
     # Plot f
-    plot_function(f, f.config_space, color=(0.7, 0.7, 0.7), ax=ax)
+    plot_function(f, f.config_space, color=(0.7, 0.7, 0.7), ax=ax_f)
     # Plot Surrogate
-    surrogate.plot_means(samples_per_axis=PLOT_SAMPLES_PER_AXIS, ax=ax)
-    surrogate.plot_confidences(samples_per_axis=PLOT_SAMPLES_PER_AXIS, ax=ax)
+    surrogate.plot_means(samples_per_axis=PLOT_SAMPLES_PER_AXIS, ax=ax_f)
+    surrogate.plot_confidences(samples_per_axis=PLOT_SAMPLES_PER_AXIS, ax=ax_f)
     # Plot Sampler
-    sampler.plot(ax=ax)
+    sampler.plot(ax=ax_f)
 
     # Finalize plot
-    ax.legend(loc=legend_location)
+    ax_f.legend(loc=legend_location)
     yield fig, "surrogate"
+    sampler.acq_func.plot(ax=ax_acq)
+    yield fig, "acquisition"
 
     for i in range(5):
         sampler.sample(1)
         surrogate.fit(sampler.X, sampler.y)
 
-        fig = plt.figure(figsize=(16, 9))
-        ax = fig.gca()
+        fig, (ax_f, ax_acq) = new_figure()
         # Plot f
-        plot_function(f, f.config_space, color=(0.7, 0.7, 0.7), ax=ax)
+        plot_function(f, f.config_space, color=(0.7, 0.7, 0.7), ax=ax_f)
         # Plot Surrogate
-        surrogate.plot_means(samples_per_axis=PLOT_SAMPLES_PER_AXIS, ax=ax)
-        surrogate.plot_confidences(samples_per_axis=PLOT_SAMPLES_PER_AXIS, ax=ax)
+        surrogate.plot_means(samples_per_axis=PLOT_SAMPLES_PER_AXIS, ax=ax_f)
+        surrogate.plot_confidences(samples_per_axis=PLOT_SAMPLES_PER_AXIS, ax=ax_f)
         # Plot Sampler
-        sampler.plot(ax=ax)
+        sampler.plot(ax=ax_f)
 
-        ax.legend(loc=legend_location)
-        ax.set_ylim(init_ymin, init_ymax)
-        yield fig, "surrogate"
+        ax_f.legend(loc=legend_location)
+        ax_f.set_ylim(init_ymin, init_ymax)
+        sampler.acq_func.plot(ax=ax_acq)
+        yield fig, "acquisition"
+
+    # Sample a lot
+    sampler.sample(51)  # Total of 60 Points
+    surrogate.fit(sampler.X, sampler.y)
+
+    fig, (ax_f, ax_acq) = new_figure()
+    # Plot f
+    plot_function(f, f.config_space, color=(0.7, 0.7, 0.7), ax=ax_f)
+    # Plot Surrogate
+    surrogate.plot_means(samples_per_axis=PLOT_SAMPLES_PER_AXIS, ax=ax_f)
+    surrogate.plot_confidences(samples_per_axis=PLOT_SAMPLES_PER_AXIS, ax=ax_f)
+    # Plot Sampler
+    sampler.plot(ax=ax_f)
+
+    ax_f.legend(loc=legend_location)
+    ax_f.set_ylim(init_ymin, init_ymax)
+    sampler.acq_func.plot(ax=ax_acq)
+    yield fig, "acquisition"
 
 
+@save_yielded_plots()
 def algorithm_walkthrough(
         f: BlackboxFunction = StyblinskiTang.for_n_dimensions(2, seed=SEED),
         acquisition_function=LowerConfidenceBound,
         acq_kwargs=None,
 
 ):
-    folder = RESULT_FOLDER / "algorithm_walkthrough"
-    folder.mkdir(exist_ok=True, parents=True)
-    fig = plt.figure(figsize=(16, 9))
-    ax = fig.gca()
+    def new_figure() -> Tuple[plt.Figure, plt.Axes]:
+        fig = plt.figure(figsize=(8, 6), dpi=200)
+        ax = fig.gca()
+        return fig, ax
+
+    fig, ax = new_figure()
+    # Sampler
     sampler = BayesianOptimizationSampler(
         obj_func=f,
         config_space=f.config_space,
@@ -134,10 +176,71 @@ def algorithm_walkthrough(
     )
 
     sampler.sample(sampler.initial_points)
-    plot_function(f, f.config_space, ax=ax)
-    fig.savefig(folder / "00_blackbox_function.png")
+    plot_function(f, f.config_space, ax=ax, samples_per_axis=PLOT_SAMPLES_PER_AXIS)
+    yield fig, "Blackboxfunction"
+    sampler.plot(ax=ax)
+    yield fig, "Sampler"
+
+    sampler.sample(50)
+    sampler.plot(ax=ax)
+    yield fig, "Sampler"
+
+    # Surrogate
+    surrogate_model = GaussianProcessSurrogate(cs=f.config_space, seed=SEED)
+    surrogate_model.fit(sampler.X, sampler.y)
+    fig, ax = new_figure()
+    surrogate_model.plot_means(ax=ax, samples_per_axis=PLOT_SAMPLES_PER_AXIS)
+    yield fig, "Surrogate_Means"
+
+    fig, ax = new_figure()
+    surrogate_model.plot_confidences(ax=ax, samples_per_axis=PLOT_SAMPLES_PER_AXIS)
+    yield fig, "Surrogate_Confidences"
+
+    # ICE
+    ice = ICE.from_random_points(surrogate_model, "x1", seed=SEED, num_grid_points_per_axis=NUM_GRID_POINTS)
+    fig, ax = new_figure()
+    ice.plot(ax=ax)
+    yield fig, "ICE"
+
+    # PDP
+    pdp = PDP.from_ICE(ice, seed=SEED)
+    # fig, ax = new_figure()
+    pdp.plot_values(ax=ax, color="black")
+    yield fig, "PDP"
+    pdp.plot_confidences(ax=ax, line_color="black", gradient_color="black")
+    pdp.plot_values(ax=ax, color="black")
+    yield fig, "PDP_with_confidence"
+
+    # Decision Tree Partitioner
+    fig, ax = new_figure()
+    dt_partitioner = DecisionTreePartitioner.from_ICE(ice)
+    dt_partitioner.partition(3)
+    dt_partitioner.plot(ax=ax)
+    yield fig, "DecisionTreePartitioner"
+
+    # Plot all regions
+    fig, ax = new_figure()
+    plot_function(f, f.config_space, samples_per_axis=PLOT_SAMPLES_PER_AXIS, ax=ax)
+    for i, leaf in enumerate(dt_partitioner.leaves):
+        plot_config_space(leaf.implied_config_space(seed=SEED), color=RANDOM_COLORS[i], alpha=0.3)
+        ax.annotate(f"{leaf.mean_confidence}")
+
+    sampler.plot(ax=ax)
+    yield fig, "DT All Regions"
+
+    # Plot incumbent region
+    fig, ax = new_figure()
+    plot_function(f, f.config_space, samples_per_axis=PLOT_SAMPLES_PER_AXIS, ax=ax)
+    incumbent_region = dt_partitioner.get_incumbent_region(sampler.incumbent_config)
+    plot_config_space(incumbent_region.implied_config_space(seed=SEED))
+    yield fig, "DT Incumbent Region"
 
 
 if __name__ == '__main__':
+    import logging
+
+    logging.basicConfig(level=logging.NOTSET)
+    logging.getLogger("matplotlib").setLevel(logging.ERROR)
+
     bo_introduction()
-    # algorithm_walkthrough()
+    algorithm_walkthrough()
