@@ -70,7 +70,8 @@ class TestBayesianSampler(PlottableTest):
                                          config_space=cs,
                                          initial_points=initial_points,
                                          acq_class=ProbabilityOfImprovement,
-                                         acq_class_kwargs={"eps": 0.01})
+                                         acq_class_kwargs={"eps": 0.01},
+                                         seed=0)
         bo.sample(50)
 
         best_config, best_val = bo.incumbent
@@ -83,7 +84,7 @@ class TestBayesianSampler(PlottableTest):
 
         # Check values
         print(best_val)
-        self.assertAlmostEqual(best_val, 0, delta=1e-4)
+        self.assertAlmostEqual(best_val, 0, delta=1e-3)
 
     def test_cache_working(self):
         f = Square.for_n_dimensions(1, seed=0)

@@ -18,7 +18,7 @@ class TestSampler(PlottableTest):
         # Random
         random_sampler = RandomSampler(f, cs, seed=seed)
         random_sampler.sample(n)
-        mmd_random = random_sampler.maximum_mean_discrepancy(m=m, seed=None)
+        mmd_random = random_sampler.maximum_mean_discrepancy(m=m, seed=seed+1)  # use different seed!
         print("MMD Random:", mmd_random)
 
         # Plot

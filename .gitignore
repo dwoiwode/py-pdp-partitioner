@@ -10,6 +10,7 @@ __pycache__/
 src/*.csv
 src/*.png
 cache
+plots
 
 # C extensions
 *.so
