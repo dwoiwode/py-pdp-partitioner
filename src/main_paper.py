@@ -28,6 +28,13 @@ warnings.filterwarnings("ignore", category=ConvergenceWarning)
 seed = 0
 
 
+(Path(__file__).parent.parent / "plots").mkdir(parents=True, exist_ok=True)
+plot_folder = Path(__file__).parent.parent / "plots" / "main_paper"
+plot_folder.mkdir(parents=True, exist_ok=True)
+
+data_folder = Path(__file__).parent.parent / 'data'
+data_folder.mkdir(parents=True, exist_ok=True)
+
 def figure_1_3(f: BlackboxFunction = StyblinskiTang.for_n_dimensions(2, seed=seed),
                samplers: Dict[str, Sampler] = None,
                sampled_points=50):
@@ -79,8 +86,8 @@ def figure_1_3(f: BlackboxFunction = StyblinskiTang.for_n_dimensions(2, seed=see
 
         ax3.set_title(name)
 
-    fig1.savefig("Figure 1.png")
-    fig3.savefig("Figure 3.png")
+    fig1.savefig(plot_folder / "Figure 1.png")
+    fig3.savefig(plot_folder / "Figure 3.png")
     plt.show()
 
 
@@ -130,7 +137,7 @@ def figure_2(f: BlackboxFunction = StyblinskiTang.for_n_dimensions(2, seed=seed)
     # Finalize
     plt.legend()
     plt.tight_layout()
-    plt.savefig("Figure 2.png")
+    plt.savefig(plot_folder / "Figure 2.png")
     plt.show()
 
 
@@ -150,7 +157,7 @@ def figure_4(f: BlackboxFunction = StyblinskiTang.for_n_dimensions(2, seed=seed)
 
     left_region.plot("green")
     right_region.plot("blue")
-    plt.savefig("Figure 4.png")
+    plt.savefig(plot_folder / "Figure 4.png")
     plt.show()
 
 
@@ -274,7 +281,7 @@ def figure_6_drawing(
     for k, col in enumerate(columns):
         axes[k, 0].set_ylabel(col)
 
-    fig.savefig("Figure 6.png")
+    fig.savefig(plot_folder / "Figure 6.png")
     plt.show()
 
 
@@ -441,15 +448,16 @@ def visualize_bad_nll(num_replications: int = 30):
     axes[1].set_title(f'PDP in best Region (NLL: {region_nll:.2f})')
 
     plt.suptitle(f'Styblinski-Tang, 3 Splits, Tau=0.1, 3 Dimensions, (%NLL {delta_nll:.4f})')
+    plt.savefig(plot_folder / "visualize_bad_nll")
     plt.show()
 
 
 if __name__ == '__main__':
+    log_filename = str(data_folder / 'figure_6.csv')
     # figure_1_3()
     # figure_2()
     # figure_4()
-    # figure_6_table_1_data_generation(log_filename="figure_6_3.csv", replications=30, seed_offset=0)
-    figure_6_drawing("figure_6_2.csv")
-    table_1_drawing("figure_6_2.csv")
-    # figure_6_table_1_drawing("figure_6_table_1.csv", columns=("base_mc", "base_nll", "mc", "nll", "mmd"))
+    # figure_6_table_1_data_generation(log_filename=log_filename, replications=30, seed_offset=0)
+    figure_6_drawing(log_filename)
+    table_1_drawing(log_filename)
     # visualize_bad_nll()

@@ -1,13 +1,15 @@
 import warnings
+from pathlib import Path
 from typing import Dict, Type
 
 import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.exceptions import ConvergenceWarning
+from tqdm import tqdm
 
 from src.algorithms.ice import ICECurve
 from src.algorithms.pdp import PDP
-from src.blackbox_functions import BlackboxFunction, BlackboxFunctionND
+from src.blackbox_functions import BlackboxFunctionND
 from src.blackbox_functions.synthetic_functions import StyblinskiTang
 from src.sampler import Sampler
 from src.sampler.acquisition_function import LowerConfidenceBound
@@ -16,15 +18,17 @@ from src.sampler.grid_sampler import GridSampler
 from src.sampler.random_sampler import RandomSampler
 from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
 from src.utils.plotting import plot_function
-from tqdm import tqdm
-
-from src.utils.utils import unscale, get_uniform_distributed_ranges, convert_hyperparameters
+from src.utils.utils import get_uniform_distributed_ranges, convert_hyperparameters
 
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 seed = 0
 
+(Path(__file__).parent.parent / "plots").mkdir(parents=True, exist_ok=True)
+folder = Path(__file__).parent.parent / "plots" / "sampler_analysis"
+folder.mkdir(parents=True, exist_ok=True)
 
 def plot_sampling_bias(
+        figure_name: str,
         f_class: Type[BlackboxFunctionND] = StyblinskiTang,
         dimensions=2,
         sampler_factories: Dict[str, Sampler] = None,
@@ -141,9 +145,10 @@ def plot_sampling_bias(
         ax_variances.set_ylabel("Std")
 
     # fig1.savefig("Figure 1.png")
-    fig.savefig("Sampler analysis.png")
+    fig.savefig(folder / figure_name)
     plt.show()
 
 
 if __name__ == "__main__":
-    plot_sampling_bias()
+    # styblinski-tang 2d
+    plot_sampling_bias('Styblinski-Tang-10-Rep', repetitions=10)
