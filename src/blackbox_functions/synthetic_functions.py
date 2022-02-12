@@ -148,7 +148,6 @@ class StyblinskiTang(BlackboxFunctionND):
             if hp.name not in hyperparameter_names:
                 reduced_cs.add_hyperparameter(hp)
 
-        # k = len(hyperparameters)
         reduced_f = StyblinskiTang(reduced_cs)
 
         def integral(config: CS.Configuration):

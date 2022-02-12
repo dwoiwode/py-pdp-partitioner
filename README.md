@@ -86,7 +86,7 @@ rf_partitioner = RandomForestPartitioner.from_ICE(ice)
 The Partitioners can split the Hyperparameterspace of not selected Hyperparameters into multiple regions. 
 The best region can be obtained using the incumbent of the sampler.
 ````python
-incumbent_config = sampler.incumbent[0]
+incumbent_config = sampler.incumbent_config
 dt_partitioner.partition(max_depth=3)
 dt_region = dt_partitioner.get_incumbent_region(incumbent_config)
 

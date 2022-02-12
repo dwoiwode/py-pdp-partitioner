@@ -28,7 +28,6 @@ warnings.filterwarnings("ignore", category=ConvergenceWarning)
 seed = 0
 
 
-(Path(__file__).parent.parent / "plots").mkdir(parents=True, exist_ok=True)
 plot_folder = Path(__file__).parent.parent / "plots" / "main_paper"
 plot_folder.mkdir(parents=True, exist_ok=True)
 
