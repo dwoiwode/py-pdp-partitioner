@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import math
 import time
 from abc import ABC
 from typing import List, Iterable, Union, Optional
@@ -57,9 +58,15 @@ def scale_float(
         hp: CSH.NumericalHyperparameter
 ) -> float:
     cs_hp = cs.get_hyperparameter(hp.name)
-    normalized_value = (value - cs_hp.lower) / (cs_hp.upper - cs_hp.lower)
-    if hp.log:
-        return np.log10(normalized_value)
+    if cs_hp.log:
+        log_lower = np.log(cs_hp.lower)
+        log_upper = np.log(cs_hp.upper)
+        value = np.log(value)
+        normalized_value = (value - log_lower) / (log_upper - log_lower)
+    else:
+        normalized_value = (value - cs_hp.lower) / (cs_hp.upper - cs_hp.lower)
+    normalized_value = np.minimum(1, normalized_value)
+    normalized_value = np.maximum(0, normalized_value)
     return normalized_value
 
 
@@ -69,7 +76,14 @@ def unscale_float(
         hp: CSH.NumericalHyperparameter
 ) -> float:
     cs_hp = cs.get_hyperparameter(hp.name)
-    value = normalized_value * (cs_hp.upper - cs_hp.lower) + cs_hp.lower
+    if cs_hp.log:
+        log_lower = np.log(cs_hp.lower)
+        log_upper = np.log(cs_hp.upper)
+        value = normalized_value * (log_upper - log_lower) + log_lower
+        value = math.exp(value)
+    else:
+        value = normalized_value * (cs_hp.upper - cs_hp.lower) + cs_hp.lower
+    value = np.minimum(cs_hp.upper, np.maximum(cs_hp.lower, value))
     return value
 
 
@@ -82,7 +96,10 @@ def unscale(x: np.ndarray, cs: CS.ConfigurationSpace) -> np.ndarray:
     for i, hp in enumerate(cs.get_hyperparameters()):
         assert isinstance(hp, CSH.NumericalHyperparameter), "Currently only Numerical Hyperparameters are supported"
         if hp.log:
-            unscaler = lambda values: np.power(10, values * (hp.upper - hp.lower) + hp.lower)
+            unscaler = lambda values: \
+                np.minimum(hp.upper,
+                           np.maximum(hp.lower,
+                                      np.exp(values * (np.log(hp.upper) - np.log(hp.lower)) + np.log(hp.lower))))
         else:
             unscaler = lambda values: values * (hp.upper - hp.lower) + hp.lower
         if num_dims == 1:

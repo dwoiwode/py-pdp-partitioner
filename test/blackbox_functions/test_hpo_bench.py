@@ -1,3 +1,5 @@
+from matplotlib import pyplot as plt
+
 from src.algorithms.ice import ICE
 from src.algorithms.pdp import PDP
 from src.blackbox_functions.hpo_bench import get_SVMBenchmarkMF
@@ -45,3 +47,5 @@ class TestHPOBench(PlottableTest):
 
                 # Partitioner
                 # dt_partitioner = DecisionTreePartitioner.from_ICE(ice)
+                self.save_fig()
+                plt.show()

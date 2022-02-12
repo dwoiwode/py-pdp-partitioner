@@ -60,7 +60,7 @@ surrogate.fit(sampler.X, sampler.y)
 There are some available algorithms:
 - ICE
 - PDP
-- DTPartitioner (decision tree partitioner)
+- DecisionTreePartitioner
 - RandomForestPartitioner
 
 Each algorithm needs:
@@ -76,12 +76,30 @@ Samples can be randomly generated via
 ice = ICE.from_random_points(surrogate, selected_hyperparameter="x1")
 ```
 
-Also, except ICE, all algorithms can be built from an ICE-Instance.
+Also, all other algorithms can be built from an ICE-Instance.
 ````python
 pdp = PDP.from_ICE(ice)
 dt_partitioner = DecisionTreePartitioner.from_ICE(ice)
 rf_partitioner = RandomForestPartitioner.from_ICE(ice)
 ````
+
+The Partitioners can split the Hyperparameterspace of not selected Hyperparameters into multiple regions. 
+The best region can be obtained using the incumbent of the sampler.
+````python
+incumbent_config = sampler.incumbent_config
+dt_partitioner.partition(max_depth=3)
+dt_region = dt_partitioner.get_incumbent_region(incumbent_config)
+
+rf_partitioner.partition(max_depth=1, num_trees=10)
+rf_region = rf_partitioner.get_incumbent_region(incumbent_config)
+````
+
+Finally, a new PDP can be obtained from the region. This PDP has the properties of a single ICE-Curve since the mean 
+of the ICE-Curve results in a new ICE-Curve.
+````python
+pdp_region = region.pdp_as_ice_curve
+````
+
 
 ## Plotting
 Most components can create plots. These plots can be drawn on a given axis or are drawn on ``plt.gca()`` by default.
@@ -119,5 +137,15 @@ pdp.plot_incumbent()  # Plot position of smallest value
 
 ### Partitioner
 ````python
-dt_partitioner.plot()  #TODO???
+dt_partitioner.plot()  # only 1 selected hp, plots all ice curves in different color per region
+dt_partitioner.plot_incumbent_cs(incumbent_config)  # plot config space of best region
+
+rf_partitioner.plot_incumbent_cs(incumbent_config)  # plot incumbent config of all trees
 ````
+
+### Regions
+````python
+region.plot_values()  # plot pdp of region
+region.plot_confidences()  # plot confidence of pdp in region
+````
+

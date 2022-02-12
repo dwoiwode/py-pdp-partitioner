@@ -1,7 +1,7 @@
 """
 Collection of blackbox functions that can be minimized
 """
-from typing import Union, List
+from typing import Union, List, Tuple
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
@@ -124,18 +124,22 @@ class StyblinskiTang(BlackboxFunctionND):
     def _styblinski_tang_integral(x: float) -> float:
         return 0.5 * (0.2 * np.power(x, 5) - 16 / 3 * np.power(x, 3) + 2.5 * np.power(x, 2))
 
-    def pd_integral(self, *hyperparameters: Union[str, CSH.Hyperparameter], seed=None) -> BlackboxFunction:
+    def pd_integral(self, *hyperparameters: Union[str, CSH.Hyperparameter], seed=None,
+                    return_offset: bool = False) -> Union[
+        CallableBlackboxFunction, tuple[CallableBlackboxFunction, float]]:
         if len(hyperparameters) == 0:
             raise ValueError("Requires at least one hyperparameter for pd_integral")
 
         hyperparameters = convert_hyperparameters(hyperparameters, self.config_space)
 
-        hp = hyperparameters[0]
-        assert isinstance(hp, CSH.NumericalHyperparameter)
-        lower = hp.lower
-        upper = hp.upper
-        integral_value = self._styblinski_tang_integral(upper) - self._styblinski_tang_integral(lower)
-        integral_mean = integral_value / (upper - lower)
+        integral_offset = 0
+        for hp in hyperparameters:
+            # hp = hyperparameters[0]
+            assert isinstance(hp, CSH.NumericalHyperparameter)
+            lower = hp.lower
+            upper = hp.upper
+            integral_value = self._styblinski_tang_integral(upper) - self._styblinski_tang_integral(lower)
+            integral_offset += integral_value / (upper - lower)
 
         hps = self.config_space.get_hyperparameters()
         reduced_cs = CS.ConfigurationSpace(seed=seed)
@@ -144,14 +148,16 @@ class StyblinskiTang(BlackboxFunctionND):
             if hp.name not in hyperparameter_names:
                 reduced_cs.add_hyperparameter(hp)
 
-        k = len(hyperparameters)
         reduced_f = StyblinskiTang(reduced_cs)
 
         def integral(config: CS.Configuration):
-            return reduced_f.value_from_config(config) + k * integral_mean
+            return reduced_f.value_from_config(config) + integral_offset
 
-        return CallableBlackboxFunction(integral, reduced_cs, name=f"{self.__name__} d({hyperparameter_names})")
-
+        if not return_offset:
+            return CallableBlackboxFunction(integral, reduced_cs, name=f"{self.__name__} d({hyperparameter_names})")
+        else:
+            return (CallableBlackboxFunction(integral, reduced_cs, name=f"{self.__name__} d({hyperparameter_names})"),
+                    integral_offset)
 
 
 

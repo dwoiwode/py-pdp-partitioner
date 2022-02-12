@@ -41,9 +41,9 @@ class TestSeeds(TestCase):
         self.assertFalse(np.array_equal(bo_sampler_seeded_1.y, bo_sampler_not_seeded.y))
 
         # Maximum mean discrepancy
-        bo_mmd_seeded_1 = bo_sampler_seeded_1.maximum_mean_discrepancy(20)
-        bo_mmd_seeded_2 = bo_sampler_seeded_2.maximum_mean_discrepancy(20)
-        bo_mmd_not_seeded = bo_sampler_not_seeded.maximum_mean_discrepancy(20)
+        bo_mmd_seeded_1 = bo_sampler_seeded_1.maximum_mean_discrepancy(20, seed=seed)
+        bo_mmd_seeded_2 = bo_sampler_seeded_2.maximum_mean_discrepancy(20, seed=seed)
+        bo_mmd_not_seeded = bo_sampler_not_seeded.maximum_mean_discrepancy(20, seed=None)
         self.assertEqual(bo_mmd_seeded_1,
                          bo_mmd_seeded_2)
         self.assertNotEqual(bo_mmd_seeded_1,

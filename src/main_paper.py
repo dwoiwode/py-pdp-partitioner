@@ -11,7 +11,6 @@ from tqdm import tqdm
 
 from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
 from src.algorithms.ice import ICE, ICECurve
-from src.algorithms.partitioner.decision_tree_partitioner import DTPartitioner
 from src.algorithms.pdp import PDP
 from src.blackbox_functions import BlackboxFunction, BlackboxFunctionND
 from src.blackbox_functions.synthetic_functions import StyblinskiTang
@@ -20,13 +19,20 @@ from src.sampler.acquisition_function import LowerConfidenceBound
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.sampler.random_sampler import RandomSampler
 from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
-from src.utils.plotting import plot_function, plot_config_space
-from src.utils.utils import calculate_log_delta
+from src.utils.plotting import plot_function, plot_config_space, plot_1D_confidence_lines, \
+    plot_1D_confidence_color_gradients, plot_line
+from src.utils.utils import calculate_log_delta, unscale
 
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 seed = 0
 
+
+plot_folder = Path(__file__).parent.parent / "plots" / "main_paper"
+plot_folder.mkdir(parents=True, exist_ok=True)
+
+data_folder = Path(__file__).parent.parent / 'data'
+data_folder.mkdir(parents=True, exist_ok=True)
 
 def figure_1_3(f: BlackboxFunction = StyblinskiTang.for_n_dimensions(2, seed=seed),
                samplers: Dict[str, Sampler] = None,
@@ -79,8 +85,8 @@ def figure_1_3(f: BlackboxFunction = StyblinskiTang.for_n_dimensions(2, seed=see
 
         ax3.set_title(name)
 
-    fig1.savefig("Figure 1.png")
-    fig3.savefig("Figure 3.png")
+    fig1.savefig(plot_folder / "Figure 1.png")
+    fig3.savefig(plot_folder / "Figure 3.png")
     plt.show()
 
 
@@ -117,20 +123,20 @@ def figure_2(f: BlackboxFunction = StyblinskiTang.for_n_dimensions(2, seed=seed)
 
     # ICE Curve 1
     plot_function(f, ice_curve_1.implied_config_space, ax=ax_selected_1)
-    ice_curve_1.plot_values(color="red", ax=ax_selected_1)
+    ice_curve_1.plot_values(ax=ax_selected_1)
     ice_curve_1.plot_confidences(line_color="red", gradient_color="lightsalmon", ax=ax_selected_1)
     plot_config_space(ice_curve_1.implied_config_space, color="red", ax=ax_2D_plot)
 
     # ICE Curve 2
     plot_function(f, ice_curve_2.implied_config_space, ax=ax_selected_2)
-    ice_curve_2.plot_values(color="green", ax=ax_selected_2)
+    ice_curve_2.plot_values(ax=ax_selected_2)
     ice_curve_2.plot_confidences(line_color="green", gradient_color="lightgreen", ax=ax_selected_2)
     plot_config_space(ice_curve_2.implied_config_space, color="green", ax=ax_2D_plot)
 
     # Finalize
     plt.legend()
     plt.tight_layout()
-    plt.savefig("Figure 2.png")
+    plt.savefig(plot_folder / "Figure 2.png")
     plt.show()
 
 
@@ -150,7 +156,7 @@ def figure_4(f: BlackboxFunction = StyblinskiTang.for_n_dimensions(2, seed=seed)
 
     left_region.plot("green")
     right_region.plot("blue")
-    plt.savefig("Figure 4.png")
+    plt.savefig(plot_folder / "Figure 4.png")
     plt.show()
 
 
@@ -178,13 +184,14 @@ def figure_6_table_1_data_generation(
                         f.config_space,
                         initial_points=4 * dimension,
                         acq_class=LowerConfidenceBound,
-                        acq_class_kwargs={"tau": tau}
+                        acq_class_kwargs={"tau": tau},
+                        seed=seed
                     )
                     sampler.sample(n_samples + sampler.initial_points)
 
-                    mmd = sampler.maximum_mean_discrepancy(300)
+                    mmd = sampler.maximum_mean_discrepancy(n_samples + sampler.initial_points, seed=seed)
 
-                    surrogate = GaussianProcessSurrogate(f.config_space)
+                    surrogate = GaussianProcessSurrogate(f.config_space, seed=seed)
                     surrogate.fit(sampler.X, sampler.y)
 
                     dt_partitioner = DecisionTreePartitioner.from_random_points(
@@ -199,7 +206,8 @@ def figure_6_table_1_data_generation(
                         dt_partitioner.partition(splits)
                         incumbent_region = dt_partitioner.get_incumbent_region(sampler.incumbent_config)
                         mc = incumbent_region.mean_confidence
-                        nll = incumbent_region.negative_log_likelihood(f)
+                        f_region = StyblinskiTang(incumbent_region.implied_config_space(seed=seed))
+                        nll = incumbent_region.negative_log_likelihood(f_region)
                         print(f"{seed=},{dimension=},{tau=},{splits=},{mmd=},{base_mc=},{base_nll=},{mc=},{nll=}")
                         d.write(f"{seed},{dimension},{tau},{splits},{mmd},{base_mc},{base_nll},{mc},{nll}\n")
                         d.flush()
@@ -272,7 +280,7 @@ def figure_6_drawing(
     for k, col in enumerate(columns):
         axes[k, 0].set_ylabel(col)
 
-    fig.savefig("Figure 6.png")
+    fig.savefig(plot_folder / "Figure 6.png")
     plt.show()
 
 
@@ -339,9 +347,9 @@ def table_1_drawing(
             split_data_string = "  |  ".join(string_array)
             print(f"|  {dimension}  |  {tau:.2f} ({table_data[0][0]:.2f})   | " + split_data_string)
 
-def visualize_bad_nll():
+
+def visualize_bad_nll(num_replications: int = 30):
     # worst table entry
-    seed = 1
     n_splits = 3
     tau = 0.1
     n_dim = 3
@@ -349,22 +357,64 @@ def visualize_bad_nll():
     n_initial_samples = n_dim * 4
     selected_hp = 'x1'
 
-    f = StyblinskiTang.for_n_dimensions(n_dim, seed=seed)
-    cs = f.config_space
-    sampler = BayesianOptimizationSampler(f, cs, acq_class_kwargs={"tau": tau}, initial_points=n_initial_samples,
-                                          seed=seed)
-    sampler.sample(n_samples + n_initial_samples)
+    y_pdp_original = 0
+    var_pdp_original = 0
+    y_pdp_region = 0
+    var_pdp_region = 0
+    y_gt_region = 0
+    grid_points = None
 
-    surrogate = GaussianProcessSurrogate(cs, seed=seed)
-    surrogate.fit(sampler.X, sampler.y)
+    base_nll = 0
+    region_nll = 0
+    delta_nll = 0
+    offset_sum = 0
+    for seed in range(num_replications):
+        f = StyblinskiTang.for_n_dimensions(n_dim, seed=seed)
+        cs = f.config_space
+        sampler = BayesianOptimizationSampler(f, cs, acq_class_kwargs={"tau": tau}, initial_points=n_initial_samples,
+                                              seed=seed)
+        sampler.sample(n_samples + n_initial_samples)
 
-    ice = ICE.from_random_points(surrogate, selected_hp)
-    partitioner = DTPartitioner.from_ICE(ice)
-    partitioner.partition(max_depth=n_splits)
-    region = partitioner.get_incumbent_region(sampler.incumbent[0])
+        surrogate = GaussianProcessSurrogate(cs, seed=seed)
+        surrogate.fit(sampler.X, sampler.y)
 
-    ground_truth = f.pd_integral(*['x2', 'x3'], seed=seed)
+        ice = ICE.from_random_points(surrogate, selected_hp, seed=seed)
+        partitioner = DecisionTreePartitioner.from_ICE(ice)
+        partitioner.partition(max_depth=n_splits)
+        region = partitioner.get_incumbent_region(sampler.incumbent[0])
 
+        ground_truth = f.pd_integral(*['x2', 'x3'], seed=seed)
+
+        f_region = StyblinskiTang(region.implied_config_space(seed=seed))
+        ground_truth_region, offset = f_region.pd_integral(*['x2', 'x3'], seed=seed, return_offset=True)
+        offset_sum += offset
+
+        # nll
+        base_nll += partitioner.root.negative_log_likelihood(f)
+        region_nll += region.negative_log_likelihood(f_region)
+        delta_nll += calculate_log_delta(region_nll, base_nll)
+
+        # root values
+        pdp = PDP.from_ICE(ice)
+        y_pdp_original = y_pdp_original + pdp.y_pdp
+        var_pdp_original = var_pdp_original + pdp.y_variances
+        grid_points = pdp.grid_points
+
+        # region values
+        y_pdp_region = y_pdp_region + region.pdp_as_ice_curve.y_ice
+        var_pdp_region = var_pdp_region + region.pdp_as_ice_curve.y_variances
+
+    # normalize
+    y_pdp_original = y_pdp_original / num_replications
+    var_pdp_original = var_pdp_original / num_replications
+    y_pdp_region = y_pdp_region / num_replications
+    var_pdp_region = var_pdp_region / num_replications
+    base_nll = base_nll / num_replications
+    region_nll = region_nll / num_replications
+    delta_nll = 100 * delta_nll / num_replications
+    offset = offset_sum / num_replications
+
+    # plot
     fig, axes = plt.subplots(
         nrows=1,
         ncols=2,
@@ -373,34 +423,40 @@ def visualize_bad_nll():
         figsize=(16, 8)
     )
 
-    # nll
-    base_nll = partitioner.root.negative_log_likelihood(f)
-    region_nll = region.negative_log_likelihood(f)
-    delta_nll = calculate_log_delta(region_nll, base_nll)
+    f = StyblinskiTang.for_n_dimensions(n_dim, seed=0)
+    ground_truth = f.pd_integral(*['x2', 'x3'], seed=0)
+    grid_points = unscale(grid_points, ground_truth.config_space).squeeze(axis=1)
+
+    def ground_truth_region(**args):
+        return ground_truth(**args) + offset
 
     # original pdp
-    pdp = PDP.from_ICE(ice)
-    pdp.plot(ax=axes[0])
+    plot_1D_confidence_color_gradients(grid_points, y_pdp_original, variances=var_pdp_original, ax=axes[0])
+    plot_1D_confidence_lines(grid_points, y_pdp_original, variances=var_pdp_original, ax=axes[0])
+    plot_line(grid_points, y_pdp_original, color='red', ax=axes[0])
     plot_function(ground_truth, ground_truth.config_space, samples_per_axis=200, ax=axes[0])
     axes[0].legend()
     axes[0].set_title(f'Full PDP (NLL: {base_nll:.2f})')
 
     # split pdp
-    region.plot_pdp(ax=axes[1])
-    plot_function(ground_truth, ground_truth.config_space, samples_per_axis=200, ax=axes[1])
+    plot_1D_confidence_color_gradients(grid_points, y_pdp_region, variances=var_pdp_region, ax=axes[1])
+    plot_1D_confidence_lines(grid_points, y_pdp_region, variances=var_pdp_region, ax=axes[1])
+    plot_line(grid_points, y_pdp_region, color='red', ax=axes[1])
+    plot_function(ground_truth_region, ground_truth.config_space, samples_per_axis=200, ax=axes[1])
     axes[1].legend()
     axes[1].set_title(f'PDP in best Region (NLL: {region_nll:.2f})')
 
-    plt.suptitle(f'Styblinski-Tang, 3 Splits, Tau=0.1, 3 Dimensions, (%NLL {delta_nll:.4f}), {seed=}')
+    plt.suptitle(f'Styblinski-Tang, 3 Splits, Tau=0.1, 3 Dimensions, (%NLL {delta_nll:.4f})')
+    plt.savefig(plot_folder / "visualize_bad_nll")
     plt.show()
 
 
 if __name__ == '__main__':
-    figure_1_3()
-    figure_2()
-    figure_4()
-    figure_6_table_1_data_generation(log_filename="figure_6.csv", replications=30, seed_offset=0)
-    figure_6_drawing("figure_6.csv")
-    table_1_drawing("figure_6.csv")
-    # figure_6_table_1_drawing("figure_6_table_1.csv", columns=("base_mc", "base_nll", "mc", "nll", "mmd"))
-    visualize_bad_nll()
+    log_filename = str(data_folder / 'figure_6.csv')
+    # figure_1_3()
+    # figure_2()
+    # figure_4()
+    # figure_6_table_1_data_generation(log_filename=log_filename, replications=30, seed_offset=0)
+    figure_6_drawing(log_filename)
+    table_1_drawing(log_filename)
+    # visualize_bad_nll()
