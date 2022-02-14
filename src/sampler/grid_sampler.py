@@ -1,11 +1,13 @@
 import random
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Union
 
+import ConfigSpace as CS
 import numpy as np
 from ConfigSpace.util import generate_grid
+from tqdm import tqdm
 
 from src.sampler import Sampler
-import ConfigSpace as CS
+from src.utils.utils import ProgressDummy
 
 
 class GridSampler(Sampler):
@@ -26,7 +28,7 @@ class GridSampler(Sampler):
         self.rng = random.Random()
         self.rng.seed(seed)
 
-    def _sample(self, n_points: int = 1):
+    def _sample(self, n_points: int = 1, pbar: Union[ProgressDummy, tqdm] = ProgressDummy()):
         expected_length = len(self) + n_points
         if self._grid is None or len(self) + len(self._grid) < expected_length:
             n_dims = len(self.config_space.get_hyperparameters())
@@ -42,3 +44,5 @@ class GridSampler(Sampler):
             self.config_list.append(sample)
             self.y_list.append(self.obj_func(**sample))
 
+            pbar.update(1)
+            pbar.refresh()

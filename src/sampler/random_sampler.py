@@ -1,8 +1,10 @@
-from typing import Callable
+from typing import Callable, Union
 
 import ConfigSpace as CS
+from tqdm import tqdm
 
 from src.sampler import Sampler
+from src.utils.utils import ProgressDummy
 
 
 class RandomSampler(Sampler):
@@ -15,7 +17,7 @@ class RandomSampler(Sampler):
     ):
         super().__init__(obj_func, config_space, minimize_objective=minimize_objective, seed=seed)
 
-    def _sample(self, n_points: int = 1):
+    def _sample(self, n_points: int = 1, pbar: Union[ProgressDummy, tqdm] = ProgressDummy()):
         self.logger.debug(f"Random Sample {n_points}")
         samples = self.config_space.sample_configuration(n_points)
         for i in range(n_points):
@@ -23,3 +25,5 @@ class RandomSampler(Sampler):
             value = self.obj_func(**config)
             self.config_list.append(config)
             self.y_list.append(value)
+            pbar.update(1)
+            pbar.refresh()

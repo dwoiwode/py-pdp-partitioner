@@ -218,7 +218,7 @@ def copy_config_space(cs: CS.ConfigurationSpace, *, seed=None) -> CS.Configurati
     hp_dic = {}
     for hp in cs.get_hyperparameters():
         if isinstance(hp, CSH.NumericalHyperparameter):
-            new_hp = CSH.UniformFloatHyperparameter(hp.name, lower=hp.lower, upper=hp.upper, log=hp.log)
+            new_hp = hp.__class__(hp.name, lower=hp.lower, upper=hp.upper, log=hp.log)
             hp_dic[hp.name] = new_hp
         else:
             raise NotImplementedError("Currently only Numerical Hyperparameter supported")
@@ -229,3 +229,16 @@ def copy_config_space(cs: CS.ConfigurationSpace, *, seed=None) -> CS.Configurati
         cs_copy.add_hyperparameter(hp)
 
     return cs_copy
+
+
+class ProgressDummy:
+    """ Small dummy class that does nothing except existing """
+
+    def update(self, n=1):
+        pass
+
+    def close(self):
+        pass
+
+    def refresh(self, nolock=False, lock_args=None):
+        pass

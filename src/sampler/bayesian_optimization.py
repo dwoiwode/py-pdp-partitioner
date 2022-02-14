@@ -4,11 +4,13 @@ from typing import Callable, Any, List, Tuple, Union, Optional
 
 import ConfigSpace as CS
 import numpy as np
+from tqdm import tqdm
 
 from src.sampler import Sampler
 from src.sampler.acquisition_function import LowerConfidenceBound, AcquisitionFunction
 from src.surrogate_models import SurrogateModel
 from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
+from src.utils.utils import ProgressDummy
 
 
 class BayesianOptimizationSampler(Sampler):
@@ -71,12 +73,12 @@ class BayesianOptimizationSampler(Sampler):
 
         self._model_fitted_hash = parameter_hash
 
-    def sample(self, n_points: int = 1):
-        super(BayesianOptimizationSampler, self).sample(n_points=n_points)
+    def sample(self, n_points: int = 1, *, show_progress=False):
+        super(BayesianOptimizationSampler, self).sample(n_points=n_points, show_progress=show_progress)
         # Make sure at end of sampling surrogate is fitted
         self.fit_surrogate()
 
-    def _sample(self, n_points: int = 1):
+    def _sample(self, n_points: int = 1, pbar: Union[ProgressDummy, tqdm] = ProgressDummy()):
         # Sample initial random points if not already done or given
         self.logger.info(f"Sample {n_points} new points")
         already_sampled = 0
@@ -84,6 +86,8 @@ class BayesianOptimizationSampler(Sampler):
         if current_points < self.initial_points:
             self._sample_initial_points(n_points)
             already_sampled = len(self) - current_points
+            pbar.update(already_sampled)
+            pbar.refresh()
 
         # Update surrogate model
         self.fit_surrogate()
@@ -100,6 +104,8 @@ class BayesianOptimizationSampler(Sampler):
 
             # Update surrogate model
             self.fit_surrogate()
+            pbar.update(1)
+            pbar.refresh()
 
     def surrogate_score(self, configs: Union[np.ndarray, List[CS.Configuration]]) -> Tuple[np.ndarray, np.ndarray]:
         if len(configs) == 0:

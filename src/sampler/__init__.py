@@ -1,20 +1,19 @@
 import hashlib
 import json
-import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Callable, List, Tuple, Optional, Iterable
+from typing import Callable, List, Tuple, Optional, Union
 
 import ConfigSpace as CS
-import ConfigSpace.hyperparameters as CSH
 import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.gaussian_process.kernels import RBF
+from tqdm import tqdm
 
 from src.utils.plotting import get_ax, check_and_set_axis
 from src.utils.typing import ColorType, SelectedHyperparameterType
 from src.utils.utils import config_list_to_array, get_hyperparameters, median_distance_between_points, \
-    ConfigSpaceHolder, copy_config_space
+    ConfigSpaceHolder, copy_config_space, ProgressDummy
 
 
 class Sampler(ConfigSpaceHolder, ABC):
@@ -37,6 +36,9 @@ class Sampler(ConfigSpaceHolder, ABC):
         self.y_list: List[float] = []
         self._cache: List[Tuple[CS.Configuration, float]] = []
         self._load_cache()
+
+    def __str__(self):
+        return f"{self.__class__.__name__}({self.obj_func.__name__})"
 
     def __len__(self) -> int:
         return len(self.config_list)
@@ -113,6 +115,10 @@ class Sampler(ConfigSpaceHolder, ABC):
             # Current version of sampler is worse than cache
             return
 
+        if len(self) == 0:
+            # We did not sample anything
+            return
+
         # Save in cache
         self.CACHE_DIR.mkdir(parents=True, exist_ok=True)
         file = self.CACHE_DIR / f"{self.hash}.json"
@@ -123,11 +129,16 @@ class Sampler(ConfigSpaceHolder, ABC):
                 "y": self.y_list
             },
             separators=(",", ":")
-        ))
+        ), encoding="latin")
 
-    def sample(self, n_points: int = 1):
+    def sample(self, n_points: int = 1, *, show_progress=False):
         """ Samples n_points new points """
         # if more points than cached previously, resample
+        if show_progress:
+            progress_bar = tqdm(total=n_points, desc=f"{self}")
+        else:
+            progress_bar = ProgressDummy()  # Does nothing except existing
+
         if len(self) + n_points > len(self._cache):
             self._cache = []
 
@@ -135,21 +146,21 @@ class Sampler(ConfigSpaceHolder, ABC):
         sampled_points = 0
         while len(self._cache) > 0 and sampled_points < n_points:
             config, value = self._cache.pop(0)
-            # self.config_space.
-            # rng = np.random.RandomState()
-            # state = rng.get_state()
-            # rng.set_state(state)
 
             self.config_list.append(config)
             self.y_list.append(value)
             sampled_points += 1
+            progress_bar.update(1)
+            progress_bar.refresh()
 
         # Use sample function
         if sampled_points < n_points:
-            self._sample(n_points - sampled_points)
+            self._sample(n_points - sampled_points, pbar=progress_bar)
+
+        progress_bar.close()
 
     @abstractmethod
-    def _sample(self, n_points: int = 1):
+    def _sample(self, n_points: int = 1, pbar: Union[ProgressDummy, tqdm] = ProgressDummy()):
         """ Samples n_points new points """
         pass
 
