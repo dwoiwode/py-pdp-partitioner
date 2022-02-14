@@ -1,11 +1,12 @@
+import matplotlib
 import numpy as np
-from matplotlib import pyplot as plt
 
 from src.algorithms.ice import ICE
 from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
-from src.blackbox_functions.synthetic_functions import Square
+from src.blackbox_functions.synthetic_functions import Square, StyblinskiTang
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
+from src.utils.plotting import plot_function, plot_config_space
 from test import PlottableTest
 
 
@@ -43,17 +44,17 @@ class TestPartitioner(PlottableTest):
 
     def test_dt_partitioner_multiple_splits(self):
         self.initialize_figure()
-        f = Square.for_n_dimensions(2, lower=-1, upper=1)
+        f = StyblinskiTang.for_n_dimensions(2)
         cs = f.config_space
-        selected_hp = cs.get_hyperparameters()[0]
+        selected_hp = "x1"
 
         bo = BayesianOptimizationSampler(f, config_space=cs)
-        bo.sample(10)
+        bo.sample(80)
 
         surrogate = GaussianProcessSurrogate(cs)
         surrogate.fit(bo.X, bo.y)
 
-        ice = ICE.from_random_points(surrogate,  selected_hp)
+        ice = ICE.from_random_points(surrogate, selected_hp, num_grid_points_per_axis=100)
 
         partitioner = DecisionTreePartitioner.from_ICE(ice)
         regions = partitioner.partition(max_depth=3)
@@ -66,3 +67,29 @@ class TestPartitioner(PlottableTest):
         colors = ['red', 'orange', 'green', 'blue', 'grey', 'black', 'magenta', 'yellow']
         color_list = colors[:len(regions)]
         partitioner.plot(color_list=color_list)
+
+    def test_dt_partitioner_multiple_splits_3d(self):
+        self.initialize_figure()
+        f = StyblinskiTang.for_n_dimensions(3)
+        cs = f.config_space
+        selected_hp = "x3"
+
+        bo = BayesianOptimizationSampler(f, config_space=cs, seed=0)
+        bo.sample(150)
+
+        surrogate = GaussianProcessSurrogate(cs, seed=0)
+        surrogate.fit(bo.X, bo.y)
+
+        ice = ICE.from_random_points(surrogate, selected_hp, num_grid_points_per_axis=100)
+
+        partitioner = DecisionTreePartitioner.from_ICE(ice)
+        partitioner.partition(max_depth=4)
+
+        ax = self.fig.gca()
+        f_2d = StyblinskiTang.for_n_dimensions(2, seed=0)
+        plot_function(f_2d, f_2d.config_space, ax=ax)
+
+        RANDOM_COLORS = tuple(matplotlib.colors.BASE_COLORS.values())
+        for i, leaf in enumerate(partitioner.leaves):
+            plot_config_space(leaf.implied_config_space(seed=0), color=RANDOM_COLORS[i % len(RANDOM_COLORS)], alpha=0.3,
+                              x_hyperparameters=("x1", "x2"))
