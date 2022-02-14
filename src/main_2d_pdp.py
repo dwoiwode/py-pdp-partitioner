@@ -8,10 +8,11 @@ from src.algorithms.pdp import PDP
 from src.blackbox_functions.synthetic_functions import StyblinskiTang
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
 from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
-from src.utils.advanced_plots import plot_2D_ICE_Curve_with_confidence, plot_full_bayesian
+from src.utils.advanced_plots import plot_2D_ICE_Curve_with_confidence
 
 folder = Path(__file__).parent.parent / "plots" / "main_2d"
 folder.mkdir(parents=True, exist_ok=True)
+
 
 def styblinski_tang_3d():
     f_folder = folder / 'syblinski_3d'
@@ -58,6 +59,7 @@ def styblinski_tang_3d():
     plot_2D_ICE_Curve_with_confidence(region_pdp)
     plt.savefig(f_folder / 'region_pdp')
     plt.show()
+
 
 if __name__ == '__main__':
     styblinski_tang_3d()

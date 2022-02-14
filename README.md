@@ -13,7 +13,7 @@ conda activate iML-Project
 
 ### Create environment
 ```
-conda create -f environment.yml
+conda env create -f environment.yml
 ```
 
 ### Update environment (if env exists)

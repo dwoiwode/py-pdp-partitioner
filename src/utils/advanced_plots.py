@@ -1,10 +1,13 @@
 from typing import Optional, Tuple
 
+import numpy as np
 from matplotlib import pyplot as plt
 
-from src.algorithms.ice import ICECurve
+from src.algorithms.ice import ICECurve, ICE
 from src.algorithms.pdp import PDP
 from src.sampler.bayesian_optimization import BayesianOptimizationSampler
+from src.surrogate_models import SurrogateModel
+from src.utils.plotting import as_quadratic_shape_as_possible_for_n_figures
 
 
 def plot_full_bayesian(bo: BayesianOptimizationSampler) -> plt.Figure:
@@ -75,3 +78,71 @@ def plot_2D_ICE_Curve_with_confidence(
     ax_mean.set_title(f"{name} Means")
     ax_sigma.set_title(f"{name} Confidences")
     return fig, (ax_mean, ax_sigma)
+
+
+def plot_hyperparameter_array_1D(
+        surrogate_model: SurrogateModel, *,
+        num_samples=1000,
+        num_grid_points_per_axis=20,
+        fig_res=4,
+        seed=0
+) -> plt.Figure:
+    cs = surrogate_model.config_space
+    hyperparameters = cs.get_hyperparameters()
+    w, h = as_quadratic_shape_as_possible_for_n_figures(len(hyperparameters))
+
+    fig, axs = plt.subplots(h, w, sharey="all", figsize=(w * fig_res, h * fig_res))
+    for selected_hp, ax in zip(hyperparameters, np.reshape(axs, -1)):
+        ice = ICE.from_random_points(
+            surrogate_model,
+            selected_hp,
+            num_samples=num_samples,
+            num_grid_points_per_axis=num_grid_points_per_axis
+        )
+        pdp = PDP.from_ICE(ice, seed)
+        pdp.plot_values(ax=ax)
+        pdp.plot_confidences(ax=ax)
+        ax.legend()
+    return fig
+
+
+def plot_hyperparameter_array_2D(
+        surrogate_model: SurrogateModel, *,
+        num_samples=1000,
+        num_grid_points_per_axis=20,
+        fig_res=4,
+        seed=0
+) -> Tuple[plt.Figure, plt.Figure]:
+    cs = surrogate_model.config_space
+    hyperparameters = cs.get_hyperparameters()
+    n = len(hyperparameters)
+    fig_mean, axs_mean = plt.subplots(n, n, figsize=(n * fig_res, n * fig_res))
+    fig_std, axs_std = plt.subplots(n, n, figsize=(n * fig_res, n * fig_res))
+    if n == 1:
+        # In this case plt.subplots returns only a "plt.AxesSubplot"
+        axs_std = [[axs_std]]
+        axs_mean = [[axs_mean]]
+    for selected_hp2, ax_mean_row, ax_std_row in zip(hyperparameters, axs_mean, axs_std):
+        for selected_hp1, ax_mean, ax_std in zip(hyperparameters, ax_mean_row, ax_std_row):
+            if selected_hp1 == selected_hp2:
+                hps = (selected_hp1,)
+            else:
+                hps = (selected_hp1, selected_hp2)
+            pdp = PDP.from_random_points(
+                surrogate_model,
+                selected_hyperparameter=hps,
+                seed=seed,
+                num_samples=num_samples,
+                num_grid_points_per_axis=num_grid_points_per_axis
+            )
+            if len(hps) == 1:
+                pdp.plot_values(ax=ax_mean)
+                pdp.plot_confidences(ax=ax_mean)
+                pdp.plot_confidences(ax=ax_std)
+                ax_mean.legend()
+                ax_std.legend()
+            else:
+                pdp.plot_values(ax=ax_mean)
+                pdp.plot_confidences(ax=ax_std)
+
+    return fig_mean, fig_std

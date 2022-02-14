@@ -1,6 +1,6 @@
 import warnings
 from pathlib import Path
-from typing import Dict, Type
+from typing import Dict, Type, Any, Callable
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -23,80 +23,87 @@ from src.utils.utils import get_uniform_distributed_ranges, convert_hyperparamet
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 seed = 0
 
-(Path(__file__).parent.parent / "plots").mkdir(parents=True, exist_ok=True)
-folder = Path(__file__).parent.parent / "plots" / "sampler_analysis"
-folder.mkdir(parents=True, exist_ok=True)
+plot_folder = Path(__file__).parent.parent / "plots" / "sampler_analysis"
+plot_folder.mkdir(parents=True, exist_ok=True)
+
 
 def plot_sampling_bias(
         figure_name: str,
         f_class: Type[BlackboxFunctionND] = StyblinskiTang,
         dimensions=2,
-        sampler_factories: Dict[str, Sampler] = None,
+        sampler_factories: Dict[str, Callable[[Any], Sampler]] = None,
         sampled_points=64 - 8,
-        repetitions=1,
-        seed_offset=0,
+        n_repetitions=1,
+        seed_offset=seed,
 ):
+    """
+    Takes `sampler_factories` as input and plot their pdps averaged over `n_repetitions`.
+
+    `sampler_factories` is a dict:
+        key = name of function
+        value = Function that takes seed as input and returns a Sampler
+    """
     f = f_class.for_n_dimensions(dimensions)
     cs = f.config_space
     initial_points = 4 * f.ndim
     if sampler_factories is None:
-        # Default sampler (from paper)
         sampler_factories = {
-            "High sampling bias": lambda seed: BayesianOptimizationSampler(
+            "High sampling bias": lambda s: BayesianOptimizationSampler(
                 f,
                 cs,
                 initial_points=initial_points,
                 acq_class=LowerConfidenceBound,
                 acq_class_kwargs={"tau": 0.1},
-                seed=seed
+                seed=s
             ),
-            "Medium Sampling bias": lambda seed: BayesianOptimizationSampler(
+            "Medium Sampling bias": lambda s: BayesianOptimizationSampler(
                 f,
                 cs,
                 initial_points=initial_points,
                 acq_class=LowerConfidenceBound,
                 acq_class_kwargs={"tau": 2},
-                seed=seed
+                seed=s
             ),
-            "Low Sampling bias": lambda seed: BayesianOptimizationSampler(
+            "Low Sampling bias": lambda s: BayesianOptimizationSampler(
                 f,
                 cs,
                 initial_points=initial_points,
                 acq_class=LowerConfidenceBound,
                 acq_class_kwargs={"tau": 5},
-                seed=seed
+                seed=s
             ),
-            "Random": lambda seed: RandomSampler(
+            "Random": lambda s: RandomSampler(
                 f,
                 cs,
-                seed=seed
+                seed=s
             ),
-            "Grid": lambda seed: GridSampler(
+            "Grid": lambda s: GridSampler(
                 f,
                 cs,
-                seed=seed
+                seed=s
             ),
         }
 
     selected_hyperparameter = ["x1"]
 
     n = len(sampler_factories)
-    fig, axes = plt.subplots(2, n, sharex="all", sharey="row", figsize=(4 * n, 4))
+    fig, axes = plt.subplots(2, n, sharex="all", sharey="row", figsize=(2.5 * n, 5))
 
     for (name, sampler_factory), ax3 in zip(sampler_factories.items(), axes.T):
         arr_means = []
         arr_variances = []
         arr_x = []
+        arr_mmd = []
 
-        for i in tqdm(range(repetitions), desc=f"Sampler: {name}"):
-            seed = seed_offset + i
+        for i in tqdm(range(n_repetitions), desc=f"Sampler: {name}"):
+            s = seed_offset + i
             f = f_class.for_n_dimensions(dimensions, seed=seed)
             cs = f.config_space
 
-            sampler = sampler_factory(seed)
+            sampler = sampler_factory(s)
             assert isinstance(sampler, Sampler)
             sampler.sample(sampled_points + initial_points)
-            surrogate = GaussianProcessSurrogate(cs, seed=seed)
+            surrogate = GaussianProcessSurrogate(cs, seed=s)
             surrogate.fit(sampler.X, sampler.y)
             pdp = PDP.from_random_points(
                 surrogate_model=surrogate, selected_hyperparameter=selected_hyperparameter,
@@ -105,6 +112,7 @@ def plot_sampling_bias(
             arr_x = pdp.x_pdp
             arr_means.append(pdp.y_pdp)
             arr_variances.append(pdp.y_variances)
+            arr_mmd.append(sampler.maximum_mean_discrepancy(seed=s + 1))
 
         arr_means = np.mean(arr_means, axis=0)
         arr_variances = np.mean(arr_variances, axis=0)
@@ -141,14 +149,14 @@ def plot_sampling_bias(
         )[0]
         ax_variances.plot(x, np.sqrt(mean_pdp.y_variances))
         # Set titles
-        ax_pdp.set_title(name)
+        ax_pdp.set_title(f"{name}\n(mmd={np.mean(arr_mmd):.2f}$\pm${np.std(arr_mmd):.2f})")
         ax_variances.set_ylabel("Std")
 
     # fig1.savefig("Figure 1.png")
-    fig.savefig(folder / figure_name)
+    fig.savefig(plot_folder / figure_name)
     plt.show()
 
 
 if __name__ == "__main__":
     # styblinski-tang 2d
-    plot_sampling_bias('Styblinski-Tang-10-Rep', repetitions=10)
+    plot_sampling_bias('Styblinski-Tang-10-Rep', n_repetitions=10)

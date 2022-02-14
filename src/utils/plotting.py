@@ -315,3 +315,11 @@ def plot_config_space(config_space: CS.ConfigurationSpace,
     else:
         raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
                                   "Please select a specific hp by setting `selected_hyperparameters`")
+
+
+def as_quadratic_shape_as_possible_for_n_figures(n: int) -> Tuple[int, int]:
+    w = int(np.ceil(np.sqrt(n)))
+    for h in range(1, w + 1):
+        if h * w >= n:
+            return w, h
+    raise ValueError(f"Could not find valid w, h for {n} ({w=})")

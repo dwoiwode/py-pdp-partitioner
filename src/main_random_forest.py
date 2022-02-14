@@ -1,7 +1,6 @@
 import math
 import warnings
 from pathlib import Path
-from typing import List
 
 import numpy as np
 import pandas as pd
@@ -28,18 +27,22 @@ sample_size_tree = 200
 n_initial_samples = n_dim * 4
 selected_hp = 'x1'
 
-(Path(__file__).parent.parent / "plots").mkdir(parents=True, exist_ok=True)
 plot_folder = Path(__file__).parent.parent / "plots" / "main_rf"
 plot_folder.mkdir(parents=True, exist_ok=True)
 
 data_folder = Path(__file__).parent.parent / 'data'
 data_folder.mkdir(parents=True, exist_ok=True)
 
-def generate_data_trees(num_replication: int = 10, log_filename="rf_data.csv", seed_offset: int = 0):
+
+def generate_data_trees(
+        num_replication: int = 10,
+        log_filename: str = "rf_data.csv",
+        seed_offset: int = 0
+):
     num_tree_list = [1, 5, 10, 15, 20, 30, 40, 50, 60, 80, 100]
     # num_tree_list = [1, 2, 3]
 
-    with open(log_filename, "a") as file:
+    with (data_folder / log_filename).open("a") as file:
         file.write('seed,num_trees,base_mc,region_mc\n')
 
         for seed in tqdm(range(seed_offset, seed_offset + num_replication), desc='Replication: '):
@@ -78,8 +81,8 @@ def generate_data_trees(num_replication: int = 10, log_filename="rf_data.csv", s
             file.write(f'{seed},dt,{dt_base_mc},{dt_region_mc}\n')
 
 
-def plot_tree_data(log_filename, img_filename):
-    df = pd.read_csv(log_filename, header=0)
+def plot_tree_data(log_filename: str, img_filename: str):
+    df = pd.read_csv(data_folder / log_filename, header=0)
 
     grouped = df.groupby(df["num_trees"].astype(str))
     result_dict = {}
@@ -127,17 +130,18 @@ def plot_tree_data(log_filename, img_filename):
     y_std = np.asarray(y_std)
 
     plt.plot(x_vals, y_means, color='black', label='Random Forest Mean')
-    plot_1D_confidence_lines(x_vals, y_means, stds=y_std, name='Random Forest', color='black', k_sigmas=(1, ))
+    plot_1D_confidence_lines(x_vals, y_means, stds=y_std, name='Random Forest', color='black', k_sigmas=(1,))
     plot_1D_confidence_color_gradients(x_vals, y_means, stds=y_std)
     plt.xlabel('Number of Trees')
     plt.ylabel('Delta Mean Confidence (%)')
-    plt.title(f'Random Forest Splitting on: Styblinski-Tang-3D, {tau=}, {n_splits=}, {sample_size_tree=}')
+    plt.title(f'Random Forest Splitting on: StyblinskiTang-{n_dim}D, {tau=}, {n_splits=}, {sample_size_tree=}')
     plt.legend()
-    plt.savefig(img_filename)
+    plt.savefig(plot_folder / img_filename)
     plt.show()
 
+
 if __name__ == '__main__':
-    log_filename = str(data_folder / "rf_data.csv")
-    img_filename = str(plot_folder / 'rf_analysis')
+    log_filename = "rf_data.csv"
+    img_filename = "rf_analysis.png"
     # generate_data_trees(num_replication=1, log_filename=log_filename)
     plot_tree_data(log_filename, img_filename)
