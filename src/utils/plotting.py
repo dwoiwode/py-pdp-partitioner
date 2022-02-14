@@ -243,8 +243,8 @@ def plot_1D_confidence_lines(
             label = f"{name}-$\mu\pm${k_sigma}$\sigma$"
         else:
             label = f"{name}-$\mu\pm${k_sigma:.2f}$\sigma$"
-        ax.plot(x, means - stds, color=color, alpha=1 / k_sigma * 0.2, label=label)
-        ax.plot(x, means + stds, color=color, alpha=1 / k_sigma * 0.2)
+        ax.plot(x, means - k_sigma * stds, color=color, alpha=1 / k_sigma * 0.2, label=label)
+        ax.plot(x, means + k_sigma * stds, color=color, alpha=1 / k_sigma * 0.2)
 
 
 def plot_2D(

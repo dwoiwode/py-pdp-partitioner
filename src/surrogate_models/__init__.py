@@ -102,7 +102,7 @@ class SurrogateModel(ConfigSpaceHolder, ABC):
             xx, yy = np.meshgrid(linspace, linspace)
             mu, std = self.predict(np.asarray([xx, yy]).T.reshape(-1, 2))
 
-            ax.pcolormesh(x, y, mu.reshape(xx.shape), shading='auto')
+            ax.pcolormesh(x, y, mu.reshape(xx.shape).T, shading='auto')
         else:
             raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
                                       "Please select a specific hp by setting `x_hyperparemeters`")
@@ -138,7 +138,7 @@ class SurrogateModel(ConfigSpaceHolder, ABC):
             xx, yy = np.meshgrid(linspace, linspace)
             mu, std = self.predict(np.asarray([xx, yy]).T.reshape(-1, 2))
 
-            ax.pcolormesh(x, y, std.reshape(xx.shape), shading='auto')
+            ax.pcolormesh(x, y, std.reshape(xx.shape).T, shading='auto')
         else:
             raise NotImplementedError(f"Plotting for {n_hyperparameters} dimensions not implemented. "
                                       "Please select a specific hp by setting `x_hyperparemeters`")
