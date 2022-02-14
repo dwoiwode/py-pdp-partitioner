@@ -91,6 +91,8 @@ def config_space_nd(
     If `lower`, `upper` or `log` are iterable, their values will be used for each respective axes
     """
     # Parse parameters
+    assert int(dimensions) == dimensions
+    dimensions = int(dimensions)  # Convert to integer
     if isinstance(lower, (float, int)):
         lower = [lower] * dimensions
     if isinstance(upper, (float, int)):

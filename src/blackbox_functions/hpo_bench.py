@@ -97,3 +97,17 @@ def get_SVMBenchmarkMF(task_id: int = 2079, seed=0):
     cs = f.config_space
 
     return cs, f
+
+
+def get_RFBenchmarkMF(task_id: int = 2079, seed=0):
+    """
+    task_id: see https://openml.github.io/openml-python/develop/examples/30_extended/tasks_tutorial.html
+    Requires openml
+    """
+    from hpobench.benchmarks.ml import RandomForestBenchmarkMF
+    b = RandomForestBenchmarkMF(task_id, rng=seed)
+
+    f = HPOBenchBlackbox(b, seed=seed)
+    cs = f.config_space
+
+    return cs, f
