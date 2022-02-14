@@ -114,6 +114,10 @@ sampler.plot()  # Plots all samples
 surrogate.plot_means()  # Plots mean predictions of surrogate
 surrogate.plot_confidences()  # Plots confidences
 ````
+#### Acquisition Function
+````python
+surrogate.acq_func.plot()  # Plot acquisition function of surrogate model
+````
 
 ### ICE
 ````python
@@ -148,4 +152,61 @@ rf_partitioner.plot_incumbent_cs(incumbent_config)  # plot incumbent config of a
 region.plot_values()  # plot pdp of region
 region.plot_confidences()  # plot confidence of pdp in region
 ````
+## Plotting examples
+### Surrogate
+Source: [test/sampler/test_acquisition_function.py](test/sampler/test_acquisition_function.py)
 
+* 1D-Surrogate model with mean + confidence
+* acquisition function
+
+![](documentation/images/surrogate.png)
+
+### Sampler
+Source: [test/sampler/test_mmd.py](test/sampler/test_mmd.py)
+
+* Underlying blackbox function (2D-Styblinski-Tang)
+* Samples from RandomSampler
+* Samples from BayesianOptimizationSampler
+
+![](documentation/images/sampler.png)
+
+### ICE
+Source: [test/algorithms/test_ice.py](test/algorithms/test_ice.py)
+
+* All ICE-Curves from 2D-Styblinski-Tang with 1 selected Hyperparameter
+
+![](documentation/images/ice.png)
+
+
+### PDP
+Source: [test/algorithms/test_pdp.py](test/algorithms/test_pdp.py)
+
+* 2D PDP (means)
+* 2D PDP (confidences)
+* All Samples for surrogate model
+
+![](documentation/images/pdp_2d.png)
+
+### PDP
+Source: [src/main_2d_pdp.py](src/main_2d_pdp.py) (`num_grid_points_per_axis=100`)
+
+* 2D PDP (means)
+
+![](documentation/images/pdp_2d_hq.png)
+
+
+### Decision Tree Partitioner
+
+Source: [test/algorithms/partitioner/test_partitioner.py](test/algorithms/partitioner/test_partitioner.py)
+
+* All ICE-Curves splitt into 8 different regions (3 splits) (used 2D-Styblinski-Tang with 1 selected hyperparameter)
+
+![](documentation/images/dt_partitioner.png)
+
+### Decision Tree Config Spaces
+Source: [test/algorithms/partitioner/test_partitioner.py](test/algorithms/partitioner/test_partitioner.py)
+
+* All Leaf-Config spaces from Decision Tree Partitioner with 3D-Styblinski-Tang Function and 1 Selected Hyperparameter (`x3`)
+* 2D-Styblinkski-Tang in background
+
+![](documentation/images/config_spaces.png)
