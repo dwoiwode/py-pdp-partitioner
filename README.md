@@ -1,4 +1,4 @@
-# Decent PDP
+# Python PDP with Partitioner
 * Original Paper
   * [arXiv](https://arxiv.org/abs/2111.04820)
   * [GitHub](https://github.com/slds-lmu/paper_2021_xautoml)
