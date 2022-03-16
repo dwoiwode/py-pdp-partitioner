@@ -11,7 +11,7 @@ extras_require = {
     "examples": [
         "pandas>=1.3.5",
         "openml>=0.12.2",
-        "HPOBench @ git+ssh://github.com/automl/HPOBench.git",
+        "HPOBench @ git+git://github.com/automl/HPOBench.git",
     ]
 }
 extras_require["test"] = extras_require["dev"] + extras_require["examples"]
