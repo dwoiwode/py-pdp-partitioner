@@ -9,14 +9,14 @@ from matplotlib import pyplot as plt
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.gaussian_process.kernels import Matern
 
-from src.algorithms.partitioner import Partitioner
-from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
-from src.blackbox_functions.synthetic_functions import StyblinskiTang
-from src.sampler.acquisition_function import LowerConfidenceBound
-from src.sampler.bayesian_optimization import BayesianOptimizationSampler
-from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
-from src.utils.advanced_plots import plot_hyperparameter_array_2D
-from src.utils.utils import calculate_log_delta
+from pyPDP.algorithms.partitioner import Partitioner
+from pyPDP.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
+from pyPDP.blackbox_functions.synthetic_functions import StyblinskiTang
+from pyPDP.sampler.acquisition_function import LowerConfidenceBound
+from pyPDP.sampler.bayesian_optimization import BayesianOptimizationSampler
+from pyPDP.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
+from pyPDP.utils.advanced_plots import plot_hyperparameter_array_2D
+from pyPDP.utils.utils import calculate_log_delta
 
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 

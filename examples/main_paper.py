@@ -9,19 +9,19 @@ from matplotlib.gridspec import GridSpec
 from sklearn.exceptions import ConvergenceWarning
 from tqdm import tqdm
 
-from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
-from src.algorithms.ice import ICE, ICECurve
-from src.algorithms.pdp import PDP
-from src.blackbox_functions import BlackboxFunction, BlackboxFunctionND
-from src.blackbox_functions.synthetic_functions import StyblinskiTang
-from src.sampler import Sampler
-from src.sampler.acquisition_function import LowerConfidenceBound
-from src.sampler.bayesian_optimization import BayesianOptimizationSampler
-from src.sampler.random_sampler import RandomSampler
-from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
-from src.utils.plotting import plot_function, plot_config_space, plot_1D_confidence_lines, \
+from pyPDP.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
+from pyPDP.algorithms.ice import ICE, ICECurve
+from pyPDP.algorithms.pdp import PDP
+from pyPDP.blackbox_functions import BlackboxFunction, BlackboxFunctionND
+from pyPDP.blackbox_functions.synthetic_functions import StyblinskiTang
+from pyPDP.sampler import Sampler
+from pyPDP.sampler.acquisition_function import LowerConfidenceBound
+from pyPDP.sampler.bayesian_optimization import BayesianOptimizationSampler
+from pyPDP.sampler.random_sampler import RandomSampler
+from pyPDP.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
+from pyPDP.utils.plotting import plot_function, plot_config_space, plot_1D_confidence_lines, \
     plot_1D_confidence_color_gradients, plot_line
-from src.utils.utils import calculate_log_delta, unscale
+from pyPDP.utils.utils import calculate_log_delta, unscale
 
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 

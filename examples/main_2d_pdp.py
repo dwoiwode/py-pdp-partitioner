@@ -2,13 +2,13 @@ from pathlib import Path
 
 from matplotlib import pyplot as plt
 
-from src.algorithms.ice import ICE
-from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
-from src.algorithms.pdp import PDP
-from src.blackbox_functions.synthetic_functions import StyblinskiTang
-from src.sampler.bayesian_optimization import BayesianOptimizationSampler
-from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
-from src.utils.advanced_plots import plot_2D_ICE_Curve_with_confidence
+from pyPDP.algorithms.ice import ICE
+from pyPDP.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
+from pyPDP.algorithms.pdp import PDP
+from pyPDP.blackbox_functions.synthetic_functions import StyblinskiTang
+from pyPDP.sampler.bayesian_optimization import BayesianOptimizationSampler
+from pyPDP.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
+from pyPDP.utils.advanced_plots import plot_2D_ICE_Curve_with_confidence
 
 folder = Path(__file__).parent.parent / "plots" / "main_2d"
 folder.mkdir(parents=True, exist_ok=True)

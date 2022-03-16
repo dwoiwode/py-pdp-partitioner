@@ -7,18 +7,18 @@ from matplotlib import pyplot as plt
 from sklearn.exceptions import ConvergenceWarning
 from tqdm import tqdm
 
-from src.algorithms.ice import ICECurve
-from src.algorithms.pdp import PDP
-from src.blackbox_functions import BlackboxFunctionND
-from src.blackbox_functions.synthetic_functions import StyblinskiTang
-from src.sampler import Sampler
-from src.sampler.acquisition_function import LowerConfidenceBound
-from src.sampler.bayesian_optimization import BayesianOptimizationSampler
-from src.sampler.grid_sampler import GridSampler
-from src.sampler.random_sampler import RandomSampler
-from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
-from src.utils.plotting import plot_function
-from src.utils.utils import get_uniform_distributed_ranges, convert_hyperparameters
+from pyPDP.algorithms.ice import ICECurve
+from pyPDP.algorithms.pdp import PDP
+from pyPDP.blackbox_functions import BlackboxFunctionND
+from pyPDP.blackbox_functions.synthetic_functions import StyblinskiTang
+from pyPDP.sampler import Sampler
+from pyPDP.sampler.acquisition_function import LowerConfidenceBound
+from pyPDP.sampler.bayesian_optimization import BayesianOptimizationSampler
+from pyPDP.sampler.grid_sampler import GridSampler
+from pyPDP.sampler.random_sampler import RandomSampler
+from pyPDP.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
+from pyPDP.utils.plotting import plot_function
+from pyPDP.utils.utils import get_uniform_distributed_ranges, convert_hyperparameters
 
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 seed = 0

@@ -8,10 +8,10 @@ import openml
 from matplotlib import pyplot as plt
 from sklearn.exceptions import ConvergenceWarning
 
-from src.blackbox_functions.hpo_bench import get_SVMBenchmarkMF, get_RFBenchmarkMF
-from src.sampler.bayesian_optimization import BayesianOptimizationSampler
-from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
-from src.utils.advanced_plots import plot_hyperparameter_array_2D, plot_hyperparameter_array_1D
+from pyPDP.blackbox_functions.hpo_bench import get_SVMBenchmarkMF, get_RFBenchmarkMF
+from pyPDP.sampler.bayesian_optimization import BayesianOptimizationSampler
+from pyPDP.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
+from pyPDP.utils.advanced_plots import plot_hyperparameter_array_2D, plot_hyperparameter_array_1D
 
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 

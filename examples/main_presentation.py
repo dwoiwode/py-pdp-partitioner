@@ -6,15 +6,15 @@ import matplotlib.colors
 from matplotlib import pyplot as plt
 from sklearn.exceptions import ConvergenceWarning
 
-from src.algorithms.ice import ICE
-from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
-from src.algorithms.pdp import PDP
-from src.blackbox_functions import BlackboxFunctionND, BlackboxFunction
-from src.blackbox_functions.synthetic_functions import StyblinskiTang
-from src.sampler.acquisition_function import LowerConfidenceBound
-from src.sampler.bayesian_optimization import BayesianOptimizationSampler
-from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
-from src.utils.plotting import plot_function, plot_config_space
+from pyPDP.algorithms.ice import ICE
+from pyPDP.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
+from pyPDP.algorithms.pdp import PDP
+from pyPDP.blackbox_functions import BlackboxFunctionND, BlackboxFunction
+from pyPDP.blackbox_functions.synthetic_functions import StyblinskiTang
+from pyPDP.sampler.acquisition_function import LowerConfidenceBound
+from pyPDP.sampler.bayesian_optimization import BayesianOptimizationSampler
+from pyPDP.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
+from pyPDP.utils.plotting import plot_function, plot_config_space
 
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 

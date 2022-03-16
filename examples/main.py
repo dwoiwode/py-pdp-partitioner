@@ -2,14 +2,14 @@ import logging
 
 import matplotlib.pyplot as plt
 
-from src.algorithms.ice import ICE
-from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
-from src.algorithms.partitioner.random_forest_partitioner import RandomForestPartitioner  # noqa
-from src.algorithms.pdp import PDP
-from src.blackbox_functions import synthetic_functions
-from src.sampler.bayesian_optimization import BayesianOptimizationSampler
-from src.sampler.random_sampler import RandomSampler  # noqa
-from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
+from pyPDP.algorithms.ice import ICE
+from pyPDP.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
+from pyPDP.algorithms.partitioner.random_forest_partitioner import RandomForestPartitioner  # noqa
+from pyPDP.algorithms.pdp import PDP
+from pyPDP.blackbox_functions import synthetic_functions
+from pyPDP.sampler.bayesian_optimization import BayesianOptimizationSampler
+from pyPDP.sampler.random_sampler import RandomSampler  # noqa
+from pyPDP.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
 
 logging.getLogger("matplotlib").setLevel(logging.INFO)
 logging.basicConfig(level=logging.DEBUG)

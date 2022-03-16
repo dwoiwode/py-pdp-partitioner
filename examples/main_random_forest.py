@@ -8,14 +8,14 @@ from matplotlib import pyplot as plt
 from sklearn.exceptions import ConvergenceWarning
 from tqdm import tqdm
 
-from src.algorithms.ice import ICE
-from src.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
-from src.algorithms.partitioner.random_forest_partitioner import RandomForestPartitioner
-from src.blackbox_functions.synthetic_functions import StyblinskiTang
-from src.sampler.bayesian_optimization import BayesianOptimizationSampler
-from src.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
-from src.utils.plotting import plot_1D_confidence_lines, plot_1D_confidence_color_gradients
-from src.utils.utils import calculate_log_delta
+from pyPDP.algorithms.ice import ICE
+from pyPDP.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
+from pyPDP.algorithms.partitioner.random_forest_partitioner import RandomForestPartitioner
+from pyPDP.blackbox_functions.synthetic_functions import StyblinskiTang
+from pyPDP.sampler.bayesian_optimization import BayesianOptimizationSampler
+from pyPDP.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
+from pyPDP.utils.plotting import plot_1D_confidence_lines, plot_1D_confidence_color_gradients
+from pyPDP.utils.utils import calculate_log_delta
 
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
