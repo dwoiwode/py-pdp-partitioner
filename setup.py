@@ -10,10 +10,11 @@ extras_require = {
     ],
     "examples": [
         "pandas>=1.3.5",
-        "openml>=0.12.2"
-        "git+git://github.com/automl/HPOBench.git@master",
-    ],
+        "openml>=0.12.2",
+        "HPOBench @ git+https://github.com/automl/HPOBench.git",
+    ]
 }
+extras_require["test"] = extras_require["dev"] + extras_require["examples"]
 
 
 setuptools.setup(
@@ -30,7 +31,7 @@ setuptools.setup(
     ),
     package_data={"deepcave": ["utils/logging.yml"]},
     python_requires=">=3.8, <3.10",
-    install_requires=Path("./requirements.txt").read_text(encoding="latin").split("\n"),
+    install_requires=Path("requirements.txt").read_text(encoding="latin").split("\n"),
     extras_require=extras_require,
     test_suite="pytest",
     platforms=["Windows", "Linux"],
