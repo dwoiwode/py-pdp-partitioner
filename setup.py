@@ -12,8 +12,9 @@ extras_require = {
         "pandas>=1.3.5",
         "openml>=0.12.2"
         "git+git://github.com/automl/HPOBench.git@master",
-    ],
+    ]
 }
+extras_require["test"] = extras_require["dev"] + extras_require["examples"]
 
 
 setuptools.setup(
