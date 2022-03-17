@@ -4,6 +4,15 @@ import setuptools
 
 from pyPDP import name, version, author_email, description, author
 
+requirements = [
+    "configspace==0.4.20",
+    "matplotlib==3.5.1",
+    "numpy==1.22.0",
+    "scipy==1.7.1",
+    "scikit-learn==1.0",
+    "tqdm==4.62.3",
+]
+
 extras_require = {
     "dev": [
         "pytest>=6.2.5",
@@ -15,7 +24,6 @@ extras_require = {
     ]
 }
 extras_require["test"] = extras_require["dev"] + extras_require["examples"]
-
 
 setuptools.setup(
     name=name,
@@ -31,7 +39,7 @@ setuptools.setup(
     ),
     package_data={"deepcave": ["utils/logging.yml"]},
     python_requires=">=3.8, <3.10",
-    install_requires=Path("requirements.txt").read_text(encoding="latin").split("\n"),
+    install_requires=requirements,
     extras_require=extras_require,
     test_suite="pytest",
     platforms=["Windows", "Linux"],

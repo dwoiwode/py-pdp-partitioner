@@ -1,3 +1,4 @@
+# Care: setup.py uses own requirements
 configspace==0.4.20
 matplotlib==3.5.1
 numpy==1.22.0
