@@ -21,6 +21,12 @@ conda env create -f environment.yml
 conda env update -f environment.yml --prune
 ```
 
+### Installation via pip
+```
+pip install pyPDPPartitioner
+```
+
+For [HPO-Bench](https://github.com/automl/HPOBench) examples, you further need to install HPOBench from git (e.g. `pip install git+https://github.com/automl/HPOBench.git@master`).
 ## Usage
 ### Blackbox functions
 To use this package you need

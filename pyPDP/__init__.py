@@ -1,4 +1,4 @@
-name = "Python PDP Partitioner"
+name = "pyPDPPartitioner"
 package_name = "pyPDP"
 author = "Yannik Mahlau and Dominik Woiwode"
 author_email = "dominik.woiwode@stud.uni-hannover.de"
