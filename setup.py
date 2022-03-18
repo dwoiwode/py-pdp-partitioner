@@ -5,12 +5,12 @@ import setuptools
 from pyPDP import name, version, author_email, description, author
 
 requirements = [
-    "configspace==0.4.20",
-    "matplotlib==3.5.1",
-    "numpy==1.22.0",
-    "scipy==1.7.1",
-    "scikit-learn==1.0",
-    "tqdm==4.62.3",
+    "configspace>=0.4.20",
+    "matplotlib>=3.5.1",
+    "numpy>=1.22.0",
+    "scipy>=1.7.1",
+    "scikit-learn>=1.0",
+    "tqdm>=4.62.3",
 ]
 
 extras_require = {
