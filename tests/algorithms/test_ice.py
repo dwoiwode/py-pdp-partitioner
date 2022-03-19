@@ -1,3 +1,4 @@
+import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 import numpy as np
 
@@ -162,3 +163,27 @@ class TestICE(PlottableTest):
         ice.centered = True
 
         ice.plot()
+
+    def test_categorical_function(self):
+        def f(x, sign):
+            if sign == "plus":
+                return x
+            elif sign == "minus":
+                return -x
+            else:
+                raise ValueError(f"Unknown sign {sign}")
+
+        cs = CS.ConfigurationSpace()  # Cannot use config_space_nd, because function takes "x" instead of "x1" as input
+        cs.add_hyperparameter(CSH.UniformFloatHyperparameter("x", -5, 6))
+        cs.add_hyperparameter(CSH.CategoricalHyperparameter("sign", choices=["plus", "minus"]))
+        bo = BayesianOptimizationSampler(f, config_space=cs, seed=42)
+        bo.sample(40)
+        for selected_hyperparameter in ["x", "sign"]:
+            print(selected_hyperparameter)
+            ice = ICE.from_random_points(
+                bo.surrogate_model,
+                selected_hyperparameter,
+            )
+            _ = ice.x_ice
+            _ = ice.y_ice
+            _ = ice.y_variances

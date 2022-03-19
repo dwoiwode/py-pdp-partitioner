@@ -7,7 +7,8 @@ import pytest
 from matplotlib import pyplot as plt
 
 from pyPDP.blackbox_functions import BlackboxFunction, config_space_nd
-from pyPDP.blackbox_functions.synthetic_functions import Levy, Ackley, CrossInTray, Square, NegativeSquare, StyblinskiTang
+from pyPDP.blackbox_functions.synthetic_functions import Levy, Ackley, CrossInTray, Square, NegativeSquare, \
+    StyblinskiTang
 from pyPDP.utils.plotting import plot_function
 from tests import PlottableTest
 

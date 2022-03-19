@@ -73,7 +73,7 @@ def scale_float(
 def unscale_float(
         normalized_value: float,
         cs: CS.ConfigurationSpace,
-        hp: CSH.NumericalHyperparameter
+        hp: CSH.Hyperparameter
 ) -> float:
     cs_hp = cs.get_hyperparameter(hp.name)
     if cs_hp.log:
@@ -89,19 +89,25 @@ def unscale_float(
 
 def unscale(x: np.ndarray, cs: CS.ConfigurationSpace) -> np.ndarray:
     """
-    assumes that x only contains numeric values and the cs-features are located in the last dimension
+    assumes that the cs-features are located in the last dimension
     """
     x_copy = x.copy()
     num_dims = len(x.shape)
     for i, hp in enumerate(cs.get_hyperparameters()):
-        assert isinstance(hp, CSH.NumericalHyperparameter), "Currently only Numerical Hyperparameters are supported"
-        if hp.log:
-            unscaler = lambda values: \
-                np.minimum(hp.upper,
-                           np.maximum(hp.lower,
-                                      np.exp(values * (np.log(hp.upper) - np.log(hp.lower)) + np.log(hp.lower))))
+        if isinstance(hp, CSH.NumericalHyperparameter):
+            if hp.log:
+                unscaler = lambda values: \
+                    np.minimum(hp.upper,
+                               np.maximum(hp.lower,
+                                          np.exp(values * (np.log(hp.upper) - np.log(hp.lower)) + np.log(hp.lower))))
+            else:
+                unscaler = lambda values: values * (hp.upper - hp.lower) + hp.lower
+        elif isinstance(hp, CSH.CategoricalHyperparameter):
+            unscaler = lambda values: np.asarray([hp.choices[k] for k in values])
+            x_copy = x_copy.astype(object)
         else:
-            unscaler = lambda values: values * (hp.upper - hp.lower) + hp.lower
+            raise TypeError(f"Currently not support hyperparameter-type {type(hp)}")
+
         if num_dims == 1:
             x_copy[i] = unscaler(x[i])
         elif num_dims == 2:
@@ -220,8 +226,11 @@ def copy_config_space(cs: CS.ConfigurationSpace, *, seed=None) -> CS.Configurati
         if isinstance(hp, CSH.NumericalHyperparameter):
             new_hp = hp.__class__(hp.name, lower=hp.lower, upper=hp.upper, log=hp.log)
             hp_dic[hp.name] = new_hp
+        elif isinstance(hp, CSH.CategoricalHyperparameter):
+            new_hp = hp.__class__(hp.name, choices=hp.choices[:])  # Copy choices
+            hp_dic[hp.name] = new_hp  # TODO: Test copy categorical hp and unscaler
         else:
-            raise NotImplementedError("Currently only Numerical Hyperparameter supported")
+            raise TypeError(f"Currently not support hyperparameter-type {type(hp)}")
 
     # add new hp to new cs
     cs_copy = CS.ConfigurationSpace(seed=seed)
