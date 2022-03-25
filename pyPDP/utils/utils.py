@@ -38,7 +38,7 @@ class ConfigSpaceHolder(ABC):
 
 
 def config_list_to_array(X: Union[List[CS.Configuration], List[Iterable[float]], np.ndarray]) -> np.ndarray:
-    if isinstance(X, list):
+    if isinstance(X, (tuple, list)):
         if isinstance(X[0], CS.Configuration):
             X = [config.get_array() for config in X]
     return np.asarray(X)
