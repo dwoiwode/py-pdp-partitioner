@@ -5,12 +5,17 @@ from typing import Type
 from pyPDP.blackbox_functions.synthetic_functions import StyblinskiTang
 from pyPDP.sampler.random_sampler import RandomSampler
 from pyPDP.surrogate_models import SurrogateModel
+from tests.utils import skip_abstract
 
 
-class SurrogateTest(unittest.TestCase, abc.ABC):
+class AbstractTestSurrogate(unittest.TestCase, abc.ABC):
     surrogate_class: Type[SurrogateModel]
 
     def setUp(self) -> None:
+        # Check abstract
+        if not hasattr(self, "surrogate_class"):
+            return
+
         # Blackbox function
         f = StyblinskiTang.for_n_dimensions(3)
         self.cs = f.config_space
@@ -23,6 +28,7 @@ class SurrogateTest(unittest.TestCase, abc.ABC):
         self.surrogate: SurrogateModel = self.surrogate_class(self.cs)
         self.surrogate.fit(sampler.X, sampler.y)
 
+    @skip_abstract
     def test_predict_config(self):
         # Setup
         config = self.cs.sample_configuration()
@@ -32,6 +38,7 @@ class SurrogateTest(unittest.TestCase, abc.ABC):
         self.assertIsInstance(mean, float)
         self.assertIsInstance(std, float)
 
+    @skip_abstract
     def test_predict_configs(self):
         # Setup
         configs = self.cs.sample_configuration(100)

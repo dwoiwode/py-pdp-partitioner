@@ -1,6 +1,6 @@
 from pyPDP.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
-from tests.surrogates import SurrogateTest
+from tests.surrogates import AbstractTestSurrogate
 
 
-class TestGaussianProcess(SurrogateTest):
+class TestGaussianProcess(AbstractTestSurrogate):
     surrogate_class = GaussianProcessSurrogate
