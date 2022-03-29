@@ -68,10 +68,10 @@ class SurrogateModel(ConfigSpaceHolder, ABC):
 
     def predict_config(self, config: CS.Configuration) -> Tuple[float, float]:
         # Single config
-        mean, std = self.predict(config.get_array())
-        assert isinstance(mean, float)
-        assert isinstance(std, float)
-        return mean, std
+        mean, std = self.predict(np.expand_dims(config.get_array(), axis=0))
+        assert isinstance(mean[0], float)
+        assert isinstance(std[0], float)
+        return mean[0], std[0]
 
     def plot_means(
             self,
