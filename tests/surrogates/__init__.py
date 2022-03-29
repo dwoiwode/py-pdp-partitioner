@@ -2,9 +2,9 @@ import abc
 import unittest
 from typing import Type
 
-from blackbox_functions.synthetic_functions import StyblinskiTang
-from sampler.random_sampler import RandomSampler
-from surrogate_models import SurrogateModel
+from pyPDP.blackbox_functions.synthetic_functions import StyblinskiTang
+from pyPDP.sampler.random_sampler import RandomSampler
+from pyPDP.surrogate_models import SurrogateModel
 
 
 class SurrogateTest(unittest.TestCase, abc.ABC):
@@ -46,4 +46,3 @@ class SurrogateTest(unittest.TestCase, abc.ABC):
         for mean, std in zip(means, stds):
             self.assertIsInstance(mean, float)
             self.assertIsInstance(std, float)
-
