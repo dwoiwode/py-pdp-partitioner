@@ -19,7 +19,7 @@ class TestHPOBench(PlottableTest):
         seed = 0
         cs, f = get_SVMBenchmarkMF(2079, seed=seed)
         # Paper configurations
-        bo_sampling_points = 80  # [80, 160, 240]
+        bo_sampling_points = 5  # [80, 160, 240]
 
         # Sampler
         sampler = BayesianOptimizationSampler(f, cs, seed=seed)
@@ -54,7 +54,7 @@ class TestHPOBench(PlottableTest):
         seed = 0
         cs, f = get_RFBenchmarkMF(2079, seed=seed)
         # Paper configurations
-        bo_sampling_points = 80  # [80, 160, 240]
+        bo_sampling_points = 5  # [80, 160, 240]
 
         # Sampler
         sampler = BayesianOptimizationSampler(f, cs, seed=seed)
@@ -89,42 +89,7 @@ class TestHPOBench(PlottableTest):
         seed = 0
         cs, f = get_NNBenchmarkMF(2079, seed=seed)
         # Paper configurations
-        bo_sampling_points = 80  # [80, 160, 240]
-
-        # Sampler
-        sampler = BayesianOptimizationSampler(f, cs, seed=seed)
-        for i in range(3):
-            sampler.sample(bo_sampling_points)
-
-            # Surrogate model
-            surrogate_model = GaussianProcessSurrogate(cs, seed=seed)
-            surrogate_model.fit(sampler.X, sampler.y)
-            for selected_hyperparameter in cs.get_hyperparameters():
-                self.initialize_figure()
-                self.fig.suptitle(f"HPOBench NN Task 2079 - {selected_hyperparameter.name} - {len(sampler)} samples")
-
-                # Plot sampler/surrogate
-                sampler.plot(x_hyperparameters=selected_hyperparameter)
-
-                # ICE
-                ice = ICE.from_random_points(surrogate_model, selected_hyperparameter, seed=seed)
-                ice.plot(color="orange")
-
-                # PDP
-                pdp = PDP.from_ICE(ice)
-                pdp.plot_values("black")
-                pdp.plot_confidences("grey")
-
-                # Partitioner
-                # dt_partitioner = DecisionTreePartitioner.from_ICE(ice)
-                self.save_fig()
-                plt.show()
-
-    def test_nn_task_2079(self):
-        seed = 0
-        cs, f = get_NNBenchmarkMF(2079, seed=seed)
-        # Paper configurations
-        bo_sampling_points = 80  # [80, 160, 240]
+        bo_sampling_points = 5  # [80, 160, 240]
 
         # Sampler
         sampler = BayesianOptimizationSampler(f, cs, seed=seed)
