@@ -32,6 +32,7 @@ class ConfigSpaceHolder(ABC):
             seed = int.from_bytes(h.digest(), "big") + seed
         self.logger.debug(f"{self.__class__.__name__}: Final Seed = {seed % 2 ** 31}")
         self.config_space = copy_config_space(config_space, seed=seed % 2 ** 31)
+        self.seed = seed
 
     def sample_random_configuration(self, n: int) -> List[CS.Configuration]:
         return self.config_space.sample_configuration(n)
