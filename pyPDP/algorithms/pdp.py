@@ -34,7 +34,8 @@ class PDP(Algorithm):
                 surrogate_model=self.surrogate_model,
                 selected_hyperparameter=self.selected_hyperparameter,
                 samples=self.samples,
-                num_grid_points_per_axis=self.num_grid_points_per_axis
+                num_grid_points_per_axis=self.num_grid_points_per_axis,
+                seed=self.seed
             )
         return self._ice
 
