@@ -229,6 +229,8 @@ class DecisionTreePartitioner(Partitioner):
                  num_splits_per_axis: int = 100,
                  min_points_per_node: int = 10,
                  not_splittable_hp: Optional[SelectedHyperparameterType] = None,  # more hp to ignore for splitting
+                 *,
+                 seed=None
                  ) -> "DecisionTreePartitioner":
         partitioner = DecisionTreePartitioner(
             surrogate_model=ice.surrogate_model,
@@ -237,7 +239,8 @@ class DecisionTreePartitioner(Partitioner):
             num_grid_points_per_axis=ice.num_grid_points_per_axis,
             num_splits_per_axis=num_splits_per_axis,
             min_points_per_node=min_points_per_node,
-            not_splittable_hp=not_splittable_hp
+            not_splittable_hp=not_splittable_hp,
+            seed=seed
         )
         partitioner._ice = ice
         return partitioner
