@@ -100,8 +100,8 @@ class TestSeeds(TestCase):
             self.assertEqual(split_seeded_1, split_seeded_2)
 
         # Incumbent config space
-        best_config_seeded_1 = best_region_seeded_1.implied_config_space(seed)
-        best_config_seeded_2 = best_region_seeded_2.implied_config_space(seed)
+        best_config_seeded_1 = best_region_seeded_1.implied_config_space(self.seed)
+        best_config_seeded_2 = best_region_seeded_2.implied_config_space(self.seed)
         self.assertEqual(best_config_seeded_1, best_config_seeded_2)
 
         # Check metrics
