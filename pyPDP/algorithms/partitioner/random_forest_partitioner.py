@@ -42,7 +42,7 @@ class RandomForestPartitioner(Partitioner):
         self.trees: Optional[List[DecisionTreePartitioner]] = None
 
     @classmethod
-    def from_ICE(cls, ice: ICE, seed=None) -> "RandomForestPartitioner":
+    def from_ICE(cls, ice: ICE, *, seed=None) -> "RandomForestPartitioner":
         partitioner = RandomForestPartitioner(
             surrogate_model=ice.surrogate_model,
             selected_hyperparameter=ice.selected_hyperparameter,
