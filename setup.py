@@ -2,7 +2,7 @@ from pathlib import Path
 
 import setuptools
 
-from pyPDP import name, version, author_email, description, author
+from pyPDP import name, version, author_email, description, author, url
 
 requirements = [
     "configspace>=0.4.20",
@@ -16,6 +16,7 @@ requirements = [
 extras_require = {
     "dev": [
         "pytest>=6.2.5",
+        "pytest-cov>=3.0.0"
     ],
     "examples": [
         "pandas>=1.3.5",
@@ -26,6 +27,7 @@ extras_require = {
 extras_require["test"] = extras_require["dev"] + extras_require["examples"]
 
 setuptools.setup(
+    url=url,
     name=name,
     author=author,
     author_email=author_email,
@@ -38,7 +40,7 @@ setuptools.setup(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"],
     ),
     package_data={"deepcave": ["utils/logging.yml"]},
-    python_requires=">=3.8, <3.10",
+    python_requires=">=3.8",
     install_requires=requirements,
     extras_require=extras_require,
     test_suite="pytest",
@@ -46,6 +48,7 @@ setuptools.setup(
     classifiers=[
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Development Status :: 3 - Alpha",
         "Natural Language :: English",
         "Environment :: Console",

@@ -1,4 +1,6 @@
 # Python PDP with Partitioner
+[GitHub](https://github.com/dwoiwode/py-pdp-partitioner)
+
 * Original Paper
   * [arXiv](https://arxiv.org/abs/2111.04820)
   * [GitHub](https://github.com/slds-lmu/paper_2021_xautoml)
@@ -8,7 +10,7 @@
 You need to either create an environment or update an existing environment.
 **After** creating an environment you have to activate it:
 ```
-conda activate iML-Project
+conda activate pyPDPPartitioner
 ```
 
 ### Create environment
