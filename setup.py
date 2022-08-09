@@ -2,7 +2,7 @@ from pathlib import Path
 
 import setuptools
 
-from pyPDP import name, version, author_email, description, author
+from pyPDP import name, version, author_email, description, author, url
 
 requirements = [
     "configspace>=0.4.20",
@@ -27,6 +27,7 @@ extras_require = {
 extras_require["test"] = extras_require["dev"] + extras_require["examples"]
 
 setuptools.setup(
+    url=url,
     name=name,
     author=author,
     author_email=author_email,

@@ -25,6 +25,8 @@ jobs:
         with:
           # Path to the Cobertura XML report.
           path: ./coverage.xml
+          # Publish the rendered output as a PR comment
+          publish: true
           # Create a coverage diff report.
           diff: true
           # Branch to diff against.
