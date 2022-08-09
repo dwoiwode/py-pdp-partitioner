@@ -16,6 +16,7 @@ requirements = [
 extras_require = {
     "dev": [
         "pytest>=6.2.5",
+        "pytest-cov>=3.0.0"
     ],
     "examples": [
         "pandas>=1.3.5",
