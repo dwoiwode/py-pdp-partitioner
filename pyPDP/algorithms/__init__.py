@@ -4,7 +4,7 @@ import numpy as np
 
 from pyPDP.surrogate_models import SurrogateModel
 from pyPDP.utils.typing import SelectedHyperparameterType
-from pyPDP.utils.utils import convert_hyperparameters, ConfigSpaceHolder
+from pyPDP.utils.utils import convert_hyperparameters, ConfigSpaceHolder, copy_config_space
 
 
 class Algorithm(ConfigSpaceHolder, ABC):
@@ -32,9 +32,10 @@ class Algorithm(ConfigSpaceHolder, ABC):
                            num_samples: int = 1000,
                            num_grid_points_per_axis: int = 20,
                            seed=None):
+        cs = copy_config_space(surrogate_model.config_space, seed=seed)
         samples = np.asarray([
             config.get_array()
-            for config in surrogate_model.config_space.sample_configuration(num_samples)
+            for config in cs.sample_configuration(num_samples)
         ])
         return cls(
             surrogate_model=surrogate_model,

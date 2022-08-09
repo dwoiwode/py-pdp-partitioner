@@ -4,26 +4,29 @@ import numpy as np
 
 from pyPDP.algorithms.ice import ICE
 from pyPDP.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
+from pyPDP.algorithms.pdp import PDP
 from pyPDP.blackbox_functions.synthetic_functions import StyblinskiTang
 from pyPDP.sampler.bayesian_optimization import BayesianOptimizationSampler
+from pyPDP.sampler.random_sampler import RandomSampler
 from pyPDP.surrogate_models.sklearn_surrogates import GaussianProcessSurrogate
 
 
 class TestSeeds(TestCase):
+    seed = 2312
+
     def test_seeds_bo(self):
         """
         Test whether same seed achieves same results everytime and different seeds achieve different results
         """
-        seed = 2312
         n_samples = 50
         # Create functions
-        f_seeded_1 = StyblinskiTang.for_n_dimensions(5, seed=seed)
-        f_seeded_2 = StyblinskiTang.for_n_dimensions(5, seed=seed)
+        f_seeded_1 = StyblinskiTang.for_n_dimensions(5, seed=self.seed)
+        f_seeded_2 = StyblinskiTang.for_n_dimensions(5, seed=self.seed)
         f_not_seeded = StyblinskiTang.for_n_dimensions(5)
 
         # Create sampler
-        bo_sampler_seeded_1 = BayesianOptimizationSampler(f_seeded_1, f_seeded_1.config_space, seed=seed)
-        bo_sampler_seeded_2 = BayesianOptimizationSampler(f_seeded_2, f_seeded_2.config_space, seed=seed)
+        bo_sampler_seeded_1 = BayesianOptimizationSampler(f_seeded_1, f_seeded_1.config_space, seed=self.seed)
+        bo_sampler_seeded_2 = BayesianOptimizationSampler(f_seeded_2, f_seeded_2.config_space, seed=self.seed)
         bo_sampler_not_seeded = BayesianOptimizationSampler(f_not_seeded, f_not_seeded.config_space)
 
         # Sample points
@@ -41,8 +44,8 @@ class TestSeeds(TestCase):
         self.assertFalse(np.array_equal(bo_sampler_seeded_1.y, bo_sampler_not_seeded.y))
 
         # Maximum mean discrepancy
-        bo_mmd_seeded_1 = bo_sampler_seeded_1.maximum_mean_discrepancy(20, seed=seed)
-        bo_mmd_seeded_2 = bo_sampler_seeded_2.maximum_mean_discrepancy(20, seed=seed)
+        bo_mmd_seeded_1 = bo_sampler_seeded_1.maximum_mean_discrepancy(20, seed=self.seed)
+        bo_mmd_seeded_2 = bo_sampler_seeded_2.maximum_mean_discrepancy(20, seed=self.seed)
         bo_mmd_not_seeded = bo_sampler_not_seeded.maximum_mean_discrepancy(20, seed=None)
         self.assertEqual(bo_mmd_seeded_1,
                          bo_mmd_seeded_2)
@@ -51,8 +54,8 @@ class TestSeeds(TestCase):
 
         # Surrogate
         # All models will have the same samples to fit on
-        surrogate_seeded_1 = GaussianProcessSurrogate(f_seeded_1.config_space, seed=seed)
-        surrogate_seeded_2 = GaussianProcessSurrogate(f_seeded_2.config_space, seed=seed)
+        surrogate_seeded_1 = GaussianProcessSurrogate(f_seeded_1.config_space, seed=self.seed)
+        surrogate_seeded_2 = GaussianProcessSurrogate(f_seeded_2.config_space, seed=self.seed)
         surrogate_not_seeded = GaussianProcessSurrogate(f_not_seeded.config_space)
 
         surrogate_seeded_1.fit(bo_sampler_seeded_1.X, bo_sampler_seeded_1.y)
@@ -68,8 +71,8 @@ class TestSeeds(TestCase):
 
         # ICE
         selected_hp = f_seeded_1.config_space.get_hyperparameter("x1")
-        ice_seeded_1 = ICE.from_random_points(surrogate_seeded_1, selected_hp, seed=seed)
-        ice_seeded_2 = ICE.from_random_points(surrogate_seeded_2, selected_hp, seed=seed)
+        ice_seeded_1 = ICE.from_random_points(surrogate_seeded_1, selected_hp, seed=self.seed)
+        ice_seeded_2 = ICE.from_random_points(surrogate_seeded_2, selected_hp, seed=self.seed)
         ice_not_seeded = ICE.from_random_points(surrogate_not_seeded, selected_hp)
 
         # Check equality of Surrogate/ICE
@@ -97,8 +100,8 @@ class TestSeeds(TestCase):
             self.assertEqual(split_seeded_1, split_seeded_2)
 
         # Incumbent config space
-        best_config_seeded_1 = best_region_seeded_1.implied_config_space(seed)
-        best_config_seeded_2 = best_region_seeded_2.implied_config_space(seed)
+        best_config_seeded_1 = best_region_seeded_1.implied_config_space(self.seed)
+        best_config_seeded_2 = best_region_seeded_2.implied_config_space(self.seed)
         self.assertEqual(best_config_seeded_1, best_config_seeded_2)
 
         # Check metrics
@@ -106,3 +109,40 @@ class TestSeeds(TestCase):
         self.assertEqual(best_region_seeded_1.mean_confidence, best_region_seeded_2.mean_confidence)
         self.assertEqual(best_region_seeded_1.negative_log_likelihood(f_seeded_1),
                          best_region_seeded_2.negative_log_likelihood(f_seeded_2))
+
+    def test_seed_from_pdp(self):
+        GRID_POINTS_PER_AXIS = 10
+        num_samples = 50
+
+        f = StyblinskiTang.for_n_dimensions(4)
+        sampler = RandomSampler(f, f.config_space)
+        sampler.sample(50)
+
+        surrogate_model = GaussianProcessSurrogate(f.config_space)
+        surrogate_model.fit(sampler.X, sampler.y)
+
+        selected_hyperparameters = ["x1"]
+
+        # And finally call PDP
+        pdp1 = PDP.from_random_points(
+            surrogate_model,
+            selected_hyperparameter=selected_hyperparameters,
+            seed=self.seed,
+            num_grid_points_per_axis=GRID_POINTS_PER_AXIS,
+            num_samples=num_samples,
+        )
+        pdp2 = PDP.from_random_points(
+            surrogate_model,
+            selected_hyperparameter=selected_hyperparameters,
+            seed=self.seed,
+            num_grid_points_per_axis=GRID_POINTS_PER_AXIS,
+            num_samples=num_samples,
+        )
+
+        x1 = pdp1.x_pdp.tolist()
+        y1 = pdp1.y_pdp.tolist()
+        x2 = pdp2.x_pdp.tolist()
+        y2 = pdp2.y_pdp.tolist()
+
+        self.assertTrue(np.array_equal(x1, x2))
+        self.assertTrue(np.array_equal(y1, y2))
