@@ -213,3 +213,35 @@ class TestBayesianSampler(PlottableTest):
 
         self.assertGreater(t_dif_1, 0.1)  # If values are loaded from cache, it is pretty fast
         self.assertGreater(t_dif_2, 0.1)  # If values are loaded from cache, it is pretty fast
+
+    def test_sample_1_init(self):
+        f = Square.for_n_dimensions(5, seed=0)
+        cs = f.config_space
+        # First try with seed
+        bo = BayesianOptimizationSampler(
+            obj_func=f,
+            config_space=cs,
+            initial_points=10,
+        )
+        bo.clear_cache()
+
+        bo.sample(1)
+        bo.sample(1)
+        bo.sample(1)
+
+        self.assertEqual(3, len(bo))
+
+    def test_sample_1_after_init(self):
+        f = Square.for_n_dimensions(5, seed=0)
+        cs = f.config_space
+        # First try with seed
+        bo = BayesianOptimizationSampler(
+            obj_func=f,
+            config_space=cs,
+            initial_points=5,
+        )
+
+        bo.sample(5)
+        bo.sample(1)
+        bo.sample(1)
+        self.assertEqual(7, len(bo))

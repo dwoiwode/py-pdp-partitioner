@@ -55,11 +55,12 @@ class BayesianOptimizationSampler(Sampler):
         else:
             sampled_points = min(self.initial_points, max_sampled_points)
 
-        self.config_list = self.config_space.sample_configuration(sampled_points)
-        if self.initial_points == 1:  # for a single value, the sampling does not return a list
-            self.config_list = [self.config_list]
+        configs = self.config_space.sample_configuration(sampled_points)
+        if sampled_points == 1:  # for a single value, the sampling does not return a list
+            configs = [configs]
 
-        self.y_list = [self.obj_func(**config) for config in self.config_list]
+        self.y_list += [self.obj_func(**config) for config in configs]
+        self.config_list += configs
         self.fit_surrogate(force=True)
 
     def fit_surrogate(self, force: bool = False):
