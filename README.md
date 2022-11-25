@@ -162,7 +162,7 @@ region.plot_confidences()  # plot confidence of pdp in region
 ````
 ## Plotting examples
 ### Surrogate
-Source: [test/sampler/test_acquisition_function.py](test/sampler/test_acquisition_function.py)
+Source: [tests/sampler/test_acquisition_function.py](tests/sampler/test_acquisition_function.py)
 
 * 1D-Surrogate model with mean + confidence
 * acquisition function
@@ -170,7 +170,7 @@ Source: [test/sampler/test_acquisition_function.py](test/sampler/test_acquisitio
 ![](documentation/images/surrogate.png)
 
 ### Sampler
-Source: [test/sampler/test_mmd.py](test/sampler/test_mmd.py)
+Source: [tests/sampler/test_mmd.py](tests/sampler/test_mmd.py)
 
 * Underlying blackbox function (2D-Styblinski-Tang)
 * Samples from RandomSampler
@@ -179,7 +179,7 @@ Source: [test/sampler/test_mmd.py](test/sampler/test_mmd.py)
 ![](documentation/images/sampler.png)
 
 ### ICE
-Source: [test/algorithms/test_ice.py](test/algorithms/test_ice.py)
+Source: [tests/algorithms/test_ice.py](tests/algorithms/test_ice.py)
 
 * All ICE-Curves from 2D-Styblinski-Tang with 1 selected Hyperparameter
 
@@ -187,7 +187,7 @@ Source: [test/algorithms/test_ice.py](test/algorithms/test_ice.py)
 
 
 ### PDP
-Source: [test/algorithms/test_pdp.py](test/algorithms/test_pdp.py)
+Source: [tests/algorithms/test_pdp.py](tests/algorithms/test_pdp.py)
 
 * 2D PDP (means)
 * 2D PDP (confidences)
@@ -196,7 +196,7 @@ Source: [test/algorithms/test_pdp.py](test/algorithms/test_pdp.py)
 ![](documentation/images/pdp_2d.png)
 
 ### PDP
-Source: [src/main_2d_pdp.py](src/main_2d_pdp.py) (`num_grid_points_per_axis=100`)
+Source: [examples/main_2d_pdp.py](examples/main_2d_pdp.py) (`num_grid_points_per_axis=100`)
 
 * 2D PDP (means)
 
@@ -205,14 +205,14 @@ Source: [src/main_2d_pdp.py](src/main_2d_pdp.py) (`num_grid_points_per_axis=100`
 
 ### Decision Tree Partitioner
 
-Source: [test/algorithms/partitioner/test_partitioner.py](test/algorithms/partitioner/test_partitioner.py)
+Source: [tests/algorithms/partitioner/test_partitioner.py](tests/algorithms/partitioner/test_partitioner.py)
 
 * All ICE-Curves splitt into 8 different regions (3 splits) (used 2D-Styblinski-Tang with 1 selected hyperparameter)
 
 ![](documentation/images/dt_partitioner.png)
 
 ### Decision Tree Config Spaces
-Source: [test/algorithms/partitioner/test_partitioner.py](test/algorithms/partitioner/test_partitioner.py)
+Source: [tests/algorithms/partitioner/test_partitioner.py](tests/algorithms/partitioner/test_partitioner.py)
 
 * All Leaf-Config spaces from Decision Tree Partitioner with 3D-Styblinski-Tang Function and 1 Selected Hyperparameter (`x3`)
 * 2D-Styblinkski-Tang in background
