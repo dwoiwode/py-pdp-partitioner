@@ -51,4 +51,4 @@ class Algorithm(ConfigSpaceHolder, ABC):
 
     @property
     def num_features(self) -> int:
-        return len(self.config_space.get_hyperparameters())
+        return len(list(self.config_space.values()))

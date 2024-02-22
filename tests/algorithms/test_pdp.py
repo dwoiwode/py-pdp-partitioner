@@ -13,7 +13,7 @@ class TestPDP(PlottableTest):
     def test_calculate_pdp_1D(self):
         f = Square.for_n_dimensions(1)
         cs = f.config_space
-        selected_hp = cs.get_hyperparameter("x1")
+        selected_hp = cs["x1"]
 
         bo = BayesianOptimizationSampler(f, config_space=cs)
         bo.sample(10)
@@ -26,7 +26,7 @@ class TestPDP(PlottableTest):
     def test_create_pdp_2D(self):
         f = Square.for_n_dimensions(2)
         cs = f.config_space
-        selected_hp = cs.get_hyperparameter("x1")
+        selected_hp = cs["x1"]
 
         bo = BayesianOptimizationSampler(f, config_space=cs)
         bo.sample(10)
@@ -42,7 +42,7 @@ class TestPDP(PlottableTest):
         cs = f.config_space
         bo = BayesianOptimizationSampler(f, config_space=cs)
 
-        selected_hp = cs.get_hyperparameter("x1")
+        selected_hp = cs["x1"]
         bo.sample(10)
 
         pdp = PDP.from_random_points(bo.surrogate_model, selected_hp)

@@ -11,7 +11,7 @@ class TestNLL(unittest.TestCase):
         cs = f.config_space
         n = 80
         tau = 1
-        selected_hyperparameter = cs.get_hyperparameter("x1")
+        selected_hyperparameter = cs["x1"]
 
         # Bayesian
         random_sampler = BayesianOptimizationSampler(f, cs,

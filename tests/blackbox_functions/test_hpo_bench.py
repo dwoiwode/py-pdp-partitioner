@@ -11,7 +11,7 @@ from tests import PlottableTest
 
 
 class TestHPOBench(PlottableTest):
-    @unittest.SkipTest
+    @unittest.skip("HPOBench requirement versions breaks stuff...")
     def test_svm_task_2079(self):
         """
         Took ~3 min for me (dwoiwode)
@@ -32,7 +32,7 @@ class TestHPOBench(PlottableTest):
             # Surrogate model
             surrogate_model = GaussianProcessSurrogate(cs, seed=seed)
             surrogate_model.fit(sampler.X, sampler.y)
-            for selected_hyperparameter in cs.get_hyperparameters():
+            for selected_hyperparameter in list(cs.values()):
                 self.initialize_figure()
                 self.fig.suptitle(f"HPOBench SVM Task 2079 - {selected_hyperparameter.name} - {len(sampler)} samples")
 
@@ -53,7 +53,7 @@ class TestHPOBench(PlottableTest):
                 self.save_fig()
                 plt.show()
 
-    @unittest.SkipTest
+    @unittest.skip("HPOBench requirement versions breaks stuff...")
     def test_rf_task_2079(self):
         seed = 0
         cs, f = get_RFBenchmarkMF(2079, seed=seed)
@@ -68,7 +68,7 @@ class TestHPOBench(PlottableTest):
             # Surrogate model
             surrogate_model = GaussianProcessSurrogate(cs, seed=seed)
             surrogate_model.fit(sampler.X, sampler.y)
-            for selected_hyperparameter in cs.get_hyperparameters():
+            for selected_hyperparameter in list(cs.values()):
                 self.initialize_figure()
                 self.fig.suptitle(f"HPOBench RF Task 2079 - {selected_hyperparameter.name} - {len(sampler)} samples")
 
@@ -89,7 +89,7 @@ class TestHPOBench(PlottableTest):
                 self.save_fig()
                 plt.show()
 
-    @unittest.SkipTest
+    @unittest.skip("HPOBench requirement versions breaks stuff...")
     def test_nn_task_2079(self):
         seed = 0
         cs, f = get_NNBenchmarkMF(2079, seed=seed)
@@ -104,7 +104,7 @@ class TestHPOBench(PlottableTest):
             # Surrogate model
             surrogate_model = GaussianProcessSurrogate(cs, seed=seed)
             surrogate_model.fit(sampler.X, sampler.y)
-            for selected_hyperparameter in cs.get_hyperparameters():
+            for selected_hyperparameter in list(cs.values()):
                 self.initialize_figure()
                 self.fig.suptitle(f"HPOBench NN Task 2079 - {selected_hyperparameter.name} - {len(sampler)} samples")
 

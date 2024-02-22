@@ -9,7 +9,7 @@ from pyPDP.blackbox_functions import config_space_nd
 class TestSplitCondition(TestCase):
     def test_float_value(self):
         cs = config_space_nd(1, upper=5, lower=-5)
-        hyperparameter = cs.get_hyperparameter('x1')
+        hyperparameter = cs["x1"]
         value = 3
         cond = SplitCondition(cs, hyperparameter, value=value, less_equal=True)
 
@@ -29,7 +29,7 @@ class TestSplitCondition(TestCase):
 
     def test_normalized_value(self):
         cs = config_space_nd(1, upper=5, lower=-5)
-        hyperparameter = cs.get_hyperparameter('x1')
+        hyperparameter = cs["x1"]
         normalized_value = 0.4
         cond = SplitCondition(cs, hyperparameter, normalized_value=normalized_value, less_equal=False)
 

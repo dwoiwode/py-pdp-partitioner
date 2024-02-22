@@ -102,7 +102,7 @@ class SurrogateModel(ConfigSpaceHolder, ABC):
     ):
         ax = get_ax(ax)
 
-        hyperparameters = self.config_space.get_hyperparameters()
+        hyperparameters = list(self.config_space.values())
         n_hyperparameters = len(hyperparameters)
         assert n_hyperparameters < 3, 'Surrogate model only supports plotting less than 3 feature dimensions'
 
@@ -116,7 +116,7 @@ class SurrogateModel(ConfigSpaceHolder, ABC):
 
             name = self.__class__.__name__
             x = ranges[0]
-            plot_line(x, mu, color=color, label=f"{name}-$\mu$", ax=ax)
+            plot_line(x, mu, color=color, label=f"{name}-$\\mu$", ax=ax)
         elif n_hyperparameters == 2:  # 2D
             x = ranges[0]
             y = ranges[1]
@@ -137,7 +137,7 @@ class SurrogateModel(ConfigSpaceHolder, ABC):
     ):
         ax = get_ax(ax)
 
-        hyperparameters = self.config_space.get_hyperparameters()
+        hyperparameters = list(self.config_space.values())
         n_hyperparameters = len(hyperparameters)
         assert n_hyperparameters < 3, 'Surrogate model only supports plotting less than 3 feature dimensions'
 

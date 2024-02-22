@@ -133,7 +133,7 @@ def plot_function(f: Callable[[Any], float],
     ax = get_ax(ax)
     color = get_color(color)
 
-    hps = cs.get_hyperparameters()
+    hps = list(cs.values())
     constants = {hp.name: hp.value for hp in hps if isinstance(hp, CSH.Constant)}
     parameters = [hp for hp in hps if not isinstance(hp, CSH.Constant)]
     n_parameter = len(parameters)
@@ -216,16 +216,16 @@ def plot_1D_confidence_lines(
 
     # Handle zero first
     if 0 in k_sigmas:
-        ax.plot(x, means, color=color, alpha=0.3, label=f"{name}-$\mu$")
+        ax.plot(x, means, color=color, alpha=0.3, label=f"{name}-$\\mu$")
 
     for k_sigma in sorted(k_sigmas):  # Sort for order in labels
         if k_sigma == 0:
             continue
         # If int omit decimal points, if float: print 2 decimal points
         if isinstance(k_sigma, int):
-            label = f"{name}-$\mu\pm${k_sigma}$\sigma$"
+            label = f"{name}-$\\mu\\pm${k_sigma}$\\sigma$"
         else:
-            label = f"{name}-$\mu\pm${k_sigma:.2f}$\sigma$"
+            label = f"{name}-$\\mu\\pm${k_sigma:.2f}$\\sigma$"
         ax.plot(x, means - k_sigma * stds, color=color, alpha=1 / k_sigma * 0.2, label=label)
         ax.plot(x, means + k_sigma * stds, color=color, alpha=1 / k_sigma * 0.2)
 

@@ -16,7 +16,7 @@ from tests import PlottableTest
 class TestConfigspaceND(TestCase):
     def test_same_bounds(self):
         cs = config_space_nd(4, lower=-4, upper=5, log=False)
-        hps = cs.get_hyperparameters()
+        hps = list(cs.values())
 
         for hp in hps:
             self.assertIsInstance(hp, CSH.NumericalHyperparameter)
@@ -27,7 +27,7 @@ class TestConfigspaceND(TestCase):
     def test_prefix(self):
         # Default prefix
         cs = config_space_nd(4)
-        hps = cs.get_hyperparameters()
+        hps = list(cs.values())
 
         expected_names = {"x1", "x2", "x3", "x4"}
         names = {hp.name for hp in hps}
@@ -35,7 +35,7 @@ class TestConfigspaceND(TestCase):
 
         # Other prefix
         cs = config_space_nd(4, variable_prefix="other_prefix_")
-        hps = cs.get_hyperparameters()
+        hps = list(cs.values())
 
         expected_names = {"other_prefix_1", "other_prefix_2", "other_prefix_3", "other_prefix_4"}
         names = {hp.name for hp in hps}
@@ -43,7 +43,7 @@ class TestConfigspaceND(TestCase):
 
     def test_different_bounds(self):
         cs = config_space_nd(3, lower=(0, -1.5, -2), upper=(5, 20, 32.3))
-        hps = cs.get_hyperparameters()
+        hps = list(cs.values())
 
         # Check Hyperparameter 0
         self.assertIsInstance(hps[0], CSH.NumericalHyperparameter)
@@ -62,7 +62,7 @@ class TestConfigspaceND(TestCase):
 
     def test_constants(self):
         cs = config_space_nd(3, lower=(0, 5, -2.32), upper=(0, 5, -2.32))
-        hps = cs.get_hyperparameters()
+        hps = list(cs.values())
 
         # Check Hyperparameter 0
         self.assertIsInstance(hps[0], CSH.Constant)
@@ -81,7 +81,7 @@ class TestLevy(TestCase):
     def test_config_space(self):
         f = Levy()
         default_cs = f.config_space
-        hp = default_cs.get_hyperparameter("x1")
+        hp = default_cs["x1"]
         self.assertIsInstance(hp, CSH.NumericalHyperparameter)
         self.assertEqual(-10, hp.lower)
         self.assertEqual(10, hp.upper)
@@ -112,7 +112,7 @@ class TestAckley(TestCase):
     def test_config_space(self):
         f = Ackley()
         default_cs = f.config_space
-        hp = default_cs.get_hyperparameter("x1")
+        hp = default_cs["x1"]
         self.assertIsInstance(hp, CSH.NumericalHyperparameter)
         self.assertEqual(-32.768, hp.lower)
         self.assertEqual(32.768, hp.upper)
@@ -143,7 +143,7 @@ class TestCrossInTray(TestCase):
     def test_config_space(self):
         f = CrossInTray()
         default_cs = f.config_space
-        hp = default_cs.get_hyperparameter("x1")
+        hp = default_cs["x1"]
         self.assertIsInstance(hp, CSH.NumericalHyperparameter)
         self.assertEqual(-10, hp.lower)
         self.assertEqual(10, hp.upper)
@@ -171,7 +171,7 @@ class TestStyblinskiTang(TestCase):
     def test_config_space(self):
         f = StyblinskiTang()
         default_cs = f.config_space
-        hp = default_cs.get_hyperparameter("x1")
+        hp = default_cs["x1"]
         self.assertIsInstance(hp, CSH.NumericalHyperparameter)
         self.assertEqual(-5, hp.lower)
         self.assertEqual(5, hp.upper)
@@ -271,7 +271,7 @@ class TestStyblinskiTang(TestCase):
             return (upper_term - lower_term) / (upper - lower)  # normalization
 
         f_int_specific = styblinski_tang_3D_int_2D
-        f_int_general = f.pd_integral(f.config_space.get_hyperparameter('x3'))
+        f_int_general = f.pd_integral(f.config_space["x3"])
 
         for x1 in np.linspace(-5, 5, num=100):
             for x2 in np.linspace(-5, 5, num=100):
@@ -294,7 +294,7 @@ class TestStyblinskiTang(TestCase):
             return (upper_term - lower_term) / (upper - lower)  # normalization
 
         f_int_specific = styblinski_tang_3D_int_2D
-        f_int_general = f.pd_integral(f.config_space.get_hyperparameter('x2'))
+        f_int_general = f.pd_integral(f.config_space["x2"])
 
         for x1 in np.linspace(-5, 5, num=100):
             for x3 in np.linspace(-5, 5, num=100):

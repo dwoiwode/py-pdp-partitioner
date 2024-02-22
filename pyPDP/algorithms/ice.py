@@ -142,7 +142,7 @@ class ICECurve:
         min_values = unscale(np.min(self.x_ice, axis=0), self.full_config_space)
         max_values = unscale(np.max(self.x_ice, axis=0), self.full_config_space)
         cs = CS.ConfigurationSpace()
-        for hp, min_, max_ in zip(self.full_config_space.get_hyperparameters(), min_values, max_values):
+        for hp, min_, max_ in zip(self.full_list(config_space.values()), min_values, max_values):
             assert isinstance(hp, CSH.NumericalHyperparameter)
             if min_ == max_:
                 hp_copy = CSH.Constant(hp.name, value=min_)
@@ -202,7 +202,7 @@ class ICE(Algorithm):
         # Retrieve hp index from cs
         cs = self.config_space
         idx = get_selected_idx(self.selected_hyperparameter, cs)
-        num_features = len(cs.get_hyperparameters())
+        num_features = len(list(cs.values()))
 
         # retrieve x-values from config
         x_s = self.grid_points

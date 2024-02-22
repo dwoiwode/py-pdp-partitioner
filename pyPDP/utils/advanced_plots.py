@@ -88,7 +88,7 @@ def plot_hyperparameter_array_1D(
         seed=0
 ) -> plt.Figure:
     cs = surrogate_model.config_space
-    hyperparameters = cs.get_hyperparameters()
+    hyperparameters = list(cs.values())
     w, h = as_quadratic_shape_as_possible_for_n_figures(len(hyperparameters))
 
     fig, axs = plt.subplots(h, w, sharey="all", figsize=(w * fig_res, h * fig_res))
@@ -114,7 +114,7 @@ def plot_hyperparameter_array_2D(
         seed=0
 ) -> Tuple[plt.Figure, plt.Figure]:
     cs = surrogate_model.config_space
-    hyperparameters = cs.get_hyperparameters()
+    hyperparameters = list(cs.values())
     n = len(hyperparameters)
     fig_mean, axs_mean = plt.subplots(n, n, figsize=(n * fig_res, n * fig_res))
     fig_std, axs_std = plt.subplots(n, n, figsize=(n * fig_res, n * fig_res))

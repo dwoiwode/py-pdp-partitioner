@@ -97,7 +97,7 @@ class DTRegion(Region):
     def implied_config_space(self, seed: Optional[int] = None) -> CS.ConfigurationSpace:
         # copy cs
         hp_dic = {}
-        for hp in self.config_space.get_hyperparameters():
+        for hp in list(self.config_space.values()):
             if isinstance(hp, CSH.NumericalHyperparameter):
                 new_hp = CSH.UniformFloatHyperparameter(hp.name, lower=hp.lower, upper=hp.upper, log=hp.log)
                 hp_dic[hp.name] = new_hp
@@ -331,6 +331,6 @@ class DecisionTreePartitioner(Partitioner):
         ax = get_ax(ax)
         region = self.get_incumbent_region(incumbent)
         new_cs = region.implied_config_space()
-        all_hp = new_cs.get_hyperparameters()
+        all_hp = new_[hp.name].values())
         not_selected_hp = sorted(list(set(all_hp) - set(self.selected_hyperparameter)), key=lambda hp: hp.name)
         plot_config_space(new_cs, x_hyperparameters=not_selected_hp, color=color, alpha=alpha, ax=ax)

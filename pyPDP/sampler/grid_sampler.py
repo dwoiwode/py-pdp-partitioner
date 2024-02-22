@@ -31,9 +31,9 @@ class GridSampler(Sampler):
     def _sample(self, n_points: int = 1, pbar: Union[ProgressDummy, tqdm] = ProgressDummy()):
         expected_length = len(self) + n_points
         if self._grid is None or len(self) + len(self._grid) < expected_length:
-            n_dims = len(self.config_space.get_hyperparameters())
+            n_dims = len(list(self.config_space.values()))
             samplers_per_axis = int(np.ceil(expected_length ** (1 / n_dims)))
-            num_steps_dict = {param.name: samplers_per_axis for param in self.config_space.get_hyperparameters()}
+            num_steps_dict = {param.name: samplers_per_axis for param in list(self.config_space.values())}
             self._grid = generate_grid(self.config_space, num_steps_dict)
             self.rng.shuffle(self._grid)
 

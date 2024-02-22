@@ -70,7 +70,7 @@ class TestSeeds(TestCase):
         # Model might be deterministic -> Cannot guarantee that not seeded != seeded
 
         # ICE
-        selected_hp = f_seeded_1.config_space.get_hyperparameter("x1")
+        selected_hp = f_seeded_1.config_spacecs["x1"]
         ice_seeded_1 = ICE.from_random_points(surrogate_seeded_1, selected_hp, seed=self.seed)
         ice_seeded_2 = ICE.from_random_points(surrogate_seeded_2, selected_hp, seed=self.seed)
         ice_not_seeded = ICE.from_random_points(surrogate_not_seeded, selected_hp)

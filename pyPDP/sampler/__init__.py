@@ -49,7 +49,7 @@ class Sampler(ConfigSpaceHolder, ABC):
     def _hash(self, *args) -> str:
         md = hashlib.md5()
         md.update(bytes(str(self.__class__), encoding="latin"))
-        md.update(bytes(str(self.config_space.get_hyperparameters()), encoding="latin"))
+        md.update(bytes(str(list(self.config_space.values())), encoding="latin"))
         for arg in args:
             md.update(bytes(str(arg), encoding="latin"))
         md.update(bytes(str(self.obj_func), encoding="latin"))

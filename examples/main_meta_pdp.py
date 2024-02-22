@@ -85,7 +85,7 @@ def optimize_mc():
     f = blackbox_function
 
     # Optimize
-    n_dim = len(cs.get_hyperparameters())
+    n_dim = len(list(cs.values()))
     sampler = BayesianOptimizationSampler(
         f,
         cs,

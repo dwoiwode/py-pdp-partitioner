@@ -68,7 +68,7 @@ class Region(ConfigSpaceHolder):
         selected_hyperparameter_names = {hp.name for hp in self.selected_hyperparameter}
         not_selected_hp = [
             hp
-            for hp in true_function.config_space.get_hyperparameters()
+            for hp in true_function.list(config_space.values())
             if hp.name not in selected_hyperparameter_names
         ]
 
@@ -159,7 +159,7 @@ class Partitioner(Algorithm, ABC):
         selected_hyperparameter_names = {hp.name for hp in self.selected_hyperparameter}
         selected_hyperparameter_names = selected_hyperparameter_names.union({hp.name for hp in self.not_splittable_hp})
         self.possible_split_parameters: List[CSH.Hyperparameter] = [
-            hp for hp in cs.get_hyperparameters()
+            hp for hp in list(cs.values())
             if hp.name not in selected_hyperparameter_names
         ]
 

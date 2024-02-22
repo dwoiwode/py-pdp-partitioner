@@ -15,7 +15,7 @@ class TestPartitioner(PlottableTest):
         self.initialize_figure()
         f = Square.for_n_dimensions(2)
         cs = f.config_space
-        selected_hp = cs.get_hyperparameter("x1")
+        selected_hp = cs["x1"]
 
         bo = BayesianOptimizationSampler(f, config_space=cs)
         bo.sample(10)
