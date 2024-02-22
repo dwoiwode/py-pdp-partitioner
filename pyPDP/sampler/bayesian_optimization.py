@@ -1,6 +1,6 @@
 import hashlib
 import warnings
-from typing import Callable, Any, List, Tuple, Union, Optional
+from typing import Callable, Any, List, Tuple, Union, Optional, Type, Dict
 
 import ConfigSpace as CS
 import numpy as np
@@ -14,15 +14,17 @@ from pyPDP.utils.utils import ProgressDummy
 
 
 class BayesianOptimizationSampler(Sampler):
-    def __init__(self,
-                 obj_func: Callable[[Any], float],
-                 config_space: CS.ConfigurationSpace,
-                 surrogate_model: Optional[SurrogateModel] = None,
-                 initial_points: int = 5,
-                 acq_class=None,
-                 acq_class_kwargs=None,
-                 minimize_objective: bool = True,
-                 seed=None):
+    def __init__(
+            self,
+            obj_func: Callable[[Any], float],
+            config_space: CS.ConfigurationSpace,
+            surrogate_model: Optional[SurrogateModel] = None,
+            initial_points: int = 5,
+            acq_class: Optional[Type[AcquisitionFunction]] = None,
+            acq_class_kwargs: Optional[Dict[str, Any]] = None,
+            minimize_objective: bool = True,
+            seed=None
+    ):
         super().__init__(obj_func, config_space, minimize_objective, seed=seed)
         # Initialize class
         self.initial_points = initial_points  # number of initial points to be sampled
@@ -39,11 +41,13 @@ class BayesianOptimizationSampler(Sampler):
             acq_class_kwargs = {}
         if acq_class is None:
             acq_class = LowerConfidenceBound  # Default Lower Confidence Bound
-        self.acq_func: AcquisitionFunction = acq_class(self.config_space,
-                                                       self.surrogate_model,
-                                                       minimize_objective=minimize_objective,
-                                                       seed=seed,
-                                                       **acq_class_kwargs)
+        self.acq_func: AcquisitionFunction = acq_class(
+            self.config_space,
+            self.surrogate_model,
+            minimize_objective=minimize_objective,
+            seed=seed,
+            **acq_class_kwargs
+        )
 
         # Update cache according to additional arguments
         self.hash = self._hash(seed, acq_class, acq_class_kwargs, initial_points, surrogate_model.__class__)

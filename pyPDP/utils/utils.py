@@ -3,6 +3,7 @@ import logging
 import math
 import time
 from abc import ABC
+from copy import deepcopy
 from typing import List, Iterable, Union, Optional
 
 import ConfigSpace as CS
@@ -222,23 +223,8 @@ def convert_hyperparameters(
 
 
 def copy_config_space(cs: CS.ConfigurationSpace, *, seed=None) -> CS.ConfigurationSpace:
-    # copy cs
-    hp_dic = {}
-    for hp in cs.get_hyperparameters():
-        if isinstance(hp, CSH.NumericalHyperparameter):
-            new_hp = hp.__class__(hp.name, lower=hp.lower, upper=hp.upper, log=hp.log)
-            hp_dic[hp.name] = new_hp
-        elif isinstance(hp, CSH.CategoricalHyperparameter):
-            new_hp = hp.__class__(hp.name, choices=hp.choices[:])  # Copy choices
-            hp_dic[hp.name] = new_hp  # TODO: Test copy categorical hp and unscaler
-        else:
-            raise TypeError(f"Currently not support hyperparameter-type {type(hp)}")
-
-    # add new hp to new cs
-    cs_copy = CS.ConfigurationSpace(seed=seed)
-    for hp in hp_dic.values():
-        cs_copy.add_hyperparameter(hp)
-
+    cs_copy = deepcopy(cs)
+    cs_copy.seed(seed)
     return cs_copy
 
 
