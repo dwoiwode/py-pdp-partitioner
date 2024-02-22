@@ -1,7 +1,7 @@
 """
 Collection of blackbox functions that can be minimized
 """
-from typing import Union, List, Tuple
+from typing import Union
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
@@ -116,7 +116,7 @@ class StyblinskiTang(BlackboxFunctionND):
     """
 
     def value_from_config(self, config: CS.Configuration) -> float:
-        x = np.asarray([config[hp.name] for hp in self.config_space.get_hyperparameters()])
+        x = np.asarray([config[hp.name] for hp in list(self.config_space.values())])
 
         return np.sum(np.power(x, 4) - 16 * np.power(x, 2) + 5 * x) / 2
 
@@ -124,9 +124,12 @@ class StyblinskiTang(BlackboxFunctionND):
     def _styblinski_tang_integral(x: float) -> float:
         return 0.5 * (0.2 * np.power(x, 5) - 16 / 3 * np.power(x, 3) + 2.5 * np.power(x, 2))
 
-    def pd_integral(self, *hyperparameters: Union[str, CSH.Hyperparameter], seed=None,
-                    return_offset: bool = False) -> Union[
-        CallableBlackboxFunction, tuple[CallableBlackboxFunction, float]]:
+    def pd_integral(
+            self,
+            *hyperparameters: Union[str, CSH.Hyperparameter],
+            seed=None,
+            return_offset: bool = False
+    ) -> Union[CallableBlackboxFunction, tuple[CallableBlackboxFunction, float]]:
         if len(hyperparameters) == 0:
             raise ValueError("Requires at least one hyperparameter for pd_integral")
 
@@ -141,7 +144,7 @@ class StyblinskiTang(BlackboxFunctionND):
             integral_value = self._styblinski_tang_integral(upper) - self._styblinski_tang_integral(lower)
             integral_offset += integral_value / (upper - lower)
 
-        hps = self.config_space.get_hyperparameters()
+        hps = list(self.config_space.values())
         reduced_cs = CS.ConfigurationSpace(seed=seed)
         hyperparameter_names = {hp.name for hp in hyperparameters}
         for hp in hps:
@@ -158,8 +161,3 @@ class StyblinskiTang(BlackboxFunctionND):
         else:
             return (CallableBlackboxFunction(integral, reduced_cs, name=f"{self.__name__} d({hyperparameter_names})"),
                     integral_offset)
-
-
-
-
-

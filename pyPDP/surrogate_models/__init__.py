@@ -5,8 +5,8 @@ import ConfigSpace as CS
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pyPDP.utils.plotting import get_ax, check_and_set_axis, plot_1D_confidence_color_gradients, plot_1D_confidence_lines, \
-    plot_line
+from pyPDP.utils.plotting import get_ax, check_and_set_axis, plot_1D_confidence_color_gradients, \
+    plot_1D_confidence_lines, plot_line
 from pyPDP.utils.typing import ColorType
 from pyPDP.utils.utils import ConfigSpaceHolder, config_list_to_array, get_uniform_distributed_ranges
 
@@ -16,9 +16,10 @@ class SurrogateModel(ConfigSpaceHolder, ABC):
         super().__init__(cs, seed=seed)
         self.num_fitted_points = 0
 
-    def __call__(self,
-                 X: Union[np.ndarray, CS.Configuration, List[CS.Configuration]]
-                 ) -> Union[np.ndarray, float, List[float]]:
+    def __call__(
+            self,
+            X: Union[np.ndarray, CS.Configuration, List[CS.Configuration]]
+    ) -> Union[np.ndarray, float, List[float]]:
         # Config or List[Config] or empty list
         if isinstance(X, CS.Configuration):
             means, stds = self.predict_config(X)
@@ -45,7 +46,11 @@ class SurrogateModel(ConfigSpaceHolder, ABC):
         """
         pass
 
-    def fit(self, X: Union[List[CS.Configuration], np.ndarray], y: Union[List[float], np.ndarray]):
+    def fit(
+            self,
+            X: Union[List[CS.Configuration], np.ndarray],
+            y: Union[List[float], np.ndarray]
+    ):
         X = config_list_to_array(X)
         self.num_fitted_points = len(y)
         return self._fit(X, np.asarray(y))
@@ -54,8 +59,10 @@ class SurrogateModel(ConfigSpaceHolder, ABC):
     def _fit(self, X: np.ndarray, y: np.ndarray):
         pass
 
-    def predict_configs(self,
-                        configs: List[CS.Configuration]) -> Tuple[List[float], List[float]]:
+    def predict_configs(
+            self,
+            configs: List[CS.Configuration]
+    ) -> Tuple[List[float], List[float]]:
         """
         If configs is a single config: Return a single mean, std.
         If configs is a list of configs: Return a tuple with list of means and list of stds
@@ -73,6 +80,20 @@ class SurrogateModel(ConfigSpaceHolder, ABC):
         assert isinstance(std[0], float)
         return mean[0], std[0]
 
+    def get_incumbent(
+            self,
+            n_samples_for_optimization: int = 1000,
+            *,
+            minimize: bool = True
+    ) -> Tuple[CS.Configuration, float]:
+        configs = self.config_space.sample_configuration(n_samples_for_optimization)
+        values = self(configs)
+        config_value_pairs = [(config, value) for config, value in zip(configs, values)]
+
+        if minimize:
+            return min(config_value_pairs, key=lambda x: x[1])
+        return max(config_value_pairs, key=lambda x: x[1])
+
     def plot_means(
             self,
             color: ColorType = "blue",
@@ -81,7 +102,7 @@ class SurrogateModel(ConfigSpaceHolder, ABC):
     ):
         ax = get_ax(ax)
 
-        hyperparameters = self.config_space.get_hyperparameters()
+        hyperparameters = list(self.config_space.values())
         n_hyperparameters = len(hyperparameters)
         assert n_hyperparameters < 3, 'Surrogate model only supports plotting less than 3 feature dimensions'
 
@@ -95,7 +116,7 @@ class SurrogateModel(ConfigSpaceHolder, ABC):
 
             name = self.__class__.__name__
             x = ranges[0]
-            plot_line(x, mu, color=color, label=f"{name}-$\mu$", ax=ax)
+            plot_line(x, mu, color=color, label=f"{name}-$\\mu$", ax=ax)
         elif n_hyperparameters == 2:  # 2D
             x = ranges[0]
             y = ranges[1]
@@ -116,7 +137,7 @@ class SurrogateModel(ConfigSpaceHolder, ABC):
     ):
         ax = get_ax(ax)
 
-        hyperparameters = self.config_space.get_hyperparameters()
+        hyperparameters = list(self.config_space.values())
         n_hyperparameters = len(hyperparameters)
         assert n_hyperparameters < 3, 'Surrogate model only supports plotting less than 3 feature dimensions'
 

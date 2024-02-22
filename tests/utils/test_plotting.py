@@ -121,7 +121,7 @@ class TestPlottingFunctions(PlottableTest):
 
         self.initialize_figure()
         cs = config_space_nd(2)
-        selected_hp = cs.get_hyperparameter("x1")
+        selected_hp = cs["x1"]
 
         sampler = RandomSampler(square_2D, config_space=cs)
         sampler.sample(10)
@@ -138,7 +138,7 @@ class TestPlottingFunctions(PlottableTest):
 
         self.initialize_figure()
         cs = config_space_nd(2)
-        selected_hp = cs.get_hyperparameter("x1")
+        selected_hp = cs["x1"]
 
         sampler = RandomSampler(square_2D, config_space=cs)
         sampler.sample(10)
@@ -157,7 +157,7 @@ class TestPlottingFunctions(PlottableTest):
 
         self.initialize_figure()
         cs = config_space_nd(2)
-        selected_hp = cs.get_hyperparameter("x1")
+        selected_hp = cs["x1"]
 
         sampler = RandomSampler(square_2D, config_space=cs)
         sampler.sample(10)
@@ -174,7 +174,7 @@ class TestPlottingFunctions(PlottableTest):
 
         self.initialize_figure()
         cs = config_space_nd(2)
-        selected_hp = cs.get_hyperparameter("x1")
+        selected_hp = cs["x1"]
 
         sampler = RandomSampler(square_2D, config_space=cs)
         sampler.sample(10)

@@ -1,7 +1,6 @@
 from functools import cached_property
-from typing import Iterable, Optional
+from typing import Optional
 
-import ConfigSpace.hyperparameters as CSH
 import numpy as np
 from matplotlib import pyplot as plt
 

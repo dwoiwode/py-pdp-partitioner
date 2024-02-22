@@ -11,7 +11,7 @@ class TestNLL(unittest.TestCase):
         cs = f.config_space
         n = 80
         tau = 1
-        selected_hyperparameter = cs.get_hyperparameter("x1")
+        selected_hyperparameter = cs["x1"]
 
         # Bayesian
         random_sampler = BayesianOptimizationSampler(f, cs,
@@ -19,7 +19,10 @@ class TestNLL(unittest.TestCase):
                                                      acq_class_kwargs={"tau": tau})
         random_sampler.sample(n)
 
-        dt_partitioner = DecisionTreePartitioner.from_random_points(random_sampler.surrogate_model, selected_hyperparameter)
+        dt_partitioner = DecisionTreePartitioner.from_random_points(
+            random_sampler.surrogate_model,
+            selected_hyperparameter
+        )
         leaf_list = dt_partitioner.partition(max_depth=1)
         best_region = dt_partitioner.get_incumbent_region(random_sampler.incumbent[0])
 

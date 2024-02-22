@@ -41,7 +41,8 @@ class AcquisitionFunction(ConfigSpaceHolder, ABC):
 
         return max(config_value_pairs, key=lambda x: x[1])
 
-    def convert_configs(self, configuration: Union[CS.Configuration, np.ndarray]):
+    @staticmethod
+    def convert_configs(configuration: Union[CS.Configuration, np.ndarray]):
         if isinstance(configuration, CS.Configuration):
             x = np.asarray(configuration.get_array())
             x = x.reshape([1, -1])
@@ -87,8 +88,14 @@ class AcquisitionFunction(ConfigSpaceHolder, ABC):
             ax.plot(x, acquisition_y, color=color_acquisition, label=self.__class__.__name__)
 
             if show_optimum:
-                ax.plot(list(optimum.values())[0], self(optimum), "*", color=color_optimum, label=f"Optimum ({optimum})",
-                        markersize=15)
+                ax.plot(
+                    list(optimum.values())[0],
+                    self(optimum),
+                    "*",
+                    color=color_optimum,
+                    label=f"Optimum ({optimum})",
+                    markersize=15
+                )
         elif n_hyperparameters == 2:  # 2D
             idx = get_selected_idx(x_hyperparameters, self.config_space)
             raise NotImplementedError("2D currently not implemented (#TODO)")
@@ -166,6 +173,7 @@ class ProbabilityOfImprovement(AcquisitionFunction):
 
 class LowerConfidenceBound(AcquisitionFunction):
     """LCB"""
+
     def __init__(self,
                  config_space: CS.ConfigurationSpace,
                  surrogate_model: SurrogateModel,

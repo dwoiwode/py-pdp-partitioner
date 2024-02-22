@@ -20,7 +20,7 @@ seed = 0
 f = synthetic_functions.StyblinskiTang.for_n_dimensions(3, seed=seed)
 cs = f.config_space
 
-selected_hyperparameter = cs.get_hyperparameter("x1")
+selected_hyperparameter = cs["x1"]
 
 # Sampler
 sampler = BayesianOptimizationSampler(f, cs, initial_points=f.ndim * 4, seed=seed)

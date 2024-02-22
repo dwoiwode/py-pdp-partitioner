@@ -10,7 +10,7 @@ from pyPDP.utils.utils import ConfigSpaceHolder
 class BlackboxFunction(ConfigSpaceHolder, ABC):
     def __init__(self, config_space: CS.ConfigurationSpace):
         super().__init__(config_space, seed=True)
-        self.ndim = len(self.config_space.get_hyperparameters())
+        self.ndim = len(list(self.config_space.values()))
         self.__name__ = str(self)
 
     def __call__(self, **kwargs) -> float:

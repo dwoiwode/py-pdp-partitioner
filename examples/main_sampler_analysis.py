@@ -149,7 +149,7 @@ def plot_sampling_bias(
         )[0]
         ax_variances.plot(x, np.sqrt(mean_pdp.y_variances))
         # Set titles
-        ax_pdp.set_title(f"{name}\n(mmd={np.mean(arr_mmd):.2f}$\pm${np.std(arr_mmd):.2f})")
+        ax_pdp.set_title(f"{name}\n(mmd={np.mean(arr_mmd):.2f}$\\pm${np.std(arr_mmd):.2f})")
         ax_variances.set_ylabel("Std")
 
     # fig1.savefig("Figure 1.png")

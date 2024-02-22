@@ -105,7 +105,7 @@ def plot_tree_data(log_filename: str, img_filename: str):
     # plt.boxplot(delta_mcs, positions=[0], manage_ticks=False)
     # plt.plot([], [], color='orange', label='Decision Tree')
     plt.plot(x, dt_mean, '*', color='red', label='Decision Tree Mean')
-    plt.plot(x, dt_mean + dt_std, '*', color='orange', label=f'Decision Tree $\mu\pm$ $\sigma$')
+    plt.plot(x, dt_mean + dt_std, '*', color='orange', label=f'Decision Tree $\\mu\\pm$ $\\sigma$')
     plt.plot(x, dt_mean - dt_std, '*', color='orange')
 
     # rf mean curve

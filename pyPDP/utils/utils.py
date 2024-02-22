@@ -3,6 +3,7 @@ import logging
 import math
 import time
 from abc import ABC
+from copy import deepcopy
 from typing import List, Iterable, Union, Optional
 
 import ConfigSpace as CS
@@ -59,7 +60,7 @@ def scale_float(
         cs: CS.ConfigurationSpace,
         hp: CSH.NumericalHyperparameter
 ) -> float:
-    cs_hp = cs.get_hyperparameter(hp.name)
+    cs_hp = cs[hp.name]
     if cs_hp.log:
         log_lower = np.log(cs_hp.lower)
         log_upper = np.log(cs_hp.upper)
@@ -77,7 +78,7 @@ def unscale_float(
         cs: CS.ConfigurationSpace,
         hp: CSH.Hyperparameter
 ) -> float:
-    cs_hp = cs.get_hyperparameter(hp.name)
+    cs_hp = cs[hp.name]
     if cs_hp.log:
         log_lower = np.log(cs_hp.lower)
         log_upper = np.log(cs_hp.upper)
@@ -95,7 +96,7 @@ def unscale(x: np.ndarray, cs: CS.ConfigurationSpace) -> np.ndarray:
     """
     x_copy = x.copy()
     num_dims = len(x.shape)
-    for i, hp in enumerate(cs.get_hyperparameters()):
+    for i, hp in enumerate(list(cs.values())):
         if isinstance(hp, CSH.NumericalHyperparameter):
             if hp.log:
                 unscaler = lambda values: \
@@ -134,19 +135,19 @@ def get_hyperparameters(hyperparameters: Optional[SelectedHyperparameterType],
                         cs: CS.ConfigurationSpace) -> List[CSH.Hyperparameter]:
     if hyperparameters is None:
         # None -> All hyperparameters in cs
-        return list(cs.get_hyperparameters())
+        return list(list(cs.values()))
     elif isinstance(hyperparameters, CSH.Hyperparameter):
         # Single Hyperparameter
         return [hyperparameters]
     elif isinstance(hyperparameters, str):
         # Single Hyperparameter name
-        return [cs.get_hyperparameter(hyperparameters)]
+        return [cs[hyperparameters]]
     else:
         # Either list of names or list of Hyperparameters
         hps = []
         for hp in hyperparameters:
             if isinstance(hp, str):
-                hps.append(cs.get_hyperparameter(hp))
+                hps.append(cs[hp])
             elif isinstance(hp, CSH.Hyperparameter):
                 hps.append(hp)
             else:
@@ -167,7 +168,7 @@ def get_uniform_distributed_ranges(
     """
     ranges = []
     if isinstance(cs, CS.ConfigurationSpace):
-        cs = cs.get_hyperparameters()
+        cs = list(cs.values())
     for parameter in cs:
         assert isinstance(parameter, CSH.NumericalHyperparameter)
         if scaled:
@@ -213,7 +214,7 @@ def convert_hyperparameters(
     hps = []
     for hp in hyperparameters:
         if isinstance(hp, str):
-            hps.append(config_space.get_hyperparameter(hp))
+            hps.append(config_space[hp])
         elif isinstance(hp, CSH.Hyperparameter):
             hps.append(hp)
         else:
@@ -222,23 +223,8 @@ def convert_hyperparameters(
 
 
 def copy_config_space(cs: CS.ConfigurationSpace, *, seed=None) -> CS.ConfigurationSpace:
-    # copy cs
-    hp_dic = {}
-    for hp in cs.get_hyperparameters():
-        if isinstance(hp, CSH.NumericalHyperparameter):
-            new_hp = hp.__class__(hp.name, lower=hp.lower, upper=hp.upper, log=hp.log)
-            hp_dic[hp.name] = new_hp
-        elif isinstance(hp, CSH.CategoricalHyperparameter):
-            new_hp = hp.__class__(hp.name, choices=hp.choices[:])  # Copy choices
-            hp_dic[hp.name] = new_hp  # TODO: Test copy categorical hp and unscaler
-        else:
-            raise TypeError(f"Currently not support hyperparameter-type {type(hp)}")
-
-    # add new hp to new cs
-    cs_copy = CS.ConfigurationSpace(seed=seed)
-    for hp in hp_dic.values():
-        cs_copy.add_hyperparameter(hp)
-
+    cs_copy = deepcopy(cs)
+    cs_copy.seed(seed)
     return cs_copy
 
 

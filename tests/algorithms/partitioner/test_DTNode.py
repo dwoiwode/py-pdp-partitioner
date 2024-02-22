@@ -2,7 +2,6 @@ from unittest import TestCase
 
 from pyPDP.algorithms.ice import ICE
 from pyPDP.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
-from pyPDP.blackbox_functions import synthetic_functions, config_space_nd
 from pyPDP.blackbox_functions.synthetic_functions import Square
 from pyPDP.sampler.acquisition_function import LowerConfidenceBound
 from pyPDP.sampler.bayesian_optimization import BayesianOptimizationSampler
@@ -17,7 +16,7 @@ class TestDTNode(TestCase):
 
         # Static paper configurations (not changed throughout the paper)
         self.cs = f.config_space
-        self.selected_hyperparameter = self.cs.get_hyperparameter("x1")
+        self.selected_hyperparameter = self.cs["x1"]
 
         self.surrogate_model = GaussianProcessSurrogate(self.cs)
         bo = BayesianOptimizationSampler(f, self.cs,
@@ -50,8 +49,8 @@ class TestDTNode(TestCase):
         root_cs = root.implied_config_space(seed=0)
 
         # root cs should be the same as the original
-        for hp in root_cs.get_hyperparameters():
-            original_hp = self.cs.get_hyperparameter(hp.name)
+        for hp in list(root_cs.values()):
+            original_hp = self.cs[hp.name]
             self.assertEqual(hp.upper, original_hp.upper)
             self.assertEqual(hp.lower, original_hp.lower)
 
@@ -59,8 +58,8 @@ class TestDTNode(TestCase):
         for leaf in self.partitioner.leaves:
             leaf_cs = leaf.implied_config_space(seed=0)
             is_different = False
-            for hp in leaf_cs.get_hyperparameters():
-                original_hp = self.cs.get_hyperparameter(hp.name)
+            for hp in list(leaf_cs.values()):
+                original_hp = self.cs[hp.name]
                 if original_hp.lower != hp.lower or original_hp.upper != hp.upper:
                     is_different = True
             self.assertTrue(is_different)

@@ -10,7 +10,7 @@ from pyPDP.algorithms.partitioner import Region, Partitioner
 from pyPDP.surrogate_models import SurrogateModel
 from pyPDP.utils.plotting import get_ax, check_and_set_axis, get_random_color, plot_config_space
 from pyPDP.utils.typing import SelectedHyperparameterType, ColorType
-from pyPDP.utils.utils import scale_float, unscale_float, unscale, ConfigSpaceHolder, get_hyperparameters
+from pyPDP.utils.utils import scale_float, unscale_float, unscale, ConfigSpaceHolder
 
 
 class SplitCondition(ConfigSpaceHolder):
@@ -97,7 +97,7 @@ class DTRegion(Region):
     def implied_config_space(self, seed: Optional[int] = None) -> CS.ConfigurationSpace:
         # copy cs
         hp_dic = {}
-        for hp in self.config_space.get_hyperparameters():
+        for hp in list(self.config_space.values()):
             if isinstance(hp, CSH.NumericalHyperparameter):
                 new_hp = CSH.UniformFloatHyperparameter(hp.name, lower=hp.lower, upper=hp.upper, log=hp.log)
                 hp_dic[hp.name] = new_hp
@@ -331,6 +331,6 @@ class DecisionTreePartitioner(Partitioner):
         ax = get_ax(ax)
         region = self.get_incumbent_region(incumbent)
         new_cs = region.implied_config_space()
-        all_hp = new_cs.get_hyperparameters()
+        all_hp = list(new_cs.values())
         not_selected_hp = sorted(list(set(all_hp) - set(self.selected_hyperparameter)), key=lambda hp: hp.name)
         plot_config_space(new_cs, x_hyperparameters=not_selected_hp, color=color, alpha=alpha, ax=ax)

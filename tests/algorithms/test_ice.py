@@ -13,7 +13,7 @@ class TestICE(PlottableTest):
         f = Square.for_n_dimensions(1)
         cs = f.config_space
         bo = BayesianOptimizationSampler(f, config_space=cs)
-        selected_hp = cs.get_hyperparameter("x1")
+        selected_hp = cs["x1"]
 
         bo.sample(10)
         num_grid_points = 1000
@@ -47,7 +47,7 @@ class TestICE(PlottableTest):
         f = Square.for_n_dimensions(2)
         cs = f.config_space
         bo = BayesianOptimizationSampler(f, config_space=cs)
-        selected_hyperparameter = cs.get_hyperparameter("x1")
+        selected_hyperparameter = cs["x1"]
 
         bo.sample(10)
         num_grid_points = 20
@@ -76,7 +76,7 @@ class TestICE(PlottableTest):
         f = Square.for_n_dimensions(2)
         cs = f.config_space
         bo = BayesianOptimizationSampler(f, config_space=cs)
-        selected_hp = cs.get_hyperparameter("x1")
+        selected_hp = cs["x1"]
 
         bo.sample(10)
         ice = ICE.from_random_points(bo.surrogate_model, selected_hp)
@@ -89,14 +89,14 @@ class TestICE(PlottableTest):
         f = StyblinskiTang.for_n_dimensions(2)
         cs = f.config_space
         bo = BayesianOptimizationSampler(f, config_space=cs)
-        selected_hp = cs.get_hyperparameter("x1")
+        selected_hp = cs["x1"]
 
         bo.sample(10)
         ice = ICE.from_random_points(bo.surrogate_model, selected_hp)
         ice_curve = ice[0]
         reduced_cs = ice_curve.implied_config_space
-        x1 = reduced_cs.get_hyperparameter("x1")
-        x2 = reduced_cs.get_hyperparameter("x2")
+        x1 = reduced_cs["x1"]
+        x2 = reduced_cs["x2"]
 
         self.assertEqual(selected_hp.lower, x1.lower)
         self.assertEqual(selected_hp.upper, x1.upper)

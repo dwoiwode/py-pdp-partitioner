@@ -88,7 +88,11 @@ class RandomForestPartitioner(Partitioner):
             not_splittable_hp = list(set(self.possible_split_parameters) - set(splittable_hp))
 
             # create dt
-            dt = DecisionTreePartitioner.from_ICE(subset_ice, min_points_per_node=1, not_splittable_hp=not_splittable_hp)
+            dt = DecisionTreePartitioner.from_ICE(
+                subset_ice,
+                min_points_per_node=1,
+                not_splittable_hp=not_splittable_hp
+            )
             dt.partition(max_depth=max_depth)
             self.trees.append(dt)
 
