@@ -1,5 +1,4 @@
 from unittest import TestCase
-import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 import numpy as np
 from ConfigSpace import ConfigurationSpace, Configuration

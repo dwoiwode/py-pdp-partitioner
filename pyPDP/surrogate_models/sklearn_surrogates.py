@@ -26,6 +26,7 @@ class SkLearnPipelineSurrogate(SurrogateModel):
 
         return self.pipeline.predict(X, return_std=True)
 
+
 class GaussianProcessSurrogate(SkLearnPipelineSurrogate):
     def __init__(self, cs: CS.ConfigurationSpace, kernel=Matern(nu=1.5), seed=None):
         pipeline = Pipeline([

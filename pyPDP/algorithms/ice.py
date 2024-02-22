@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Optional, List
+from typing import Optional
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
@@ -142,7 +142,7 @@ class ICECurve:
         min_values = unscale(np.min(self.x_ice, axis=0), self.full_config_space)
         max_values = unscale(np.max(self.x_ice, axis=0), self.full_config_space)
         cs = CS.ConfigurationSpace()
-        for hp, min_, max_ in zip(self.full_list(config_space.values()), min_values, max_values):
+        for hp, min_, max_ in zip(list(self.full_config_space.values()), min_values, max_values):
             assert isinstance(hp, CSH.NumericalHyperparameter)
             if min_ == max_:
                 hp_copy = CSH.Constant(hp.name, value=min_)

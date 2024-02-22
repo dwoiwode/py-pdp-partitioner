@@ -9,7 +9,7 @@ from sklearn.exceptions import ConvergenceWarning
 from pyPDP.algorithms.ice import ICE
 from pyPDP.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
 from pyPDP.algorithms.pdp import PDP
-from pyPDP.blackbox_functions import BlackboxFunctionND, BlackboxFunction
+from pyPDP.blackbox_functions import BlackboxFunction
 from pyPDP.blackbox_functions.synthetic_functions import StyblinskiTang
 from pyPDP.sampler.acquisition_function import LowerConfidenceBound
 from pyPDP.sampler.bayesian_optimization import BayesianOptimizationSampler

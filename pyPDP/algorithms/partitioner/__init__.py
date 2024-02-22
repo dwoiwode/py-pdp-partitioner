@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import Tuple, Optional, List, Callable
+from typing import Tuple, Optional, List
 
 import ConfigSpace as CS
 import numpy as np
@@ -68,7 +68,7 @@ class Region(ConfigSpaceHolder):
         selected_hyperparameter_names = {hp.name for hp in self.selected_hyperparameter}
         not_selected_hp = [
             hp
-            for hp in true_function.list(config_space.values())
+            for hp in list(true_function.config_space.values())
             if hp.name not in selected_hyperparameter_names
         ]
 
@@ -127,6 +127,7 @@ class Region(ConfigSpaceHolder):
             confidence_max_sigma=confidence_max_sigma,
             ax=ax)
 
+
 class Partitioner(Algorithm, ABC):
     def __init__(self, surrogate_model: SurrogateModel,
                  selected_hyperparameter: SelectedHyperparameterType,
@@ -175,5 +176,5 @@ class Partitioner(Algorithm, ABC):
         return self._ice
 
     @abstractmethod
-    def partition(self, max_depth: int = 1): # -> List[Region]:
+    def partition(self, max_depth: int = 1):  # -> List[Region]:
         pass

@@ -10,7 +10,7 @@ from sklearn.exceptions import ConvergenceWarning
 from tqdm import tqdm
 
 from pyPDP.algorithms.partitioner.decision_tree_partitioner import DecisionTreePartitioner
-from pyPDP.algorithms.ice import ICE, ICECurve
+from pyPDP.algorithms.ice import ICE
 from pyPDP.algorithms.pdp import PDP
 from pyPDP.blackbox_functions import BlackboxFunction, BlackboxFunctionND
 from pyPDP.blackbox_functions.synthetic_functions import StyblinskiTang
@@ -33,6 +33,7 @@ plot_folder.mkdir(parents=True, exist_ok=True)
 
 data_folder = Path(__file__).parent.parent / 'data'
 data_folder.mkdir(parents=True, exist_ok=True)
+
 
 def figure_1_3(f: BlackboxFunction = StyblinskiTang.for_n_dimensions(2, seed=seed),
                samplers: Dict[str, Sampler] = None,

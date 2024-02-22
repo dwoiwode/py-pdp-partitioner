@@ -19,7 +19,10 @@ class TestNLL(unittest.TestCase):
                                                      acq_class_kwargs={"tau": tau})
         random_sampler.sample(n)
 
-        dt_partitioner = DecisionTreePartitioner.from_random_points(random_sampler.surrogate_model, selected_hyperparameter)
+        dt_partitioner = DecisionTreePartitioner.from_random_points(
+            random_sampler.surrogate_model,
+            selected_hyperparameter
+        )
         leaf_list = dt_partitioner.partition(max_depth=1)
         best_region = dt_partitioner.get_incumbent_region(random_sampler.incumbent[0])
 
