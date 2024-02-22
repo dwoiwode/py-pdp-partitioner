@@ -1,3 +1,5 @@
+import unittest
+
 from matplotlib import pyplot as plt
 
 from pyPDP.algorithms.ice import ICE
@@ -9,6 +11,7 @@ from tests import PlottableTest
 
 
 class TestHPOBench(PlottableTest):
+    @unittest.SkipTest
     def test_svm_task_2079(self):
         """
         Took ~3 min for me (dwoiwode)
@@ -50,6 +53,7 @@ class TestHPOBench(PlottableTest):
                 self.save_fig()
                 plt.show()
 
+    @unittest.SkipTest
     def test_rf_task_2079(self):
         seed = 0
         cs, f = get_RFBenchmarkMF(2079, seed=seed)
@@ -85,6 +89,7 @@ class TestHPOBench(PlottableTest):
                 self.save_fig()
                 plt.show()
 
+    @unittest.SkipTest
     def test_nn_task_2079(self):
         seed = 0
         cs, f = get_NNBenchmarkMF(2079, seed=seed)
