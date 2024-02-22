@@ -193,7 +193,7 @@ Source: [tests/algorithms/test_pdp.py](tests/algorithms/test_pdp.py)
 * 2D PDP (confidences)
 * All Samples for surrogate model
 
-![](documentation/images/pdp_2d.png)
+![](documentation/images/pdp_2D.png)
 
 ### PDP
 Source: [examples/main_2d_pdp.py](examples/main_2d_pdp.py) (`num_grid_points_per_axis=100`)

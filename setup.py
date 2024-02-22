@@ -5,7 +5,7 @@ import setuptools
 from pyPDP import name, version, author_email, description, author, url
 
 requirements = [
-    "configspace>=0.4.20",
+    "configspace>=0.7.2",
     "matplotlib>=3.5.1",
     "numpy>=1.22.0",
     "scipy>=1.7.1",
